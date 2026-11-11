@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hybridpoker"
+version = "0.0.1"
+description = "Explainable Texas Hold'em AI combining probability calculations and supervised ML opponent modeling."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+# Loose version ranges describing what the project needs.
+# Exact, tested versions are pinned in requirements.txt.
+dependencies = [
+    "pokerkit>=0.7.7,<0.8",
+    "numpy>=2.0",
+    "pandas>=2.2",
+    "scikit-learn>=1.5",
+    "streamlit>=1.40",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
