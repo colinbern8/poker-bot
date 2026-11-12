@@ -96,7 +96,7 @@ Branch: `phase-1-equity-engine`.
 | `seed` is a required keyword argument | Forces every experiment to record its seed (CLAUDE.md rule 8). |
 | Split pots count as 1/n of the pot | Correct equity for ties. A royal-flush board gives 1/(players). |
 | Standard error from fractional pot shares | A binary win/loss indicator misstates uncertainty when splits are common. |
-| `pot_size` includes the opponent's bet and excludes the hero's call; `call_amount > pot_size` is rejected | One consistent convention across the project. The check catches the most common mistake, leaving the bet out of the pot. |
+| `pot_size` includes the opponent's bet and excludes the hero's call; `call_amount > pot_size` is rejected | One consistent convention across the project. The check catches the most common mistake, leaving the bet out of the pot. It is listed as assumption 7 of the simplified heads-up API in `docs/probability_engine.md`. |
 | Exact enumeration limited to heads-up river | 990 combinations take about 0.3 s. Two opponents would need about 450,000, which takes minutes. |
 | No decision rule (call/fold) in Phase 1 | CLAUDE.md rule 7 says to separate math from decision rules. Rules come in Phase 2. |
 | No new dependencies | Only the standard library and PokerKit are used. |
@@ -113,7 +113,13 @@ GitHub Actions run 43276364776 on commit `398dabe`:
 This includes `test_seeded_results_are_identical_across_platforms`, so the
 same seed gives the same equity on Windows as on Linux.
 
-- `tests/test_equity.py` (43 tests):
+After adding the hand-counted river tests (8 more tests), the local run gave
+`90 passed in 16.38s`. CI results for the final commit are shown on the
+Phase 1 pull request.
+
+- `tests/test_equity.py` (51 tests):
+  - hand-counted river examples, with exact answers derived on paper and
+    checked against both exact enumeration and Monte Carlo
   - validation
   - split pots for 1, 2, 3, 5 and 9 opponents
   - the standard-error formula
@@ -161,7 +167,11 @@ exact value:
 - Opponent hands are assumed uniformly random. This ignores what their
   betting reveals. The ML opponent model is meant to address this.
 - Call EV assumes no future betting, full equity realization, a heads-up
-  final pot, and no rake (see `docs/probability_engine.md`).
+  final pot, no rake, and `call_amount <= pot_size`. These are the
+  simplified heads-up API assumptions in `docs/probability_engine.md`.
+- Independent verification covers hand-counted river spots only. Preflop,
+  flop and turn equities are checked for consistency (ordering, multiway
+  trends, agreement with the same engine), not against published values.
 - The standard error uses a normal approximation. It is unreliable for very
   small `sample_count` and is NaN for a single sample.
 - Exact enumeration is heads-up river only.

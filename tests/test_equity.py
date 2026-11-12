@@ -117,6 +117,78 @@ def test_royal_flush_board_exact_equity_is_half() -> None:
     assert result.tie_rate == 1.0
 
 
+# --- Hand-counted river examples ---------------------------------------------
+#
+# Each expected value below was worked out by counting cards on paper, not by
+# running the engine. On the river, the hero sees 7 cards, so 45 are unseen
+# and the opponent holds one of C(45, 2) = 990 equally likely hands.
+# Each case lists (wins, ties, losses) out of 990.
+
+HAND_COUNTED_RIVER_CASES = [
+    pytest.param(
+        # Quad nines on board; the hero's ace is the best possible kicker.
+        # Opponent ties only by also holding an ace (3 unseen aces):
+        #   ties   = 990 - C(42, 2) = 990 - 861 = 129
+        #   wins   = C(42, 2)       = 861
+        "AsKd", "9c9d9h9s2c", (861, 129, 0),
+        id="quads-on-board-ace-kicker",
+    ),
+    pytest.param(
+        # Quad nines on board; the hero plays the board's king kicker.
+        # Any opponent ace (4 unseen) wins; everyone else ties:
+        #   losses = 990 - C(41, 2) = 990 - 820 = 170
+        #   ties   = C(41, 2)       = 820
+        "2s3s", "9c9d9h9sKc", (0, 820, 170),
+        id="quads-on-board-king-kicker",
+    ),
+    pytest.param(
+        # Board full house AAAKK, the best possible full house. The hero plays
+        # the board. Only quads beat it: the last ace (Ac with any of 44 other
+        # cards = 44 hands) or the last two kings (KhKs = 1 hand).
+        #   losses = 44 + 1 = 45, ties = 945
+        "5c5d", "AhAdAsKcKd", (0, 945, 45),
+        id="board-full-house-aces-full",
+    ),
+    pytest.param(
+        # Board is an ace-high straight with only two hearts and no pair:
+        # no flush or full house is possible and nothing beats a broadway
+        # straight, so all 990 opponent hands tie.
+        "2c3d", "AhKdQcJsTh", (0, 990, 0),
+        id="board-broadway-straight",
+    ),
+]
+
+
+@pytest.mark.parametrize(("hole", "board", "counts"), HAND_COUNTED_RIVER_CASES)
+def test_exact_river_equity_matches_hand_counts(
+    hole: str, board: str, counts: tuple[int, int, int]
+) -> None:
+    wins, ties, losses = counts
+    assert wins + ties + losses == 990
+    result = exact_river_equity(hole, board)
+
+    assert result.equity == pytest.approx((wins + ties / 2) / 990)
+    assert result.win_rate == pytest.approx(wins / 990)
+    assert result.tie_rate == pytest.approx(ties / 990)
+    assert result.loss_rate == pytest.approx(losses / 990)
+
+
+@pytest.mark.parametrize(("hole", "board", "counts"), HAND_COUNTED_RIVER_CASES)
+def test_monte_carlo_matches_hand_counts(
+    hole: str, board: str, counts: tuple[int, int, int]
+) -> None:
+    wins, ties, _ = counts
+    expected = (wins + ties / 2) / 990
+    estimate = estimate_equity(hole, board, sample_count=2000, seed=11)
+
+    if estimate.standard_error == 0:
+        # Every outcome has the same share (e.g. all ties).
+        assert estimate.equity == pytest.approx(expected)
+    else:
+        z_score = (estimate.equity - expected) / estimate.standard_error
+        assert abs(z_score) < Z_TOLERANCE
+
+
 def test_standard_error_uses_fractional_pot_shares() -> None:
     # Shares: win, 2-way tie, loss, 2-way tie.
     shares = [1.0, 0.5, 0.0, 0.5]

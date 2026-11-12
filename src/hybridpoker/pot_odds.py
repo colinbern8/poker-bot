@@ -25,6 +25,12 @@ Assumptions behind these formulas (they are deliberate simplifications):
 5. EV is measured relative to folding. Chips the hero already put in the
    pot are sunk: they are lost by folding, so they do not count against
    calling.
+6. ``call_amount <= pot_size`` (enforced). Under the definitions above the
+   pot already holds the opponent's bet, and the hero never has to add
+   more than that bet, so no real spot breaks this rule. A larger call
+   almost always means the opponent's bet was left out of ``pot_size``,
+   so it raises ``ValueError`` instead of returning a wrong answer.
+   Consequence: pot odds are never above 0.5.
 """
 
 from __future__ import annotations

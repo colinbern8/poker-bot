@@ -125,7 +125,7 @@ With the virtual environment active:
 python -m pytest
 ```
 
-Expected result: all tests pass (`82 passed` as of Phase 1).
+Expected result: all tests pass (`90 passed` as of Phase 1).
 
 If you see `No module named pytest`, the virtual environment is not active.
 Activate it (see [Setup](#setup)) and try again.

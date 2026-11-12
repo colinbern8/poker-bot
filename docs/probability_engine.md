@@ -80,6 +80,13 @@ The tests require the Monte Carlo estimate to be within 4 SE of this
 exact answer. This validates the simulation without relying on equity
 figures copied from elsewhere.
 
+The tests also include **hand-counted examples**, where the exact answer
+was worked out on paper by counting cards. One example: with quad nines on
+the board and an ace kicker, the opponent ties only by holding one of the 3
+unseen aces. That gives 129 ties and 861 wins out of 990, for an equity of
+(861 + 129/2) / 990 ≈ 0.9348. These cases check the engine against math
+that does not depend on the engine itself.
+
 Exact enumeration is limited to **one opponent**. Two opponents would need
 about 450,000 combinations, which takes minutes at the measured speed.
 
@@ -137,3 +144,13 @@ called the break-even point.
 6. **Random opponent hands.** The equity input assumes opponents hold
    random cards. Real opponents' betting tells us something about their
    hands. Using that information is the purpose of the ML opponent model.
+7. **`call_amount` can never exceed `pot_size` (enforced).** The pot
+   already contains the opponent's bet, and the hero never has to add more
+   than that bet, so in a correctly described spot the call is at most the
+   pot. If a call is larger, the opponent's bet was almost certainly left
+   out of `pot_size`, so the functions raise an error instead of returning
+   a wrong answer. A side effect is that pot odds are never above 50%.
+
+These seven points together are the **simplified heads-up API
+assumptions** of Phase 1. Later phases that relax any of them (for
+example, multiway pots or future betting) must update this list.
