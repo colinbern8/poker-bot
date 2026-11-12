@@ -875,7 +875,92 @@ completed successfully on Ubuntu and Windows.
 
 **Tests:** local, Python 3.12.3: 312 passed (6 new calibration tests).
 
+### Next milestone (Phase 3)
+
+The project owner approved Random Forest B #22 and the Phase 4 plan, with
+refinements, on 2026-11-12. Phase 4 continues below.
+
+## Phase 4: EV agents and profitability experiment (in progress)
+
+Plan: [`docs/phase4_plan.md`](phase4_plan.md).
+
+- **Primary comparison:** ML EV Agent minus Frequency EV Agent.
+- **Key secondary comparison:** ML EV Agent minus ProbabilityAgent.
+
+Work is in stages 4A to 4D, each reviewed before the next.
+
+### Stage 4A: decision equations, opponent tracking, simulator integration (2026-11-12)
+
+**Completed work**
+
+- `tests/test_phase2_regression.py`: SHA-256 hashes of `decisions.csv` and
+  `hands.csv` for three fixed matches, recorded and committed (`466dbb0`)
+  **before** any Phase 2 code changed.
+- `hand_log.observation_columns(obs)`: the `obs_` columns extracted into
+  one shared function, used by the logger and by the agents.
+- Public end-of-hand notification:
+  - `PublicHandSummary` carries the full betting history, the board,
+    the player's position and the deal/seating indices. It carries no
+    hole cards, payoffs or showdown cards.
+  - `Agent.observe_hand_end` does nothing by default.
+  - `run_match` calls it for both players after every hand.
+- `ev.py`: the EV equations for fold, check, call (including a short
+  call) and bet/raise (fold/call/re-raise branches, uncalled chips
+  returned), with the assumptions in the module text. Each action's
+  value comes with a plain-language explanation.
+- `opponent_tracker.py`:
+  - records the opponent's public actions;
+  - recovers the amount faced from the history;
+  - infers the current deal so the mirror hand is excluded;
+  - computes Feature Set B with the **same** `history_features` function
+    and frozen priors used in training.
+- `counterfactual.py`: the opponent's hypothetical observation after a
+  candidate hero action. It is rebuilt from public history and board
+  with fake hole cards, checked against the hero's real observation, and
+  stripped of hole cards.
+- `opponent_predictor.py`:
+  - loads a Feature Set B bundle (optional SHA-256 check);
+  - builds features via `observation_columns` → `feature_set_a` plus the
+    tracker's history;
+  - returns legal-masked probabilities, keeping raw ones for diagnostics.
+
+**Verification**
+
+- The reference hashes still match after both Phase 2 changes.
+  Regenerating pilot match 3 also produced byte-identical `decisions.csv`
+  and `hands.csv` compared with the logs written before the change.
+- Live history features equal the offline training features exactly,
+  checked for both players in two matches.
+- In three matches, every hypothetical opponent observation built from
+  the hero's view equals the opponent's real next observation exactly
+  (more than 50 action pairs).
+- After a hero all-in, the opponent's legal actions are fold and call
+  only, and the predictor gives raises probability 0.
+- The frozen model, SHA-256
+  `5d4c8235e142a2fdd23a2b370def8183aabfad72b7998120cbe4fb711dda7b31`,
+  loads through the predictor.
+
+**Distribution-shift finding (limitation)**
+
+- Only 441 of 23,603 training rows (1.9%) show a player facing an
+  all-in. Of these, 11 are preflop: 10 maniac and 1 solid, all calls.
+- For a hypothetical preflop shove the model predicts a 0.84 call rate,
+  essentially the training-wide facing-all-in call rate (0.846), for any
+  opponent.
+- This is recorded in the Phase 4 plan as an experimental limitation.
+  Stage 4B will log how often decisions rely on such poorly covered
+  states.
+
+**Tests:** local, Python 3.12.3: 357 passed. The 45 new tests are:
+
+| File | Tests |
+|---|---|
+| Phase 2 regression | 3 |
+| end-of-hand summary | 7 |
+| EV equations | 17 |
+| opponent tracker | 9 |
+| counterfactual and predictor | 9 |
+
 ### Next milestone
 
-Approval of the probability model and of the Phase 4 plan
-(`docs/phase4_plan.md`), before any Phase 4 implementation.
+Stage 4A review by the project owner, before Stage 4B (the two EV agents).

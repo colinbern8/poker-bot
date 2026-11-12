@@ -20,7 +20,7 @@ from pokerkit import Card, Deck
 from hybridpoker.actions import ActionCategory, LegalAction, apply_action
 from hybridpoker.agents.base import Agent, Decision
 from hybridpoker.game import PLAYER_COUNT, SEAT_POSITIONS, STREET_NAMES, create_heads_up_state
-from hybridpoker.observation import Observation, PublicAction, observe
+from hybridpoker.observation import Observation, PublicAction, PublicHandSummary, observe
 
 _STANDARD_DECK: tuple[Card, ...] = tuple(Deck.STANDARD)
 _MAX_STEPS = 1000  # safety net; a heads-up hand needs far fewer
@@ -57,6 +57,38 @@ class HandResult:
     payoffs: tuple[int, int]
     went_to_showdown: bool
     decisions: tuple[DecisionRecord, ...]
+
+
+def public_history(result: HandResult) -> tuple[PublicAction, ...]:
+    """Every action of a finished hand, as all players saw it."""
+    return tuple(
+        PublicAction(
+            street=record.observation.street,
+            position=record.observation.position,
+            category=record.action.category,
+            bet_to=record.action.bet_to,
+            chips_added=record.action.chips_added,
+            is_all_in=record.action.is_all_in,
+        )
+        for record in result.decisions
+    )
+
+
+def public_hand_summary(
+    result: HandResult, seat: int, deal_index: int, seat_swap: int, hands_per_deal: int
+) -> PublicHandSummary:
+    """The public summary of a finished hand for the player in ``seat``.
+
+    Hole cards, payoffs and showdown information are deliberately left out.
+    """
+    return PublicHandSummary(
+        position=SEAT_POSITIONS[seat],
+        history=public_history(result),
+        board_cards=result.board_cards,
+        deal_index=deal_index,
+        seat_swap=seat_swap,
+        hands_per_deal=hands_per_deal,
+    )
 
 
 def shuffled_deck(deal_seed: int) -> list[Card]:

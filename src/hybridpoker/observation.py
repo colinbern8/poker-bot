@@ -77,6 +77,35 @@ class Observation:
         return self.legal(ActionCategory.ALL_IN) is not None
 
 
+@dataclass(frozen=True)
+class PublicHandSummary:
+    """What every player publicly saw in a finished hand (Phase 4).
+
+    Sent to agents after each hand so they can remember an opponent's
+    behaviour across hands. It holds **public information only**: the full
+    betting history (including actions after the receiving player's last
+    decision, e.g. the opponent folding to a bet), the community cards that
+    were dealt, the receiving player's position, and match-structure
+    indices. It never contains hole cards, showdown cards or payoffs,
+    matching the information used to train the opponent model.
+
+    Attributes:
+        position: The receiving player's position in this hand.
+        history: Every action of the hand, in order.
+        board_cards: Community cards dealt (empty if the hand ended preflop).
+        deal_index: Which deal of the match this hand belongs to.
+        seat_swap: 0 or 1, the seating of this deal (always 0 without swaps).
+        hands_per_deal: 2 for seat-swapped matches, otherwise 1.
+    """
+
+    position: str
+    history: tuple[PublicAction, ...]
+    board_cards: tuple[Card, ...]
+    deal_index: int
+    seat_swap: int
+    hands_per_deal: int
+
+
 def board_cards_of(state: State) -> tuple[Card, ...]:
     """Flatten PokerKit's board representation for a single board."""
     return tuple(cards[0] for cards in state.board_cards)

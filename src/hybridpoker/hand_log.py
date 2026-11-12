@@ -46,6 +46,7 @@ from hybridpoker.actions import RAISE_CATEGORIES, ActionCategory
 from hybridpoker.agents.base import Agent
 from hybridpoker.game import BIG_BLIND, SMALL_BLIND, STARTING_STACK
 from hybridpoker.match import MatchResult
+from hybridpoker.observation import Observation
 from hybridpoker.pot_odds import pot_odds
 
 SCHEMA_VERSION = 2
@@ -66,6 +67,39 @@ def cards_text(cards: Iterable[Card]) -> str:
     return "".join(repr(card) for card in cards)
 
 
+def observation_columns(obs: Observation) -> dict[str, Any]:
+    """The public ``obs_`` columns for one observation, in log column order.
+
+    Shared by the hand logger and by Phase 4 agents, so the features an
+    agent computes during play are built exactly like the logged training
+    data. It reads only public fields: never ``obs.hole_cards``.
+    """
+    this_street = [a for a in obs.history if a.street == obs.street]
+    row: dict[str, Any] = {
+        "obs_street": obs.street,
+        "obs_position": obs.position,
+        "obs_board": cards_text(obs.board_cards),
+        "obs_pot_size": obs.pot_size,
+        "obs_to_call": obs.to_call,
+        "obs_pot_odds": pot_odds(obs.pot_size, obs.to_call),
+        "obs_own_stack": obs.own_stack,
+        "obs_opponent_stack": obs.opponent_stack,
+        "obs_effective_stack": obs.effective_stack,
+        "obs_own_bet": obs.own_bet,
+        "obs_opponent_bet": obs.opponent_bet,
+        "obs_big_blind": obs.big_blind,
+        "obs_actions_this_street": len(this_street),
+        "obs_raises_this_street": sum(a.category in RAISE_CATEGORIES for a in this_street),
+        "obs_raises_this_hand": sum(a.category in RAISE_CATEGORIES for a in obs.history),
+        "obs_history": ";".join(a.short() for a in obs.history),
+    }
+    for category in ActionCategory:
+        legal = obs.legal(category)
+        row[f"obs_legal_{category.value}"] = legal is not None
+        row[f"obs_bet_to_{category.value}"] = legal.bet_to if legal else None
+    return row
+
+
 def decision_rows(match: MatchResult) -> list[dict[str, Any]]:
     """One dictionary per decision, with prefixed column names."""
     rows = []
@@ -74,7 +108,6 @@ def decision_rows(match: MatchResult) -> list[dict[str, Any]]:
         for record in result.decisions:
             obs = record.observation
             seat = record.seat
-            this_street = [a for a in obs.history if a.street == obs.street]
             row: dict[str, Any] = {
                 "id_match": match.match_id,
                 "id_hand_index": hand.hand_index,
@@ -82,27 +115,8 @@ def decision_rows(match: MatchResult) -> list[dict[str, Any]]:
                 "id_seat_swap": hand.seat_swap,
                 "id_decision_index": record.decision_index,
                 "id_deal_seed": result.deal_seed,
-                "obs_street": obs.street,
-                "obs_position": obs.position,
-                "obs_board": cards_text(obs.board_cards),
-                "obs_pot_size": obs.pot_size,
-                "obs_to_call": obs.to_call,
-                "obs_pot_odds": pot_odds(obs.pot_size, obs.to_call),
-                "obs_own_stack": obs.own_stack,
-                "obs_opponent_stack": obs.opponent_stack,
-                "obs_effective_stack": obs.effective_stack,
-                "obs_own_bet": obs.own_bet,
-                "obs_opponent_bet": obs.opponent_bet,
-                "obs_big_blind": obs.big_blind,
-                "obs_actions_this_street": len(this_street),
-                "obs_raises_this_street": sum(a.category in RAISE_CATEGORIES for a in this_street),
-                "obs_raises_this_hand": sum(a.category in RAISE_CATEGORIES for a in obs.history),
-                "obs_history": ";".join(a.short() for a in obs.history),
+                **observation_columns(obs),
             }
-            for category in ActionCategory:
-                legal = obs.legal(category)
-                row[f"obs_legal_{category.value}"] = legal is not None
-                row[f"obs_bet_to_{category.value}"] = legal.bet_to if legal else None
             row.update(
                 {
                     "act_category": record.action.category.value,

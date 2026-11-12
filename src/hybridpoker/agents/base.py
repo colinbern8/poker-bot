@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from hybridpoker.actions import ActionCategory
-from hybridpoker.observation import Observation
+from hybridpoker.observation import Observation, PublicHandSummary
 
 
 @dataclass(frozen=True)
@@ -42,6 +42,15 @@ class Agent(ABC):
     @abstractmethod
     def act(self, observation: Observation, rng: random.Random) -> Decision:
         """Choose a legal action for the given observation."""
+
+    def observe_hand_end(self, summary: PublicHandSummary) -> None:
+        """Receive the public summary of a finished hand.
+
+        Optional; the default does nothing, so agents that ignore it behave
+        exactly as before. Phase 4 agents use it to track an opponent's
+        public actions across hands.
+        """
+        return None
 
     def config(self) -> dict[str, Any]:
         """Settings that define this agent, stored in run metadata only."""

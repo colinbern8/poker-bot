@@ -1,7 +1,8 @@
-# Phase 4 Plan: Hybrid Agent and Profitability Experiment (DRAFT)
+# Phase 4 Plan: Hybrid Agent and Profitability Experiment
 
-Status: **draft for approval, 2026-11-12. Nothing in this document is
-implemented yet.**
+Status: **approved 2026-11-12, with refinements (section 8). Stage 4A
+(decision equations, opponent tracking, simulator integration)
+implemented; awaiting review before Stage 4B.**
 Competition presentation: **December 7–9, 2026**.
 
 ## 1. Research question
@@ -29,15 +30,35 @@ The model file is frozen by SHA-256 hash in the evaluation manifest.
 
 | Agent | Decision rule | Opponent model |
 |---|---|---|
-| **Probability** (existing baseline, unchanged) | Equity vs pot-odds thresholds (Phase 2) | none |
-| **Hybrid-Prior** (control) | The new expected-value rule (section 4) | Dummy: training action frequencies, legal-masked |
-| **Hybrid-ML** (treatment) | The same expected-value rule | Frozen Random Forest B |
+| **ProbabilityAgent** (existing baseline, unchanged) | Equity vs pot-odds thresholds (Phase 2) | none |
+| **Frequency EV Agent** (control) | The new expected-value rule (section 4) | Training action frequencies, legal-masked (the Dummy) |
+| **ML EV Agent** (treatment) | The same expected-value rule | Frozen Random Forest B |
 
-Hybrid-Prior isolates the effect of the new decision rule. **Hybrid-ML
-minus Hybrid-Prior isolates the value of the ML opponent model**, which is
-the research question. Hybrid-ML minus Probability is the overall gain.
+**Primary comparison: ML EV Agent minus Frequency EV Agent.** It isolates
+the benefit of learned opponent modeling, because the decision rule is
+identical.
+
+**Key secondary comparison: ML EV Agent minus ProbabilityAgent.** It shows
+the overall improvement over the mathematical baseline.
+
+Both comparisons use paired deals and are reported in bb/100 with
+confidence intervals.
 
 ## 4. Hybrid decision rule (explainable, one step ahead)
+
+The equations are implemented in `src/hybridpoker/ev.py` and unit-tested
+on hand-computed spots in `tests/test_ev.py`. The tests cover:
+
+- checking;
+- calling, including a short-stack call;
+- betting with the opponent always folding, always calling, always
+  re-raising, and a mix;
+- a preflop raise;
+- facing a raise, with sunk chips excluded;
+- all-in, with uncalled chips returned.
+
+Every EV is the expected change in the hero's chips compared with folding
+now.
 
 The equity calculation is the Phase 1 one, unchanged: equity against one
 random hand, 500 Monte Carlo samples. For each legal hero action the agent
@@ -48,17 +69,23 @@ hand:
 - **Check (no bet faced):** `equity × pot`.
 - **Call:** `equity × (pot + to_call) − to_call`. This is the Phase 1
   call EV.
-- **Bet or raise of size `b`:**
-  1. The agent applies the action to a **copy** of the public game state.
-  2. It asks the opponent model for the opponent's response probabilities
-     in that hypothetical state: P(fold), P(call) and P(raise), where
-     P(raise) covers half-pot, pot and all-in.
+- **Bet or raise adding `a` chips (the opponent must add `r` to call):**
+  1. The agent builds the opponent's hypothetical state after the action
+     (`counterfactual.py`).
+  2. The opponent model gives legal-masked response probabilities:
+     P(fold), P(call) and P(raise), where P(raise) covers half-pot, pot
+     and all-in.
   3. It combines them:
 
-     `EV = P(fold) × pot + P(call) × [equity × (pot + 2b) − b] + P(raise) × (−b)`
+     `EV = P(fold) × pot + P(call) × [equity × (pot + a' + r') − a'] − P(raise) × a`
 
-  The P(raise) term is a deliberate, documented simplification: the hero
-  is assumed to give up against a re-raise.
+     Here `r' = min(r, opponent stack)` and `a' = a − (r − r')`, because
+     uncalled chips are returned.
+- **Facing a raise:** the same fold, call and re-raise equations apply.
+  Chips the hero already put in are sunk.
+- **All-in:** if the hero's bet puts either player all-in, the
+  opponent's legal mask only allows fold or call, so P(raise) = 0. A
+  short call returns the uncalled excess.
 - **Choice:** the action with the highest EV. Ties go to the more passive
   action.
 - **Logging:** every decision records a reason, for example
@@ -66,13 +93,24 @@ hand:
 
 Known simplifications, stated in the report:
 
-- no betting on later streets;
-- equity against a random hand, with no range narrowing from opponent
-  actions;
-- re-raises treated as losing the bet;
-- five abstract bet sizes only.
+- **No future betting:** after a check, call or called bet, the hand is
+  valued at showdown with no more chips.
+- **Re-raises lose the bet:** the hero gives up the chips just added.
+  This is conservative.
+- **Fixed equity:** equity is against a random hand in every branch,
+  with no range narrowing.
+- **Five abstract bet sizes only.**
+- **Counterfactual distribution shift.** The model was trained on states
+  that occurred, but the agents query states created by their own
+  candidate actions. Some of these are rare in training. For example,
+  only 11 of 23,603 training rows (all from maniac and solid players, all
+  calls) show a player facing a preflop all-in. For a preflop shove the
+  model therefore predicts about the training-wide facing-all-in call
+  rate (0.84) for any opponent. This is an experimental limitation.
+  Stage 4B will log how often decisions depend on such poorly covered
+  states.
 
-These apply equally to Hybrid-Prior and Hybrid-ML, so their difference
+These apply equally to the Frequency EV and ML EV Agents, so their difference
 measures only the value of the opponent model.
 
 ## 5. Implementation (files)
@@ -115,12 +153,12 @@ measures only the value of the opponent model.
 - **Matches:** each hero plays seat-swapped matches against each opponent
   with the **same deal seeds** (common random numbers), so the agents
   face identical cards.
-- **Primary endpoint:** Hybrid-ML minus Probability in bb/100, averaged
-  with equal weight over the 16 opponents. The 95% interval treats the
-  deal pair as the unit and pairs hands across agents through the common
-  deals.
-- **Key secondary endpoint:** Hybrid-ML minus Hybrid-Prior, the value of
-  the ML model.
+- **Primary endpoint:** ML EV Agent minus Frequency EV Agent in bb/100,
+  averaged with equal weight over the 16 opponents. This is the value of
+  learned opponent modeling. The 95% interval treats the deal pair as the
+  unit and pairs hands across agents through the common deals.
+- **Key secondary endpoint:** ML EV Agent minus ProbabilityAgent, the
+  overall improvement over the mathematical baseline.
 - **Other secondary endpoints:**
   - training-pool vs held-out opponents;
   - per style;
@@ -130,23 +168,53 @@ measures only the value of the opponent model.
   3 heroes ≈ 19,200 hands, roughly 1–2 h on 4 cores, to be confirmed by
   the development speed measurement.
 
-## 7. Approvals needed before implementation
+## 7. Performance measurement (Stage 4C)
 
-1. The three-agent design, with Hybrid-Prior as the control.
-2. The one-step EV rule and its simplifications.
-3. The behaviour-neutral changes to Phase 2 code (`observation_columns`
-   refactor and the end-of-hand notification), protected by byte-identity
-   tests.
-4. Master seeds 5000 (development) and 4000 (final), the freeze
-   procedure, and the primary endpoint.
+- Model inference time is measured separately from equity calculation
+  time.
+- Median and 95th-percentile decision latency are reported for each
+  agent.
+- No major optimizations unless they are needed for the competition demo.
 
-## 8. Timeline
+## 8. Approved refinements (2026-11-12)
+
+1. **Primary comparison:** ML EV minus Frequency EV. ML EV minus
+   ProbabilityAgent is the key secondary comparison. Both use paired deals
+   and bb/100 with confidence intervals.
+2. **EV equations:** specified and unit-tested before the agents; the
+   assumptions are documented (section 4).
+3. **Counterfactual-state tests:** the hypothetical state must
+   - contain only information the acting player can observe;
+   - update pot, bets, stacks, position and history correctly;
+   - have the opponent as the predicted actor;
+   - respect the legal-action mask;
+   - preserve the approved history calculation.
+
+   Distribution shift is flagged as a limitation.
+4. **Simulator changes:** the shared observation function and the public
+   end-of-hand notification, with regression tests showing no change to
+   gameplay, legality or logs.
+5. **Final evaluation:**
+   - development on master seed 5000;
+   - final evaluation on fresh master seed 4000;
+   - sample size set from development data before the freeze;
+   - code and model hashes frozen before the final runs;
+   - no tuning on final results.
+6. **Performance:** see section 7.
+7. **Stages, each reviewed before the next:**
+   - 4A: equations, tracking and integration;
+   - 4B: both EV agents with controlled tests;
+   - 4C: development matches, performance and final evaluation plan;
+   - 4D: freeze and final runs.
+
+## 9. Timeline
 
 | Dates | Work |
 |---|---|
-| Nov 13 | Approve probability model and this plan |
-| Nov 14–20 | Implement, with parity and unit tests; development runs; sample size |
-| Nov 21 | Freeze |
+| Nov 12 | Stage 4A |
+| Nov 13–16 | Stage 4B: EV agents |
+| Nov 17–20 | Stage 4C: development runs, performance, sample size |
+| Nov 21 | Freeze (Stage 4D) |
 | Nov 22–24 | Final evaluation runs |
 | Nov 25–30 | Analysis and report |
 | Dec 1–6 | Streamlit demo, slides, buffer |
