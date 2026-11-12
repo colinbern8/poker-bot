@@ -1,6 +1,6 @@
 # Phase 3 Plan: Supervised Opponent Modeling
 
-Status: **Stages 1-2 approved 2026-11-12. Stage 3 models trained and evaluated; awaiting review before merging or Phase 4.**
+Status: **Phase 3 approved 2026-11-12 as the supervised-learning experiment. Phase 4 probability model selected by validation log-loss (section 13a); awaiting approval with the Phase 4 plan.**
 Branch: `phase-3-machine-learning`.
 Competition presentation: **December 7–9, 2026**.
 
@@ -502,6 +502,40 @@ must not overrun much past Nov 22.
 - `docs/progress.md` is updated with the decisions, tests, actual
   results and limitations.
 
+## 13a. Post-hoc decision: probability model for Phase 4 (2026-11-12)
+
+**This decision was made after inspecting the Stage 3 classification
+results.** The macro-F1-selected models were poorly calibrated: their
+log-loss was no better than the Dummy's. The Phase 4 agent needs good
+probabilities, not just good class predictions.
+
+The project owner therefore decided:
+
+1. The Stage 3 macro-F1-selected models and results stay unchanged as the
+   Phase 3 classification experiment.
+2. The model feeding the Phase 4 agent is a **Feature Set B** model
+   selected by **validation log-loss of legal-masked probabilities**:
+   - candidates are every B setting in the existing Random Forest and
+     HistGradientBoosting grids;
+   - ties are broken by validation macro-F1;
+   - models are fitted on train;
+   - test and held-out scores are never used for the choice.
+3. Calibration is evaluated with reliability diagnostics, per action
+   where sample sizes allow. Raw and legal-masked probabilities are
+   reported separately, and the agent uses the masked ones.
+4. Solid opponents and the rare all-in class are investigated
+   descriptively, without changing the selected model.
+
+Implementation: `scripts/select_probability_model.py` (selection and
+refit) and `scripts/evaluate_probability_models.py` (diagnostics). The
+results are in `results/phase3/probability_model_report.md`.
+
+**Outcome:** Random Forest B, grid #22, with validation log-loss 0.521.
+The test and held-out results in the report are evaluation only. Because
+the selection criterion changed after results were seen, the profitability
+claims rest on the fresh Phase 4 evaluation matches (`docs/phase4_plan.md`),
+not on these sets.
+
 ## 13. Known limitations and open risks
 
 - **Synthetic opponents.** The models learn rules we wrote. Held-out
@@ -527,3 +561,4 @@ must not overrun much past Nov 22.
 | 2026-11-12 | Implementation plan and six detail decisions approved. Added: pairing-balance tests; probability clipping with renormalization and preserved raw probabilities. Manifest excludes git commit and versions (kept in run metadata and the generation summary) so it rebuilds byte-identically. Pilot split names `pilot_pool` / `pilot_heldout`. |
 | 2026-11-12 | Stage 2: full dataset generated (43,856 rows; 38,320 used). `generate_dataset.py` records the git commit and working-tree state at the start of a run; report tables escape `|`. No changes to strategies, features or splits. |
 | 2026-11-12 | Stage 3: Random Forest uses `n_jobs=1` (multi-threaded prediction was not bit-reproducible). Added reports (no change to models or selection): same-settings A vs B on validation, calibration note, random-guess references for the shuffled-label control, shuffled-control spread over 5 extra seeds. Per-style figure uses log-loss because per-style macro-F1 is capped. Balanced accuracy added to the metrics as approved. |
+| 2026-11-12 | Post-hoc decision (after seeing Stage 3 results): the Phase 4 probability model is selected by validation log-loss of legal-masked probabilities among Feature Set B settings (section 13a). Stage 3 results unchanged. |

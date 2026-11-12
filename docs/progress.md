@@ -798,9 +798,84 @@ locally and not committed.
 
 **Tests:** local, Python 3.12.3: 306 passed (285 earlier and 21 new).
 
+### Phase 3 approval and the Phase 4 probability model (2026-11-12)
+
+The project owner approved Phase 3 as the supervised-learning experiment.
+**After inspecting the Stage 3 results**, they decided that the Phase 4
+agent's model is selected by validation log-loss (see
+`docs/phase3_plan.md` section 13a). Stage 3 results are unchanged.
+
+**Selection (validation only):** among 84 Feature Set B settings, the
+lowest validation log-loss of legal-masked probabilities was 0.5209, for
+Random Forest grid #22: 300 trees, `max_depth=12`, `min_samples_leaf=20`,
+`max_features=0.5`, no class weighting.
+
+- The refit reproduced the grid value exactly.
+- The best HistGradientBoosting setting scored 0.5274. Random Forest minus
+  HGB on validation is −0.0066 [−0.0119, −0.0007] (5 matches).
+- The five lowest validation log-losses are all Random Forest settings
+  within 0.002 of each other.
+
+**Evaluation (not used for the choice).** Full report:
+[`results/phase3/probability_model_report.md`](../results/phase3/probability_model_report.md),
+figures 9–11.
+
+| Model | Test log-loss | Held-out log-loss | Top-label ECE (test + held-out) |
+|---|---|---|---|
+| Dummy | 0.814 | 0.867 | 0.011 |
+| RF-B, macro-F1 selected | 0.832 | 0.824 | 0.058 |
+| HGB-B, macro-F1 selected | 0.892 | 0.886 | 0.043 |
+| **RF-B, log-loss selected** | **0.656** | **0.676** | **0.014** |
+
+- **Against the Dummy (paired):** log-loss −0.157 [−0.211, −0.108] on test
+  and −0.191 [−0.253, −0.128] on held-out. Brier score is also better on
+  both sets.
+- **Against the macro-F1-selected RF-B:** log-loss −0.176 (test) and
+  −0.148 (held-out), with intervals excluding 0.
+- **The cost is lower macro-F1:** 0.295 (test) and 0.324 (held-out),
+  against 0.361 and 0.372.
+- **Calibration:** reliability bins track the diagonal, with two mild
+  exceptions:
+  - raise_pot is slightly over-predicted in its top equal-count bin
+    (probabilities 0.26–0.65): 0.394 predicted against 0.360 observed;
+  - all-in is under-predicted in its top bin: 0.029 predicted against
+    0.040 observed.
+
+  Raw and masked probabilities are almost identical for this model: only
+  0.1–0.2% of raw probability falls on illegal actions, against 3% for the
+  Dummy.
+- **Overfitting:** little. Skill over the Dummy (1 − log-loss ÷ Dummy
+  log-loss) is 0.37 on train and 0.34 on validation; the macro-F1-selected
+  RF-B fell from 0.66 to 0.14. Skill drops to 0.19 (test) and 0.22
+  (held-out). Three likely causes:
+  - set composition: the test set is half Solid rows;
+  - different configurations per set;
+  - mild optimism from selecting among 84 settings on 5 validation
+    matches.
+- **Solid opponents:**
+  - The candidate beats the Dummy on log-loss: 0.870 against 0.956 (test)
+    and 0.840 against 0.893 (held-out). The Stage 3 deficit was a
+    calibration problem.
+  - Solid's raises and all-ins depend on private equity, which the model
+    cannot see.
+  - The candidate also beats a label-informed style-prior reference in 11
+    of 12 style/set cells. That reference uses true style labels and is
+    not deployable.
+- **All-in:**
+  - 358 rows, all from maniac and solid configurations, and mostly on the
+    river.
+  - The candidate ranks all-in rows well (AUC 0.855) and gives them about
+    3× the probability of other rows (0.027 against 0.009).
+  - It never makes all-in the most likely action.
+  - No change was made to target it.
+- **Speed:** about 15 ms per batched prediction call.
+
+**CI for the final Stage 3 commit `49e3b7f`:** GitHub Actions run 25
+completed successfully on Ubuntu and Windows.
+
+**Tests:** local, Python 3.12.3: 312 passed (6 new calibration tests).
+
 ### Next milestone
 
-Stage 3 review by the project owner, before merging or starting Phase 4.
-Phase 4 will feed predicted probabilities into the agent, so it needs a
-decision on calibration: keep the macro-F1-selected models, or select by
-validation log-loss for the agent.
+Approval of the probability model and of the Phase 4 plan
+(`docs/phase4_plan.md`), before any Phase 4 implementation.
