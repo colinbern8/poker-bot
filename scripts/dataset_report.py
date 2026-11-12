@@ -127,12 +127,20 @@ def main() -> None:
         "match_seconds_min": timing["seconds"].min(), "match_seconds_max": timing["seconds"].max(),
         "match_seconds_mean": timing["seconds"].mean(),
         "warmup_seconds_max": timing["worker_warmup_seconds"].max(),
-        "git_commit": summary["versions"]["git_commit"],
+        "git_commit_at_end": summary["versions"].get("git_commit_at_end", summary["versions"].get("git_commit")),
+        "git_commit_at_start": summary["versions"].get("git_commit_at_start"),
     }
+    commits = {}
+    for spec in match_specs(manifest):
+        meta = json.loads((args.raw / run_dir_name(spec) / "metadata.json").read_text(encoding="utf-8"))
+        commits[meta["versions"]["git_commit"][:7]] = commits.get(meta["versions"]["git_commit"][:7], 0) + 1
+    runtime["per_match_metadata_commits"] = commits
     report["runtime"] = runtime
     md += ["## 2. Generation runtime (measured)", "",
-           f"- {runtime['workers']} worker processes on {runtime['cpu_count']} CPUs, git commit "
-           f"`{runtime['git_commit'][:7]}`.",
+           f"- {runtime['workers']} worker processes on {runtime['cpu_count']} CPUs.",
+           f"- Git commit recorded per match (at the moment each match was written): "
+           + ", ".join(f"`{c}` x {n}" for c, n in sorted(commits.items())) + "; summary commit at start: "
+           f"`{(runtime['git_commit_at_start'] or 'not recorded')[:7]}`, at end: `{runtime['git_commit_at_end'][:7]}`.",
            f"- Wall time: **{runtime['wall_seconds'] / 60:.1f} min** for {total_decisions:,} decisions "
            f"(**{runtime['decisions_per_wall_second']:.1f} decisions/s overall**, "
            f"{runtime['decisions_per_process_second']:.1f} decisions/s per process).",

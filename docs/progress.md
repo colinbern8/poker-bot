@@ -498,7 +498,145 @@ Local, Linux, Python 3.12.3: `python -m pytest` gave
 - **Parallel speed.** Throughput per process roughly halves when 4
   processes share 4 CPUs.
 
+### Next milestone (Stage 1)
+
+The project owner approved the pilot on 2026-11-12 and authorized Stage 2.
+
+### Stage 2: full dataset (2026-11-12)
+
+Generated from the committed manifest with
+`scripts/generate_dataset.py --workers 4`, then audited with
+`scripts/dataset_report.py --regenerate 0 47`. The full report is
+[`results/phase3/dataset_report.md`](../results/phase3/dataset_report.md).
+Raw logs are under `data/raw/simulations/phase3_s3000/` and are not
+committed. No strategies, features or classes were changed, nothing was
+rebalanced, and no models were trained.
+
+**Completeness and runtime (measured)**
+
+- 48 of 48 runs have the `metadata.json` completion marker.
+- Every run has 120 hands, the manifest seed and the manifest hash, and
+  no leftover temporary files.
+- Every run passed the loader's configuration checks.
+- Wall time was 12.8 min with 4 workers for 43,856 decisions:
+  57.1 decisions/s overall, 14.9 per process. Matches took 33–83 s each.
+  The pilot projection had been about 44,000 rows and 13 min.
+
+**Decision counts (measured)**
+
+| Set | Matches | Rows used |
+|---|---|---|
+| train | 26 | 23,603 |
+| validation | 5 | 4,252 |
+| test | 5 | 4,895 |
+| held-out (scored rows only) | 12 | 5,570 |
+| **Total used** | 48 | **38,320** |
+
+Another 5,536 rows are the training-pool counterparts' decisions in
+held-out matches. They are generated but never trained on or scored.
+
+By style family (rows used):
+
+| Family | Rows |
+|---|---|
+| calling_station | 11,386 |
+| solid | 9,847 |
+| maniac | 8,777 |
+| nit | 8,310 |
+
+**Split separation**
+
+- No match is in more than one split.
+- No held-out configuration has rows in train, validation or test.
+- Only the 4 held-out configurations are scored in the held-out set.
+- Every validation and test configuration also appears in train.
+- No deal seed is shared between matches.
+
+**Action classes (rows used)**
+
+| Action | Rows | Share |
+|---|---|---|
+| check_call | 27,696 | 72.3% |
+| raise_half_pot | 4,724 | 12.3% |
+| raise_pot | 3,930 | 10.3% |
+| fold | 1,612 | 4.2% |
+| all_in | 358 | 0.9% |
+
+By style family:
+
+- **nit:** fold 14.2%, never all-in.
+- **calling_station:** check_call 97.1%; it never chose raise_pot or
+  all-in, and folded twice in total.
+- **maniac:** raised 59% of the time (half-pot 28.0%, pot 28.9%,
+  all-in 2.0%).
+- **solid:** in between, with 1.9% all-in.
+
+**Conditioned on legal availability**
+
+- **fold** was legal in 36.7% of decisions (only when facing a bet) and
+  was chosen in 11.5% of those. By family: nit 35.1%, solid 10.8%,
+  maniac 2.1%, calling_station 0.0%.
+- **all_in** was legal in 98.3% of decisions and was chosen in 1.0% of
+  those. By family: solid 1.9%, maniac 2.0%, nit and calling_station 0.
+- check_call was always legal, so `a_legal_check_call` is constant.
+
+**Rare classes and imbalance across sets**
+
+- all_in is the only class below 1% overall. It is below 1% within
+  train (0.9%) and validation (0.4%, only 19 rows). Test has 69 all_in
+  rows and the held-out set 57.
+- Class shares differ from train by at most 6.3 percentage points
+  (validation check_call +6.3 pp; test +4.7 pp; held-out +2.7 pp). Only
+  validation crosses the 5 pp descriptive flag that was set before the
+  data was examined.
+- The cause is which configurations landed in the 5 validation matches:
+  only 366 solid rows and 756 maniac rows, against 1,612 calling_station
+  rows. Shares also vary widely between individual matches; for
+  example, check_call ranges from 45.6% to 100% across train matches.
+
+**Audits on the full dataset:** L1–L11 all passed.
+
+- L2, L6–L10 and L11a cover every row:
+  - 43,856 rows replayed with fake hole cards gave 0 mismatches;
+  - the player role matched in 100% of rows;
+  - the priors were fitted on 23,603 train rows only.
+- L3 checked 300 rows from 6 matches covering every split.
+- L4 and L5 checked 282 and 240 sampled deals.
+- L11b: matches 0 (validation) and 47 (held-out) were regenerated, and
+  both their `decisions.csv` and `hands.csv` are byte-identical.
+
+**Tests:**
+
+- Local, Python 3.12.3: 285 passed.
+- GitHub Actions on commit `9b860f1`: Ubuntu (Python 3.12.16) 285 passed
+  in 118.22 s; Windows (Python 3.12.10) 285 passed in 115.57 s.
+
+### Problems found in Stage 2
+
+- **Mixed commits recorded during generation (no effect on the data).**
+  The report code was committed while generation was running. Matches
+  written before that commit recorded `8177a6b` (7 matches); later ones
+  recorded `9b860f1` (41). The commits differ only by the new
+  `reporting.py`, which generation does not import. `git diff` confirms
+  the generation, agent, simulator and logging code is identical.
+  `generate_dataset.py` now also records the commit and whether there
+  were uncommitted changes at the **start** of a run.
+- **Broken Markdown tables.** The column name `chosen | legal` broke the
+  report's tables. `md_table` now escapes pipe characters (tested), and
+  the report was regenerated.
+
+### Implications for Stage 3 (for decision before training)
+
+- **Validation is the most imbalanced set.** It has only 19 all_in rows.
+  Validation macro-F1, the approved tuning metric, gives all_in one fifth
+  of its weight, so model selection may be swayed by a handful of rows.
+- **Per-style test results are thin.** Test has 352 maniac rows (one
+  configuration) and 450 nit rows (one configuration). The held-out set
+  is more even (1,206–1,655 rows per family, one configuration each).
+- **Accuracy is easy to inflate.** Predicting check_call every time
+  scores 72% on rows used.
+
 ### Next milestone
 
-Pilot review by the project owner. If approved: Stage 2, generating the
-48-match dataset from the committed manifest.
+Stage 2 review by the project owner. If approved: Stage 3, model
+training and evaluation per `docs/phase3_plan.md`.

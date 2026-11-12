@@ -15,6 +15,7 @@ import argparse
 import json
 import os
 import platform
+import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from importlib.metadata import version
@@ -40,6 +41,16 @@ def _run(spec, manifest, out_root):
     return result
 
 
+def _working_tree_dirty() -> bool | None:
+    """True if tracked files have uncommitted changes (None if git is unavailable)."""
+    try:
+        result = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"],
+                                capture_output=True, text=True, check=True)
+        return bool(result.stdout.strip())
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--manifest", type=Path, required=True)
@@ -54,6 +65,11 @@ def main() -> None:
     todo = [s for s in specs if args.overwrite or not (args.out / run_dir_name(s) / "metadata.json").exists()]
     print(f"{manifest['name']}: {len(specs)} selected, {len(todo)} to generate, {args.workers} workers", flush=True)
 
+    # Record provenance at the START: each match's metadata.json records the
+    # commit at the moment it is written, which can differ if a commit is made
+    # while generation runs.
+    commit_at_start = _git_commit()
+    dirty_at_start = _working_tree_dirty()
     samples = sorted({c["equity_samples"] for c in manifest["configs"]})
     start = time.perf_counter()
     results = []
@@ -77,7 +93,9 @@ def main() -> None:
             "hybridpoker": __version__,
             "pokerkit": version("pokerkit"),
             "python": platform.python_version(),
-            "git_commit": _git_commit(),
+            "git_commit_at_start": commit_at_start,
+            "working_tree_dirty_at_start": dirty_at_start,
+            "git_commit_at_end": _git_commit(),
         },
     }
     args.out.mkdir(parents=True, exist_ok=True)

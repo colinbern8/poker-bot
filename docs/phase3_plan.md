@@ -1,6 +1,6 @@
 # Phase 3 Plan: Supervised Opponent Modeling
 
-Status: **design and implementation plan approved 2026-11-12. Stage 1 (pilot) implemented; awaiting pilot review.**
+Status: **Stage 1 pilot approved 2026-11-12. Stage 2 full dataset generated and audited; awaiting review before Stage 3.**
 Branch: `phase-3-machine-learning`.
 Competition presentation: **December 7–9, 2026**.
 
@@ -525,3 +525,4 @@ must not overrun much past Nov 22.
 |---|---|
 | 2026-11-12 | Plan written from the approved decisions. |
 | 2026-11-12 | Implementation plan and six detail decisions approved. Added: pairing-balance tests; probability clipping with renormalization and preserved raw probabilities. Manifest excludes git commit and versions (kept in run metadata and the generation summary) so it rebuilds byte-identically. Pilot split names `pilot_pool` / `pilot_heldout`. |
+| 2026-11-12 | Stage 2: full dataset generated (43,856 rows; 38,320 used). `generate_dataset.py` records the git commit and working-tree state at the start of a run; report tables escape `|`. No changes to strategies, features or splits. |

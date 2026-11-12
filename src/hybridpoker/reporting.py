@@ -19,11 +19,10 @@ def md_table(frame: pd.DataFrame, floatfmt: str = "{:.3f}") -> str:
     """A GitHub-flavoured Markdown table (no extra dependency needed)."""
 
     def cell(value) -> str:
-        if isinstance(value, float):
-            return floatfmt.format(value)
-        return str(value)
+        text = floatfmt.format(value) if isinstance(value, float) else str(value)
+        return text.replace("|", "\\|")  # a bare pipe would split the cell
 
-    header = "| " + " | ".join(str(c) for c in frame.columns) + " |"
+    header = "| " + " | ".join(cell(c) for c in frame.columns) + " |"
     rule = "|" + "|".join("---" for _ in frame.columns) + "|"
     rows = ["| " + " | ".join(cell(v) for v in row) + " |" for row in frame.itertuples(index=False)]
     return "\n".join([header, rule, *rows])

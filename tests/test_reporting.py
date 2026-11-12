@@ -88,3 +88,5 @@ def test_per_match_share_range_and_markdown() -> None:
     assert ranges.loc["x", "fold"] == "25.0%-50.0%"
     table = md_table(pd.DataFrame({"a": [1], "b": [0.5]}))
     assert table.splitlines() == ["| a | b |", "|---|---|", "| 1 | 0.500 |"]
+    escaped = md_table(pd.DataFrame({"chosen | legal": ["x|y"]})).splitlines()
+    assert escaped[0] == "| chosen \\| legal |" and escaped[2] == "| x\\|y |"
