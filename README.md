@@ -5,9 +5,10 @@ An explainable Texas Hold'em poker AI for a university AI course project.
 **Research question:** Can supervised machine learning-based opponent modeling
 improve decisions made by a probability-based poker agent?
 
-**Current status:** Phase 1, the probability engine (equity and pot odds).
-See [`docs/progress.md`](docs/progress.md) for progress and
-[`docs/probability_engine.md`](docs/probability_engine.md) for how the math works.
+**Current status:** Phase 2, the heads-up simulator, baseline agents, and hand logs.
+See [`docs/progress.md`](docs/progress.md) for progress,
+[`docs/probability_engine.md`](docs/probability_engine.md) for the equity math, and
+[`docs/simulator.md`](docs/simulator.md) for the simulator, agents, and statistics.
 
 ## Technology
 
@@ -22,7 +23,7 @@ See [`docs/progress.md`](docs/progress.md) for progress and
 poker-bot/
 ├── src/hybridpoker/      # project source code (the `hybridpoker` package)
 ├── tests/                # automated tests (pytest)
-├── scripts/              # helper scripts (e.g. benchmarks)
+├── scripts/              # helper scripts (benchmarks, matches)
 ├── docs/                 # progress log and explanations of the math
 ├── pyproject.toml        # project settings and dependency ranges
 ├── requirements.txt      # exact tested dependency versions
@@ -125,7 +126,8 @@ With the virtual environment active:
 python -m pytest
 ```
 
-Expected result: all tests pass (`90 passed` as of Phase 1).
+Expected result: all tests pass (`177 passed` as of Phase 2). The full
+suite takes about a minute.
 
 If you see `No module named pytest`, the virtual environment is not active.
 Activate it (see [Setup](#setup)) and try again.
@@ -163,6 +165,27 @@ Measure engine speed on your machine:
 ```bash
 python scripts/benchmark_equity.py
 ```
+
+## Running matches
+
+Play a seeded, seat-swapped match between the probability agent and a bot,
+and write hand logs:
+
+```bash
+python scripts/run_match.py --villain calling_station --deals 500 --seed 1
+```
+
+Play the probability agent against every bot in turn:
+
+```bash
+python scripts/run_match.py --villain all --deals 300 --seed 1
+```
+
+Each deal is played twice with seats swapped, so `--deals 500` means 1,000
+hands. Results are printed as bb/100 with a 95% confidence interval. Logs go to
+`data/raw/simulations/<run>/` (`decisions.csv`, `hands.csv`,
+`metadata.json`), which git ignores. Agents: `probability`, `random`,
+`calling_station`, `maniac`, `nit`, `solid`.
 
 ## Updating dependencies
 
