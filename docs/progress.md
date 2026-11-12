@@ -961,6 +961,93 @@ Work is in stages 4A to 4D, each reviewed before the next.
 | opponent tracker | 9 |
 | counterfactual and predictor | 9 |
 
+### Next milestone (Stage 4A)
+
+The project owner approved Stage 4A and the Stage 4B plan on 2026-11-12.
+Phase 3 was merged into `main` through colinbern8/poker-bot#5 (merge commit
+`04e3e8c`, CI run 32 passed). Stage 4A continues on `phase-4-ev-agents`.
+
+### Stage 4B: the two EV agents (2026-11-12)
+
+**Completed work**
+
+- `agents/ev_agent.py`: one `EVAgent` class.
+  - The Frequency EV Agent uses the global training-split prior, which is
+    legal-masked and **not** conditioned on the betting situation.
+  - The ML EV Agent uses the frozen RF-B #22, verified by SHA-256, with
+    live opponent history.
+  - Both use the same equity (`hand_strength`, 500 samples), the same
+    EV equations and the same tie-break (fewest additional chips).
+- **Per-decision diagnostics:** equity, all action EVs, raw and masked
+  opponent probabilities, the hypothetical opponent observation, training
+  coverage (diagnostic only), the opponent's history length, and timing
+  (equity vs model inference).
+- `state_coverage.py` with `scripts/build_phase4_artifacts.py`, which
+  writes `results/phase3/frequency_prior.json` and
+  `results/phase3/state_coverage.json` (train split only, with a
+  `--check` mode). The prior equals the trained Dummy's class prior
+  exactly.
+- `scripts/ev_decision_examples.py` writes
+  `results/phase4/stage4b_examples.md`: illustrative spots only, not a
+  tournament.
+
+**Tests:** local, Python 3.12.3: 378 passed (21 new in
+`tests/test_ev_agent.py`). They use controlled spots with injected
+equity and stub opponents:
+
+- **Checks and folds:** a free check beats bets that get re-raised; zero
+  equity still checks rather than folds.
+- **Calls:** call or fold flips exactly at break-even equity, with the tie
+  going to fold. Facing a raise, only the new chips are valued.
+- **Bet sizes:** an always-folding opponent gets the smallest bet; with a
+  certain win, check ties with the bets and wins the tie; an
+  always-calling opponent gives hand-computed EVs for every size.
+- **Re-raises:** an always-re-raising opponent is never bet into with the
+  half-pot or pot sizes.
+- **All-in:** after a hero all-in, re-raise probability is masked to 0.
+  Facing an all-in, only fold or call is offered and no model call is
+  made. Uncalled chips are returned.
+- **Same rule for both agents:** given identical probabilities, they make
+  identical decisions and payoffs over a whole match.
+- **Equity:** identical to the ProbabilityAgent's for the same seed.
+- **Hypothetical states:** they equal the opponent's actual next
+  observation.
+- **History:** live opponent history equals the offline training
+  features.
+- **Diagnostics:** complete for every decision.
+- **Determinism:** EV-agent match logs are byte-identical across runs.
+- **Artifacts:** checked.
+- **Frozen model:** a real-model test runs locally and is skipped in CI,
+  because the model file is outside the repository.
+
+**Example decisions** (illustrative; see the examples file):
+
+- **The ML agent adapts to its opponent.** Facing a half-pot flop bet
+  after watching 8 deals of a nit, it predicts a 0.42 fold rate to a
+  pot-size raise; after a maniac, 0.02 folds and about 0.5 re-raises.
+  The Frequency agent's predictions are the same in every spot.
+- **Coverage flags work.** A preflop all-in opening leads to a state
+  with 0 training rows.
+
+**Finding (needs a decision before Stage 4C).** The approved EV rule
+overvalues large bets, especially all-in. In the "opponent calls" branch,
+equity is still against a random hand, so a shove looks very profitable
+whenever equity is above about 50%.
+
+- Both agents went all-in on 6 of 12 decisions in the smoke matches.
+- With queens on a K-7-2 flop (77% equity), all-in is valued at +102
+  (Frequency) and +74 (ML), against +3 for checking.
+
+Options are in `docs/phase4_plan.md` section 10. The recommendation is
+to value the called branch against the opponent's predicted continuing
+range. No equation was changed.
+
+**Timing note.** In the smoke runs, equity took about 230 ms per
+decision on a cold preflop cache and close to 0 ms once warm; the model
+call took 2 ms (Frequency) and about 52 ms (ML, including feature
+building). Stage 4C will measure median and 95th-percentile latency with
+the cache warmed.
+
 ### Next milestone
 
-Stage 4A review by the project owner, before Stage 4B (the two EV agents).
+Stage 4B review and a decision on the all-in finding, before Stage 4C.

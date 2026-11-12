@@ -16,7 +16,9 @@ import pytest
 from hybridpoker.dataset_generation import generate_match
 from hybridpoker.dataset_loader import load_dataset, prior_rows
 from hybridpoker.dataset_manifest import build_pilot_manifest, match_specs
-from hybridpoker.opponent_history import HistoryPriors, fit_priors
+from hybridpoker.action_probabilities import CLASS_ORDER
+from hybridpoker.opponent_history import HistoryPriors, feature_set_b, fit_priors
+from hybridpoker.opponent_model import FeaturePreprocessor, encode_targets, make_model
 
 TINY_DEALS = 4
 TINY_SAMPLES = 30
@@ -45,3 +47,15 @@ def tiny_dataset(tmp_path_factory) -> TinyDataset:
         generate_match(spec, manifest, raw_dir)
     frame = load_dataset(manifest, raw_dir)
     return TinyDataset(manifest, raw_dir, frame, fit_priors(prior_rows(frame, manifest)))
+
+
+@pytest.fixture(scope="session")
+def tiny_bundle(tiny_dataset) -> dict:
+    """A small Feature Set B Random Forest bundle, shaped like the frozen Phase 4 model."""
+    train = prior_rows(tiny_dataset.frame, tiny_dataset.manifest)
+    features = feature_set_b(train, tiny_dataset.priors)
+    prep = FeaturePreprocessor().fit(features)
+    model = make_model("random_forest", {"n_estimators": 20, "min_samples_leaf": 5}, seed=3)
+    model.fit(prep.transform(features), encode_targets(train["act_category"]))
+    return {"model": model, "preprocessor": prep, "priors": tiny_dataset.priors, "feature_set": "B",
+            "class_order": CLASS_ORDER}

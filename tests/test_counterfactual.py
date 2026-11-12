@@ -20,13 +20,11 @@ from hybridpoker.action_probabilities import CLASS_ORDER
 from hybridpoker.actions import ActionCategory as C
 from hybridpoker.agents import make_agent
 from hybridpoker.counterfactual import ReplayMismatch, hypothetical_opponent_observation, replay_public_state
-from hybridpoker.dataset_loader import prior_rows
 from hybridpoker.game import create_heads_up_state
 from hybridpoker.hand_log import observation_columns
 from hybridpoker.match import run_match
 from hybridpoker.observation import observe
-from hybridpoker.opponent_history import B_FEATURES, feature_set_b
-from hybridpoker.opponent_model import FeaturePreprocessor, encode_targets, make_model
+from hybridpoker.opponent_history import B_FEATURES
 from hybridpoker.opponent_predictor import ModelHashMismatch, OpponentPredictor, file_sha256
 from hybridpoker.opponent_tracker import OpponentTracker
 from hybridpoker.simulator import public_hand_summary
@@ -125,15 +123,9 @@ def test_after_hero_all_in_the_opponent_cannot_raise() -> None:
 # --- Predictor: masks, actor, history ------------------------------------------------------
 
 
-@pytest.fixture(scope="module")
-def bundle(tiny_dataset):
-    frame, priors = tiny_dataset.frame, tiny_dataset.priors
-    train = prior_rows(frame, tiny_dataset.manifest)
-    features = feature_set_b(train, priors)
-    prep = FeaturePreprocessor().fit(features)
-    model = make_model("random_forest", {"n_estimators": 20, "min_samples_leaf": 5}, seed=3)
-    model.fit(prep.transform(features), encode_targets(train["act_category"]))
-    return {"model": model, "preprocessor": prep, "priors": priors, "feature_set": "B", "class_order": CLASS_ORDER}
+@pytest.fixture
+def bundle(tiny_bundle):
+    return tiny_bundle
 
 
 def test_predictor_respects_legal_masks_and_sums_to_one(bundle) -> None:

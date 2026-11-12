@@ -1,8 +1,9 @@
 # Phase 4 Plan: Hybrid Agent and Profitability Experiment
 
-Status: **approved 2026-11-12, with refinements (section 8). Stage 4A
-(decision equations, opponent tracking, simulator integration)
-implemented; awaiting review before Stage 4B.**
+Status: **approved 2026-11-12, with refinements (section 8). Stages 4A
+and 4B implemented on branch `phase-4-ev-agents`. Stage 4B found an
+all-in overvaluation in the approved EV rule (section 10); a decision on
+it is needed before Stage 4C.**
 Competition presentation: **December 7–9, 2026**.
 
 ## 1. Research question
@@ -43,6 +44,16 @@ the overall improvement over the mathematical baseline.
 
 Both comparisons use paired deals and are reported in bb/100 with
 confidence intervals.
+
+**About the control baseline.** The Frequency EV Agent uses the *global*
+training-split action shares (`results/phase3/frequency_prior.json`:
+fold 0.043, check/call 0.707, half-pot 0.127, pot 0.113, all-in 0.009),
+legal-masked in each hypothetical state. It does not condition on the
+betting situation (street, bet size, raises so far) or on the opponent.
+It is a deliberately simple control, and it may be weaker than a
+context-aware frequency baseline. A gain of ML over this control
+therefore includes the value of situation-awareness as well as of
+opponent-specific history.
 
 ## 4. Hybrid decision rule (explainable, one step ahead)
 
@@ -218,3 +229,60 @@ measures only the value of the opponent model.
 | Nov 22–24 | Final evaluation runs |
 | Nov 25–30 | Analysis and report |
 | Dec 1–6 | Streamlit demo, slides, buffer |
+
+## 10. Stage 4B: implementation and finding (2026-11-12)
+
+**Implemented:**
+
+- `agents/ev_agent.py`: a single `EVAgent` with interchangeable opponent
+  models:
+  - `FrequencyResponseModel`, the control;
+  - `MLResponseModel`, the frozen Random Forest B #22, loaded only after
+    its SHA-256 is verified.
+
+  Both agents share the same equity function (500 samples), the same EV
+  equations, legal actions and tie-breaking (fewest additional chips,
+  then class order).
+- **Per-decision diagnostics:**
+  - equity;
+  - the EV of every legal action;
+  - raw and masked opponent probabilities for every bet;
+  - the hypothetical opponent observation;
+  - training coverage of that state (diagnostic only);
+  - the opponent's history length;
+  - timing, with equity and model inference measured separately.
+- **Committed artifacts**, built from the train split only by
+  `scripts/build_phase4_artifacts.py`:
+  - `results/phase3/frequency_prior.json`, which equals the trained
+    Dummy's class prior;
+  - `results/phase3/state_coverage.json`, with 26 coverage keys and a low
+    threshold of 30 rows.
+
+**Finding: the approved EV rule overvalues large bets, especially all-in.**
+
+- *Cause.* In the "opponent calls" branch the hero's equity is still
+  measured against a **random** hand, as if the opponent called with any
+  hand (assumption: fixed equity). For a shove of `a` chips into a pot
+  `P`, the called branch is worth about `e·(P + 2a) − a`. That is
+  strongly positive whenever `e > 0.5`, however unlikely a strong
+  opponent is to call with a weak hand.
+- *Symptoms.*
+  - In the smoke matches, both agents went all-in on 6 of 12 decisions,
+    once with 59% preflop equity.
+  - With queens on a K-7-2 flop (77% equity), all-in is valued at +102
+    (Frequency) and +74 (ML), against +3 for checking.
+  - After an all-in a re-raise is impossible, so the masked probability
+    goes only to fold or call; the all-in therefore escapes the re-raise
+    penalty.
+- *Consequence.* Both agents tend toward "shove or check". The primary
+  comparison would then depend largely on predicted call rates after an
+  all-in, for which coverage is weak (`preflop|facing_all_in=1|raises=1`
+  has 0 training rows; the flop equivalent has 55).
+
+No equation was changed. A decision is needed before Stage 4C:
+
+| Option | Change | Pros | Cons |
+|---|---|---|---|
+| **A. Equity against the calling range (recommended)** | In the "called" branch, value the hero's hand against the opponent's likely **continuing range**: the top share of hands, where the share is the predicted P(call) + P(re-raise). Ranking: preflop by the cached 169-class equity, postflop by made-hand strength on the board. | Removes the main flaw (callers are stronger than random). Explainable. The opponent model then informs both fold chances and caller strength, which strengthens the research question. Same rule for both agents. | About 2–4× equity time per decision. A new approximation (hands are ranked by current strength) that needs its own tests. |
+| B. Restrict bet sizes (e.g. no all-in below a fixed equity) | Ad hoc rule | Quick | Arbitrary threshold; doesn't fix the underlying bias for other bet sizes |
+| C. Keep as is and document | None | No extra work | The experiment would mostly measure an artifact of the rule |
