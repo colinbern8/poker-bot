@@ -7,10 +7,20 @@ import pandas as pd
 import pytest
 from pokerkit import Card
 
+from pokerkit import Deck
+
 from hybridpoker.actions import ActionCategory
 from hybridpoker.agents import make_agent
-from hybridpoker.hand_log import COLUMN_GROUPS, decisions_frame, hand_rows, write_run
+from hybridpoker.game import create_heads_up_state
+from hybridpoker.hand_log import (
+    COLUMN_GROUPS,
+    decisions_frame,
+    feature_columns,
+    hand_rows,
+    write_run,
+)
 from hybridpoker.match import MatchResult, run_match
+from hybridpoker.observation import observe
 
 FAST = 30
 
@@ -139,3 +149,108 @@ def test_logs_are_byte_identical_for_the_same_seed(tmp_path: Path) -> None:
         paths = write_run(match, hero, villain, tmp_path / attempt)
         contents.append((paths["decisions"].read_bytes(), paths["hands"].read_bytes()))
     assert contents[0] == contents[1]
+
+
+# --- Leakage audit: observable features come from public information only ------------
+
+
+def history_entries(row) -> list[list[str]]:
+    history = row["obs_history"] if isinstance(row["obs_history"], str) else ""
+    return [entry.split(":") for entry in history.split(";")] if history else []
+
+
+def replay_from_public_information(row):
+    """Rebuild the observation using only public data and FAKE hole cards.
+
+    The logged board and betting history are replayed in a fresh PokerKit
+    game whose hole cards are arbitrary. If the result matches every obs_
+    value, those values cannot depend on any private information.
+    """
+    board = list(Card.parse(row["obs_board"])) if isinstance(row["obs_board"], str) else []
+    fake_cards = iter([card for card in Deck.STANDARD if card not in set(board)])
+    board_cards = iter(board)
+    state = create_heads_up_state()
+
+    def deal_pending_cards() -> None:
+        while True:
+            if state.can_deal_hole():
+                state.deal_hole(next(fake_cards))
+            elif state.can_burn_card():
+                state.burn_card(next(fake_cards))
+            elif state.can_deal_board():
+                state.deal_board(next(board_cards))
+            else:
+                return
+
+    for _street, _position, category, bet_to in history_entries(row):
+        deal_pending_cards()
+        if category == "fold":
+            state.fold()
+        elif category == "check_call":
+            state.check_or_call()
+        else:
+            state.complete_bet_or_raise_to(int(bet_to))
+    deal_pending_cards()
+    return observe(state, history=())
+
+
+def test_observable_features_are_reproducible_from_public_information(frame: pd.DataFrame) -> None:
+    for _, row in frame.iterrows():
+        public = replay_from_public_information(row)
+        assert row["obs_street"] == public.street
+        assert row["obs_position"] == public.position
+        assert row["obs_pot_size"] == public.pot_size
+        assert row["obs_to_call"] == public.to_call
+        assert row["obs_own_stack"] == public.own_stack
+        assert row["obs_opponent_stack"] == public.opponent_stack
+        assert row["obs_effective_stack"] == public.effective_stack
+        assert row["obs_own_bet"] == public.own_bet
+        assert row["obs_opponent_bet"] == public.opponent_bet
+        for category in ActionCategory:
+            legal = public.legal(category)
+            assert row[f"obs_legal_{category.value}"] == (legal is not None)
+            expected = legal.bet_to if legal else None
+            logged = row[f"obs_bet_to_{category.value}"]
+            assert (pd.isna(logged) and expected is None) or logged == expected
+
+
+def test_rows_describe_the_state_before_the_action(frame: pd.DataFrame) -> None:
+    for _, hand in frame.groupby(["id_match", "id_hand_index"]):
+        rows = hand.sort_values("id_decision_index").to_dict("records")
+        for before, after in zip(rows, rows[1:]):
+            # The next decision sees exactly this action added to the pot and history.
+            assert after["obs_pot_size"] == before["obs_pot_size"] + before["act_chips_added"]
+            last = history_entries(after)[-1]
+            assert last[2] == before["act_category"]
+            assert int(last[3]) == before["act_bet_to"]
+
+
+def test_feature_columns_select_only_observable_features(frame: pd.DataFrame) -> None:
+    features = feature_columns(frame)
+    assert features and all(column.startswith("obs_") for column in features)
+    excluded = set(frame.columns) - set(features)
+    assert {"id_deal_seed", "hidden_actor_hole_cards", "hidden_agent_equity",
+            "label_actor_agent", "out_actor_net_chips", "act_category"} <= excluded
+
+
+# --- Identifiers ---------------------------------------------------------------------------
+
+
+def test_every_row_identifies_its_match_hand_and_decision(match_and_agents, frame: pd.DataFrame) -> None:
+    match = match_and_agents[0]
+    assert frame["id_match"].notna().all()
+    assert set(frame["id_match"]) == {match.match_id}
+    assert not frame.duplicated(["id_match", "id_hand_index", "id_decision_index"]).any()
+    assert {row["match_id"] for row in hand_rows(match)} == {match.match_id}
+
+
+def test_match_id_depends_on_configuration_and_seed() -> None:
+    def match_id(villain_name: str, seed: int, samples: int = FAST) -> str:
+        return run_match(make_agent("random"), make_agent(villain_name, samples), 2, seed).match_id
+
+    base = match_id("nit", 1)
+    assert base == match_id("nit", 1)  # deterministic
+    assert base != match_id("nit", 2)  # different seed
+    assert base != match_id("maniac", 1)  # different opponent
+    assert base != match_id("nit", 1, samples=FAST + 1)  # different bot configuration
+    assert base.startswith("m") and "nit" not in base

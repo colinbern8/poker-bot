@@ -14,6 +14,7 @@ All randomness comes from one master ``seed``:
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -41,6 +42,7 @@ class PlayedHand:
 
 @dataclass(frozen=True)
 class MatchResult:
+    match_id: str
     hero_name: str
     villain_name: str
     seed: int
@@ -73,6 +75,27 @@ class MatchResult:
         return win_rate([h.hero_net for h in self.hands], 1, BIG_BLIND, confidence)
 
 
+def make_match_id(hero: Agent, villain: Agent, deal_count: int, seed: int, seat_swap: bool) -> str:
+    """An opaque, deterministic identifier for a match configuration.
+
+    It is derived from both agents' full configurations, the seed, the deal
+    count and the seat-swap setting, so different configurations get
+    different ids. It deliberately does not spell out agent names, but it
+    is still an identifier, never a model feature.
+    """
+    description = json.dumps(
+        {
+            "hero": hero.config(),
+            "villain": villain.config(),
+            "deal_count": deal_count,
+            "seed": seed,
+            "seat_swap": seat_swap,
+        },
+        sort_keys=True,
+    )
+    return f"m{derive_seed('match', description):016x}"
+
+
 def run_match(
     hero: Agent,
     villain: Agent,
@@ -103,6 +126,7 @@ def run_match(
             progress(deal_index + 1, deal_count)
 
     return MatchResult(
+        match_id=make_match_id(hero, villain, deal_count, seed, seat_swap),
         hero_name=hero.name,
         villain_name=villain.name,
         seed=seed,

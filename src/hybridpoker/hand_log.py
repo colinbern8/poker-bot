@@ -47,7 +47,8 @@ from hybridpoker.game import BIG_BLIND, SMALL_BLIND, STARTING_STACK
 from hybridpoker.match import MatchResult
 from hybridpoker.pot_odds import pot_odds
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+FEATURE_PREFIX = "obs_"
 
 COLUMN_GROUPS = {
     "id_": "Row identifiers; not features.",
@@ -74,6 +75,7 @@ def decision_rows(match: MatchResult) -> list[dict[str, Any]]:
             seat = record.seat
             this_street = [a for a in obs.history if a.street == obs.street]
             row: dict[str, Any] = {
+                "id_match": match.match_id,
                 "id_hand_index": hand.hand_index,
                 "id_deal_index": hand.deal_index,
                 "id_seat_swap": hand.seat_swap,
@@ -121,6 +123,17 @@ def decision_rows(match: MatchResult) -> list[dict[str, Any]]:
     return rows
 
 
+def feature_columns(frame: pd.DataFrame) -> list[str]:
+    """Return only the observable ``obs_`` columns: the safe model inputs.
+
+    Phase 3 should select model inputs with this function instead of
+    dropping columns by hand, so hidden cards, outcomes, labels, ids (the
+    deal seed determines the cards) and private bot parameters can never
+    slip in.
+    """
+    return [column for column in frame.columns if column.startswith(FEATURE_PREFIX)]
+
+
 def decisions_frame(match: MatchResult) -> pd.DataFrame:
     """Decision rows as a DataFrame; bet amounts stay whole numbers.
 
@@ -139,6 +152,7 @@ def hand_rows(match: MatchResult) -> list[dict[str, Any]]:
         result = hand.result
         rows.append(
             {
+                "match_id": match.match_id,
                 "hand_index": hand.hand_index,
                 "deal_index": hand.deal_index,
                 "seat_swap": hand.seat_swap,
@@ -181,6 +195,7 @@ def run_metadata(
     return {
         "schema_version": SCHEMA_VERSION,
         "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "match_id": match.match_id,
         "seed": match.seed,
         "deal_count": match.deal_count,
         "seat_swap": match.seat_swap,
