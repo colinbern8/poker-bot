@@ -1,0 +1,734 @@
+{
+  "manifest": "phase3",
+  "manifest_hash": "bde45493a95a8cb66576b006005dfed72593965879262533594687136dabe233",
+  "completeness": {
+    "matches": 48,
+    "complete": 48,
+    "problems": []
+  },
+  "runtime": {
+    "workers": 4,
+    "cpu_count": 4,
+    "wall_seconds": 767.7540304869999,
+    "decisions": 43856,
+    "decisions_per_wall_second": 57.12246143752755,
+    "decisions_per_process_second": 14.864804343529423,
+    "match_seconds_min": 33.43327899499991,
+    "match_seconds_max": 83.27713733700011,
+    "match_seconds_mean": 61.46509873602079,
+    "warmup_seconds_max": 17.071937901999945,
+    "git_commit_at_end": "9b860f16237bfb295f63408424590a9620a0dba8",
+    "git_commit_at_start": null,
+    "per_match_metadata_commits": {
+      "8177a6b": 7,
+      "9b860f1": 41
+    }
+  },
+  "counts": {
+    "total_rows": 43856,
+    "used_rows": 38320,
+    "unused_heldout_counterpart_rows": 5536,
+    "by_split": [
+      {
+        "split": "train",
+        "matches": 26,
+        "rows (all)": 23603,
+        "mean/match": 907.8076923076923,
+        "min/match": 613,
+        "max/match": 1138,
+        "rows used for evaluation/training": 23603
+      },
+      {
+        "split": "validation",
+        "matches": 5,
+        "rows (all)": 4252,
+        "mean/match": 850.4,
+        "min/match": 647,
+        "max/match": 1108,
+        "rows used for evaluation/training": 4252
+      },
+      {
+        "split": "test",
+        "matches": 5,
+        "rows (all)": 4895,
+        "mean/match": 979.0,
+        "min/match": 802,
+        "max/match": 1050,
+        "rows used for evaluation/training": 4895
+      },
+      {
+        "split": "heldout",
+        "matches": 12,
+        "rows (all)": 11106,
+        "mean/match": 925.5,
+        "min/match": 619,
+        "max/match": 1117,
+        "rows used for evaluation/training": 5570
+      }
+    ],
+    "by_family_and_set": [
+      {
+        "family": "calling_station",
+        "train": 6470,
+        "validation": 1612,
+        "test": 1649,
+        "heldout": 1655,
+        "total": 11386
+      },
+      {
+        "family": "maniac",
+        "train": 6358,
+        "validation": 756,
+        "test": 352,
+        "heldout": 1311,
+        "total": 8777
+      },
+      {
+        "family": "nit",
+        "train": 5136,
+        "validation": 1518,
+        "test": 450,
+        "heldout": 1206,
+        "total": 8310
+      },
+      {
+        "family": "solid",
+        "train": 5639,
+        "validation": 366,
+        "test": 2444,
+        "heldout": 1398,
+        "total": 9847
+      }
+    ],
+    "by_configuration_and_set": [
+      {
+        "configuration": "calling_station",
+        "train": 2699,
+        "validation": 0,
+        "test": 558,
+        "heldout": 0
+      },
+      {
+        "configuration": "calling_station_v1",
+        "train": 1675,
+        "validation": 480,
+        "test": 1091,
+        "heldout": 0
+      },
+      {
+        "configuration": "calling_station_v2",
+        "train": 2096,
+        "validation": 1132,
+        "test": 0,
+        "heldout": 0
+      },
+      {
+        "configuration": "calling_station_v3",
+        "train": 0,
+        "validation": 0,
+        "test": 0,
+        "heldout": 1655
+      },
+      {
+        "configuration": "maniac",
+        "train": 1615,
+        "validation": 477,
+        "test": 352,
+        "heldout": 0
+      },
+      {
+        "configuration": "maniac_v1",
+        "train": 2299,
+        "validation": 279,
+        "test": 0,
+        "heldout": 0
+      },
+      {
+        "configuration": "maniac_v2",
+        "train": 2444,
+        "validation": 0,
+        "test": 0,
+        "heldout": 0
+      },
+      {
+        "configuration": "maniac_v3",
+        "train": 0,
+        "validation": 0,
+        "test": 0,
+        "heldout": 1311
+      },
+      {
+        "configuration": "nit",
+        "train": 1504,
+        "validation": 739,
+        "test": 0,
+        "heldout": 0
+      },
+      {
+        "configuration": "nit_v1",
+        "train": 0,
+        "validation": 0,
+        "test": 0,
+        "heldout": 1206
+      },
+      {
+        "configuration": "nit_v2",
+        "train": 1931,
+        "validation": 434,
+        "test": 0,
+        "heldout": 0
+      },
+      {
+        "configuration": "nit_v3",
+        "train": 1701,
+        "validation": 345,
+        "test": 450,
+        "heldout": 0
+      },
+      {
+        "configuration": "solid",
+        "train": 1889,
+        "validation": 366,
+        "test": 498,
+        "heldout": 0
+      },
+      {
+        "configuration": "solid_v1",
+        "train": 2352,
+        "validation": 0,
+        "test": 486,
+        "heldout": 0
+      },
+      {
+        "configuration": "solid_v2",
+        "train": 0,
+        "validation": 0,
+        "test": 0,
+        "heldout": 1398
+      },
+      {
+        "configuration": "solid_v3",
+        "train": 1398,
+        "validation": 0,
+        "test": 1460,
+        "heldout": 0
+      }
+    ]
+  },
+  "separation": {
+    "matches_in_more_than_one_split": 0,
+    "heldout_configs": [
+      "calling_station_v3",
+      "maniac_v3",
+      "nit_v1",
+      "solid_v2"
+    ],
+    "heldout_configs_in_train_validation_test_rows": [],
+    "configs_scored_in_heldout_set": [
+      "calling_station_v3",
+      "maniac_v3",
+      "nit_v1",
+      "solid_v2"
+    ],
+    "train_configs_in_validation_or_test_not_in_train": [],
+    "deal_seeds_shared_between_matches": 0,
+    "matches_per_split": {
+      "heldout": 12,
+      "test": 5,
+      "train": 26,
+      "validation": 5
+    }
+  },
+  "actions": {
+    "overall": [
+      {
+        "group": "all",
+        "rows": 38320,
+        "fold": "1612 (4.2%)",
+        "check_call": "27696 (72.3%)",
+        "raise_half_pot": "4724 (12.3%)",
+        "raise_pot": "3930 (10.3%)",
+        "all_in": "358 (0.9%)"
+      }
+    ],
+    "by_family": [
+      {
+        "group": "nit",
+        "rows": 8310,
+        "fold": "1178 (14.2%)",
+        "check_call": "6315 (76.0%)",
+        "raise_half_pot": "591 (7.1%)",
+        "raise_pot": "226 (2.7%)",
+        "all_in": "0 (0.0%)"
+      },
+      {
+        "group": "solid",
+        "rows": 9847,
+        "fold": "370 (3.8%)",
+        "check_call": "6787 (68.9%)",
+        "raise_half_pot": "1341 (13.6%)",
+        "raise_pot": "1164 (11.8%)",
+        "all_in": "185 (1.9%)"
+      },
+      {
+        "group": "calling_station",
+        "rows": 11386,
+        "fold": "2 (0.0%)",
+        "check_call": "11051 (97.1%)",
+        "raise_half_pot": "333 (2.9%)",
+        "raise_pot": "0 (0.0%)",
+        "all_in": "0 (0.0%)"
+      },
+      {
+        "group": "maniac",
+        "rows": 8777,
+        "fold": "62 (0.7%)",
+        "check_call": "3543 (40.4%)",
+        "raise_half_pot": "2459 (28.0%)",
+        "raise_pot": "2540 (28.9%)",
+        "all_in": "173 (2.0%)"
+      }
+    ],
+    "by_set": [
+      {
+        "group": "validation",
+        "rows": 4252,
+        "fold": "222 (5.2%)",
+        "check_call": "3274 (77.0%)",
+        "raise_half_pot": "411 (9.7%)",
+        "raise_pot": "326 (7.7%)",
+        "all_in": "19 (0.4%)"
+      },
+      {
+        "group": "train",
+        "rows": 23603,
+        "fold": "1024 (4.3%)",
+        "check_call": "16696 (70.7%)",
+        "raise_half_pot": "3002 (12.7%)",
+        "raise_pot": "2668 (11.3%)",
+        "all_in": "213 (0.9%)"
+      },
+      {
+        "group": "test",
+        "rows": 4895,
+        "fold": "143 (2.9%)",
+        "check_call": "3691 (75.4%)",
+        "raise_half_pot": "535 (10.9%)",
+        "raise_pot": "457 (9.3%)",
+        "all_in": "69 (1.4%)"
+      },
+      {
+        "group": "heldout",
+        "rows": 5570,
+        "fold": "223 (4.0%)",
+        "check_call": "4035 (72.4%)",
+        "raise_half_pot": "776 (13.9%)",
+        "raise_pot": "479 (8.6%)",
+        "all_in": "57 (1.0%)"
+      }
+    ]
+  },
+  "legal_conditioned": {
+    "fold": {
+      "overall": [
+        {
+          "group": "all",
+          "rows": 38320,
+          "legal rows": 14076,
+          "legal share": 0.3673277661795407,
+          "chosen": 1612,
+          "chosen | legal": 0.11452117078715544
+        }
+      ],
+      "by_family": [
+        {
+          "group": "nit",
+          "rows": 8310,
+          "legal rows": 3354,
+          "legal share": 0.4036101083032491,
+          "chosen": 1178,
+          "chosen | legal": 0.35122242098986284
+        },
+        {
+          "group": "solid",
+          "rows": 9847,
+          "legal rows": 3416,
+          "legal share": 0.3469076876205951,
+          "chosen": 370,
+          "chosen | legal": 0.10831381733021077
+        },
+        {
+          "group": "calling_station",
+          "rows": 11386,
+          "legal rows": 4393,
+          "legal share": 0.3858246969963113,
+          "chosen": 2,
+          "chosen | legal": 0.00045526974732529026
+        },
+        {
+          "group": "maniac",
+          "rows": 8777,
+          "legal rows": 2913,
+          "legal share": 0.3318901674831947,
+          "chosen": 62,
+          "chosen | legal": 0.021283899759697907
+        }
+      ],
+      "by_set": [
+        {
+          "group": "validation",
+          "rows": 4252,
+          "legal rows": 1356,
+          "legal share": 0.31890874882408277,
+          "chosen": 222,
+          "chosen | legal": 0.16371681415929204
+        },
+        {
+          "group": "train",
+          "rows": 23603,
+          "legal rows": 9003,
+          "legal share": 0.3814345634029572,
+          "chosen": 1024,
+          "chosen | legal": 0.11373986448961457
+        },
+        {
+          "group": "test",
+          "rows": 4895,
+          "legal rows": 1661,
+          "legal share": 0.3393258426966292,
+          "chosen": 143,
+          "chosen | legal": 0.08609271523178808
+        },
+        {
+          "group": "heldout",
+          "rows": 5570,
+          "legal rows": 2056,
+          "legal share": 0.36912028725314183,
+          "chosen": 223,
+          "chosen | legal": 0.10846303501945526
+        }
+      ]
+    },
+    "all_in": {
+      "overall": [
+        {
+          "group": "all",
+          "rows": 38320,
+          "legal rows": 37681,
+          "legal share": 0.9833246346555323,
+          "chosen": 358,
+          "chosen | legal": 0.00950080942650142
+        }
+      ],
+      "by_family": [
+        {
+          "group": "nit",
+          "rows": 8310,
+          "legal rows": 8215,
+          "legal share": 0.9885679903730445,
+          "chosen": 0,
+          "chosen | legal": 0.0
+        },
+        {
+          "group": "solid",
+          "rows": 9847,
+          "legal rows": 9679,
+          "legal share": 0.9829389661825937,
+          "chosen": 185,
+          "chosen | legal": 0.019113544787684678
+        },
+        {
+          "group": "calling_station",
+          "rows": 11386,
+          "legal rows": 11204,
+          "legal share": 0.9840154575794836,
+          "chosen": 0,
+          "chosen | legal": 0.0
+        },
+        {
+          "group": "maniac",
+          "rows": 8777,
+          "legal rows": 8583,
+          "legal share": 0.9778967756636664,
+          "chosen": 173,
+          "chosen | legal": 0.020156122567866714
+        }
+      ],
+      "by_set": [
+        {
+          "group": "validation",
+          "rows": 4252,
+          "legal rows": 4229,
+          "legal share": 0.9945907808090311,
+          "chosen": 19,
+          "chosen | legal": 0.004492787893118941
+        },
+        {
+          "group": "train",
+          "rows": 23603,
+          "legal rows": 23162,
+          "legal share": 0.9813159344151168,
+          "chosen": 213,
+          "chosen | legal": 0.009196097055521976
+        },
+        {
+          "group": "test",
+          "rows": 4895,
+          "legal rows": 4807,
+          "legal share": 0.9820224719101124,
+          "chosen": 69,
+          "chosen | legal": 0.014354066985645933
+        },
+        {
+          "group": "heldout",
+          "rows": 5570,
+          "legal rows": 5483,
+          "legal share": 0.9843806104129263,
+          "chosen": 57,
+          "chosen | legal": 0.010395768739741018
+        }
+      ]
+    },
+    "all_actions": [
+      {
+        "action": "fold",
+        "legal share": 0.3673277661795407,
+        "chosen share": 0.04206680584551148,
+        "chosen | legal": 0.11452117078715544
+      },
+      {
+        "action": "check_call",
+        "legal share": 1.0,
+        "chosen share": 0.7227557411273486,
+        "chosen | legal": 0.7227557411273486
+      },
+      {
+        "action": "raise_half_pot",
+        "legal share": 0.9833246346555323,
+        "chosen share": 0.1232776617954071,
+        "chosen | legal": 0.12536822271171147
+      },
+      {
+        "action": "raise_pot",
+        "legal share": 0.9833246346555323,
+        "chosen share": 0.10255741127348643,
+        "chosen | legal": 0.10429659510097927
+      },
+      {
+        "action": "all_in",
+        "legal share": 0.9833246346555323,
+        "chosen share": 0.009342379958246346,
+        "chosen | legal": 0.00950080942650142
+      }
+    ]
+  },
+  "imbalance": {
+    "rare_overall": [
+      "all_in"
+    ],
+    "rare_by_set": {
+      "train": [
+        "all_in"
+      ],
+      "validation": [
+        "all_in"
+      ],
+      "test": [],
+      "heldout": []
+    },
+    "share_differences_pp": [
+      {
+        "group": "train",
+        "fold": 0.0,
+        "check_call": 0.0,
+        "raise_half_pot": 0.0,
+        "raise_pot": 0.0,
+        "all_in": 0.0,
+        "max |diff| (pp)": 0.0
+      },
+      {
+        "group": "validation",
+        "fold": 0.8826408811897051,
+        "check_call": 6.262288516746661,
+        "raise_half_pot": -3.0526826855125364,
+        "raise_pot": -3.636667596785316,
+        "all_in": -0.45557911563851217,
+        "max |diff| (pp)": 6.262288516746661
+      },
+      {
+        "group": "test",
+        "fold": -1.417083240704024,
+        "check_call": 4.666702182081828,
+        "raise_half_pot": -1.7892022780470127,
+        "raise_pot": -1.967590640150356,
+        "all_in": 0.5071739768195703,
+        "max |diff| (pp)": 4.666702182081828
+      },
+      {
+        "group": "heldout",
+        "fold": -0.33484089103787484,
+        "check_call": 1.7048809560845424,
+        "raise_half_pot": 1.2130551824841045,
+        "raise_pot": -2.704006907803386,
+        "all_in": 0.12091166027262315,
+        "max |diff| (pp)": 2.704006907803386
+      }
+    ],
+    "sets_over_flag": [
+      "validation"
+    ],
+    "per_match_ranges": [
+      {
+        "group": "validation",
+        "matches": 5,
+        "fold": "0.0%-13.6%",
+        "check_call": "56.3%-95.1%",
+        "raise_half_pot": "4.9%-17.5%",
+        "raise_pot": "0.0%-15.1%",
+        "all_in": "0.0%-0.9%"
+      },
+      {
+        "group": "train",
+        "matches": 26,
+        "fold": "0.0%-14.8%",
+        "check_call": "45.6%-100.0%",
+        "raise_half_pot": "0.0%-26.0%",
+        "raise_pot": "0.0%-24.4%",
+        "all_in": "0.0%-1.8%"
+      },
+      {
+        "group": "test",
+        "matches": 5,
+        "fold": "0.2%-8.9%",
+        "check_call": "56.9%-83.4%",
+        "raise_half_pot": "6.9%-16.2%",
+        "raise_pot": "5.9%-17.1%",
+        "all_in": "1.0%-2.6%"
+      },
+      {
+        "group": "heldout",
+        "matches": 12,
+        "fold": "0.0%-25.8%",
+        "check_call": "33.7%-98.0%",
+        "raise_half_pot": "2.0%-32.6%",
+        "raise_pot": "0.0%-30.3%",
+        "all_in": "0.0%-3.4%"
+      }
+    ]
+  },
+  "audits": [
+    {
+      "audit_id": "L1",
+      "name": "Feature-name allowlist",
+      "passed": true,
+      "detail": "60 feature names checked"
+    },
+    {
+      "audit_id": "L2",
+      "name": "Private columns scrambled: features unchanged",
+      "passed": true,
+      "detail": "43856 rows, sets ['A', 'B']"
+    },
+    {
+      "audit_id": "L3",
+      "name": "Future truncation: features unchanged",
+      "passed": true,
+      "detail": "300 rows truncated, sets ['A', 'B']"
+    },
+    {
+      "audit_id": "L4",
+      "name": "History uses only earlier deals",
+      "passed": true,
+      "detail": "282 (match, deal) checks"
+    },
+    {
+      "audit_id": "L5",
+      "name": "Mirror hand of the current deal excluded",
+      "passed": true,
+      "detail": "240 deals checked"
+    },
+    {
+      "audit_id": "L6",
+      "name": "Public replay with fake hole cards",
+      "passed": true,
+      "detail": "43856 rows replayed, 0 mismatches"
+    },
+    {
+      "audit_id": "L7",
+      "name": "Player role from public seating equals true role",
+      "passed": true,
+      "detail": "43856 rows, 100% match"
+    },
+    {
+      "audit_id": "L8",
+      "name": "Split integrity",
+      "passed": true,
+      "detail": "2 manifests, 48 loaded matches"
+    },
+    {
+      "audit_id": "L9",
+      "name": "Seed uniqueness",
+      "passed": true,
+      "detail": "52 match seeds distinct"
+    },
+    {
+      "audit_id": "L10",
+      "name": "Priors fitted on training rows only",
+      "passed": true,
+      "detail": "fitted on 23603 rows; 20253 other rows perturbed"
+    },
+    {
+      "audit_id": "L11a",
+      "name": "Manifests rebuild byte-identically",
+      "passed": true,
+      "detail": "['phase3', 'phase3_pilot'] identical"
+    },
+    {
+      "audit_id": "L11b",
+      "name": "Regenerated match is byte-identical",
+      "passed": true,
+      "detail": "match_00 (validation) decisions.csv: 222944 bytes identical"
+    },
+    {
+      "audit_id": "L11b",
+      "name": "Regenerated match is byte-identical",
+      "passed": true,
+      "detail": "match_00 (validation) hands.csv: 11170 bytes identical"
+    },
+    {
+      "audit_id": "L11b",
+      "name": "Regenerated match is byte-identical",
+      "passed": true,
+      "detail": "match_47 (heldout) decisions.csv: 244179 bytes identical"
+    },
+    {
+      "audit_id": "L11b",
+      "name": "Regenerated match is byte-identical",
+      "passed": true,
+      "detail": "match_47 (heldout) hands.csv: 11522 bytes identical"
+    }
+  ],
+  "audit_seconds": {
+    "L1": 0.00016902500010473887,
+    "L2": 3.858165320000353,
+    "L3": 76.03384757999993,
+    "L4": 47.91530891000002,
+    "L5": 19.16427984300026,
+    "L6": 29.497816666999825,
+    "L7": 0.007068199000059394,
+    "L8": 0.01309601399998428,
+    "L9": 0.0025352540001222224,
+    "L10": 0.1262374800003272,
+    "L11a": 0.00450819900015631,
+    "L11b match 0": 53.22352629800025,
+    "L11b match 47": 53.68841850099989
+  },
+  "l3_subset_matches": [
+    7,
+    30,
+    10,
+    5,
+    40,
+    46
+  ]
+}
