@@ -383,3 +383,499 @@ independent match.
 Phase 3: generate the dataset per the plan above, engineer features from
 `obs_` columns, and train supervised opponent models against a simple
 baseline. It needs a plan approved before work starts.
+
+## Phase 3: Supervised opponent modeling (in progress)
+
+Branch: `phase-3-machine-learning`.
+
+The approved design is in [`docs/phase3_plan.md`](phase3_plan.md). It
+covers the 16 opponent configurations, the 48 matches from master seed
+3000, the 26/5/5 + 12 held-out match splits, Feature Sets A and B, the
+models, metrics and leakage tests.
+
+### Stage 1: pilot (2026-11-12): completed work
+
+- `opponent_configs.py`: 4 presets plus 3 seeded variants each. One
+  variant per preset is held out (calling_station_v3, maniac_v3, nit_v1,
+  solid_v2).
+- `dataset_manifest.py`:
+  - 36 training-pool matches from a round-robin schedule (each
+    configuration plays exactly 6, no repeated pairs);
+  - a balanced 26/5/5 split, accepted on the first draw;
+  - 12 held-out matches;
+  - a 4-match pilot with separate seeds.
+  Both manifests are committed under `data/manifests/` and rebuild
+  byte-identically.
+- `dataset_generation.py`, `scripts/generate_dataset.py`: parallel
+  generation from a manifest.
+- `dataset_loader.py`: accepts only complete runs that match the manifest
+  (seed, configurations, manifest hash).
+- `features.py`: Feature Set A, 47 features (situation, legal actions,
+  board texture, betting history).
+- `opponent_history.py`: Feature Set B, with 13 history features from
+  earlier deals only. The mirror hand is excluded, the player role comes
+  from public seating, and rates use alpha = 10 smoothing toward
+  train-only priors.
+- `action_probabilities.py`:
+  - fixed class order;
+  - legal-action mask, a 1e-6 floor and renormalization;
+  - raw probabilities kept for diagnostics.
+- `leakage.py`: audits L1–L11. Each is also tested against a deliberately
+  leaky input.
+- `scripts/pilot_report.py` produces
+  [`results/phase3/pilot_report.md`](../results/phase3/pilot_report.md).
+
+### Engineering decisions (Stage 1)
+
+| Decision | Reason |
+|---|---|
+| Manifest has no timestamps, versions or git commit | It must rebuild byte-identically. Those details are in each run's `metadata.json` and in `generation_summary.json`. |
+| Feature builders select an explicit column list first | They physically cannot read hidden, label, outcome or id columns. |
+| Player role from `id_seat_swap` and `obs_position` | Tracks "the opponent at this seat" the way a real player could, without reading labels. |
+| History counts are summed per deal, then shifted by one deal | Excluding the whole current deal (both seatings) is built into the computation, not a filter that could be forgotten. |
+| Audits tested against deliberate leaks | A passing audit only means something if it fails on a leak. |
+
+### Pilot results (4 matches, 60 deals each; validation only, not used for any reported result)
+
+- **Size:** 3,669 decision rows (3,133 scored). Rows per match ranged
+  from 698 (maniac vs nit_v2) to 1,052; the mean was 917, or 5.8–8.8
+  decisions per hand.
+- **Runtime:** 93.8 s wall time with 4 worker processes on 4 CPUs.
+  Each process ran at 14.0 decisions/s while running in parallel, about
+  half the single-process rate from Phase 2. The preflop-cache warm-up
+  took up to 16.7 s per worker.
+- **Projection (extrapolated, not measured):** about 44,000 rows for
+  48 matches, about 13 min wall time with 4 workers.
+- **Actions:**
+
+  | Action | Rows | Share |
+  |---|---|---|
+  | check_call | 2,810 | 76.6% |
+  | raise_half_pot | 420 | 11.4% |
+  | raise_pot | 258 | 7.0% |
+  | fold | 147 | 4.0% |
+  | all_in | 34 | 0.9% |
+
+  `all_in` is below 1% and is flagged as a rare class. Action mixes differ
+  clearly by style: calling-station configurations chose check_call 95%
+  of the time; maniacs raised 57% of the time; nits folded 14% of the
+  time.
+- **Features:**
+  - No missing values in A or B.
+  - All history rates lie within [0, 1].
+  - At deal 0 the history features equal the priors, with zero counts.
+  - Earlier-hand counts never decrease.
+  - `a_legal_check_call` is constant: check or call is always legal.
+  - By deals 40–59, average history features differ by style. For
+    example, the facing-a-bet fold rate is 0.28 for nits and 0.01 for
+    calling stations, against a prior of 0.15. This is descriptive only,
+    not a model result.
+- **Audits:** L1–L11 all passed on the pilot data:
+  - 3,669 rows replayed with fake hole cards gave 0 mismatches;
+  - the player role matched in 100% of rows;
+  - all 52 seeds are distinct;
+  - a regenerated match was byte-identical (223,957 bytes).
+
+### Tests executed (Stage 1)
+
+Local, Linux, Python 3.12.3: `python -m pytest` gave
+`279 passed in 101.36s` (183 from earlier phases and 96 new).
+
+### Known problems and limitations (Stage 1)
+
+- **Held-out configurations are close to their presets.** For example,
+  calling_station_v3 differs from calling_station only by bluff rate
+  0.027. The held-out evaluation therefore tests generalization to near
+  variants, not to new styles.
+- **Rare classes.** `all_in` is 0.9% of rows overall, and calling
+  stations never chose `raise_pot` or `all_in`. Macro-F1 will be noisy on
+  rare classes, and accuracy alone would be misleading: always predicting
+  check_call scores 77%.
+- **Family balance.** Maniac matches have shorter hands, so maniacs
+  produce fewer rows (296 of 3,669 in the pilot).
+- **Sampled audits.** L3 truncation checks a sample of 150 rows, and L4/L5
+  check sampled deals per match. L2 and L6–L10 cover every row.
+- **Parallel speed.** Throughput per process roughly halves when 4
+  processes share 4 CPUs.
+
+### Next milestone (Stage 1)
+
+The project owner approved the pilot on 2026-11-12 and authorized Stage 2.
+
+### Stage 2: full dataset (2026-11-12)
+
+Generated from the committed manifest with
+`scripts/generate_dataset.py --workers 4`, then audited with
+`scripts/dataset_report.py --regenerate 0 47`. The full report is
+[`results/phase3/dataset_report.md`](../results/phase3/dataset_report.md).
+Raw logs are under `data/raw/simulations/phase3_s3000/` and are not
+committed. No strategies, features or classes were changed, nothing was
+rebalanced, and no models were trained.
+
+**Completeness and runtime (measured)**
+
+- 48 of 48 runs have the `metadata.json` completion marker.
+- Every run has 120 hands, the manifest seed and the manifest hash, and
+  no leftover temporary files.
+- Every run passed the loader's configuration checks.
+- Wall time was 12.8 min with 4 workers for 43,856 decisions:
+  57.1 decisions/s overall, 14.9 per process. Matches took 33–83 s each.
+  The pilot projection had been about 44,000 rows and 13 min.
+
+**Decision counts (measured)**
+
+| Set | Matches | Rows used |
+|---|---|---|
+| train | 26 | 23,603 |
+| validation | 5 | 4,252 |
+| test | 5 | 4,895 |
+| held-out (scored rows only) | 12 | 5,570 |
+| **Total used** | 48 | **38,320** |
+
+Another 5,536 rows are the training-pool counterparts' decisions in
+held-out matches. They are generated but never trained on or scored.
+
+By style family (rows used):
+
+| Family | Rows |
+|---|---|
+| calling_station | 11,386 |
+| solid | 9,847 |
+| maniac | 8,777 |
+| nit | 8,310 |
+
+**Split separation**
+
+- No match is in more than one split.
+- No held-out configuration has rows in train, validation or test.
+- Only the 4 held-out configurations are scored in the held-out set.
+- Every validation and test configuration also appears in train.
+- No deal seed is shared between matches.
+
+**Action classes (rows used)**
+
+| Action | Rows | Share |
+|---|---|---|
+| check_call | 27,696 | 72.3% |
+| raise_half_pot | 4,724 | 12.3% |
+| raise_pot | 3,930 | 10.3% |
+| fold | 1,612 | 4.2% |
+| all_in | 358 | 0.9% |
+
+By style family:
+
+- **nit:** fold 14.2%, never all-in.
+- **calling_station:** check_call 97.1%; it never chose raise_pot or
+  all-in, and folded twice in total.
+- **maniac:** raised 59% of the time (half-pot 28.0%, pot 28.9%,
+  all-in 2.0%).
+- **solid:** in between, with 1.9% all-in.
+
+**Conditioned on legal availability**
+
+- **fold** was legal in 36.7% of decisions (only when facing a bet) and
+  was chosen in 11.5% of those. By family: nit 35.1%, solid 10.8%,
+  maniac 2.1%, calling_station 0.0%.
+- **all_in** was legal in 98.3% of decisions and was chosen in 1.0% of
+  those. By family: solid 1.9%, maniac 2.0%, nit and calling_station 0.
+- check_call was always legal, so `a_legal_check_call` is constant.
+
+**Rare classes and imbalance across sets**
+
+- all_in is the only class below 1% overall. It is below 1% within
+  train (0.9%) and validation (0.4%, only 19 rows). Test has 69 all_in
+  rows and the held-out set 57.
+- Class shares differ from train by at most 6.3 percentage points
+  (validation check_call +6.3 pp; test +4.7 pp; held-out +2.7 pp). Only
+  validation crosses the 5 pp descriptive flag that was set before the
+  data was examined.
+- The cause is which configurations landed in the 5 validation matches:
+  only 366 solid rows and 756 maniac rows, against 1,612 calling_station
+  rows. Shares also vary widely between individual matches; for
+  example, check_call ranges from 45.6% to 100% across train matches.
+
+**Audits on the full dataset:** L1–L11 all passed.
+
+- L2, L6–L10 and L11a cover every row:
+  - 43,856 rows replayed with fake hole cards gave 0 mismatches;
+  - the player role matched in 100% of rows;
+  - the priors were fitted on 23,603 train rows only.
+- L3 checked 300 rows from 6 matches covering every split.
+- L4 and L5 checked 282 and 240 sampled deals.
+- L11b: matches 0 (validation) and 47 (held-out) were regenerated, and
+  both their `decisions.csv` and `hands.csv` are byte-identical.
+
+**Tests:**
+
+- Local, Python 3.12.3: 285 passed.
+- GitHub Actions on commit `9b860f1`: Ubuntu (Python 3.12.16) 285 passed
+  in 118.22 s; Windows (Python 3.12.10) 285 passed in 115.57 s.
+
+### Problems found in Stage 2
+
+- **Mixed commits recorded during generation (no effect on the data).**
+  The report code was committed while generation was running. Matches
+  written before that commit recorded `8177a6b` (7 matches); later ones
+  recorded `9b860f1` (41). The commits differ only by the new
+  `reporting.py`, which generation does not import. `git diff` confirms
+  the generation, agent, simulator and logging code is identical.
+  `generate_dataset.py` now also records the commit and whether there
+  were uncommitted changes at the **start** of a run.
+- **Broken Markdown tables.** The column name `chosen | legal` broke the
+  report's tables. `md_table` now escapes pipe characters (tested), and
+  the report was regenerated.
+
+### Implications for Stage 3 (for decision before training)
+
+- **Validation is the most imbalanced set.** It has only 19 all_in rows.
+  Validation macro-F1, the approved tuning metric, gives all_in one fifth
+  of its weight, so model selection may be swayed by a handful of rows.
+- **Per-style test results are thin.** Test has 352 maniac rows (one
+  configuration) and 450 nit rows (one configuration). The held-out set
+  is more even (1,206–1,655 rows per family, one configuration each).
+- **Accuracy is easy to inflate.** Predicting check_call every time
+  scores 72% on rows used.
+
+### Next milestone (Stage 2)
+
+The project owner approved Stage 2 on 2026-11-12 and authorized Stage 3.
+Validation macro-F1 stays the selection metric, and per-class precision,
+recall and F1 are reported.
+
+### Stage 3: model training and evaluation (2026-11-12)
+
+Full results are in
+[`results/phase3/model_results.md`](../results/phase3/model_results.md),
+with figures in `docs/figures/phase3/`. Trained models
+(`models/phase3/`) and predictions (`data/processed/phase3/`) are kept
+locally and not committed.
+
+**Completed work**
+
+- `opponent_model.py`:
+  - feature matrices;
+  - a train-only preprocessor that fixes the column order, drops
+    columns that are constant in training data (only
+    `a_legal_check_call`) and rejects missing values;
+  - seeded models;
+  - probabilities always in the fixed five-class order.
+- `evaluation.py`:
+  - accuracy, macro-F1, balanced accuracy, log-loss and per-class
+    precision/recall/F1, all checked against scikit-learn;
+  - match-level and paired bootstrap.
+- `scripts/train_opponent_models.py` ran the full approved grids (36
+  Random Forest and 48 HistGradientBoosting settings, each on A and B):
+  - fitted on train;
+  - selected by validation macro-F1 of legal-masked predictions;
+  - every selected model, refitted, gave bit-identical predictions;
+  - shuffled-label controls trained with the same settings.
+  It took 29.2 min.
+- `scripts/evaluate_opponent_models.py` produced:
+  - metrics on raw and legal-masked probabilities;
+  - 2,000-resample match-level bootstrap;
+  - paired comparisons;
+  - per-style, per-street and history-length breakdowns;
+  - permutation importance by feature group;
+  - eight figures.
+- `scripts/shuffled_control_spread.py`: a diagnostic described under
+  unexpected results.
+- matplotlib 3.11.2 added and pinned, with its dependencies.
+
+**Engineering decisions (Stage 3)**
+
+| Decision | Reason |
+|---|---|
+| Random Forest with `n_jobs=1` | With several threads, scikit-learn adds the trees' probabilities in thread-completion order, so a refit differed in the last digits. One thread makes results bit-reproducible. |
+| HistGradientBoosting with `early_stopping=False` | Its internal early stopping holds out random rows, which would break match-level splitting. |
+| A class missing from training would get probability 0 (then floored), never be dropped | All five classes are always scored; the task never changes silently. No selected model was missing any class. |
+| Primary metrics on legal-masked probabilities; raw reported separately | Masked predictions are what an agent would use. Raw results show how much probability each model put on illegal actions. |
+| Per-style comparison uses log-loss and balanced accuracy, not macro-F1 | Macro-F1 averages over all five classes, so styles that never use some actions are capped. |
+| No rebalancing of the data | The approved grid's `class_weight` option was the only reweighting, and it was chosen by validation. |
+
+**Results (legal-masked; 95% match-level bootstrap intervals)**
+
+| Model | Test macro-F1 (5 matches) | Held-out macro-F1 (12 matches) | Test log-loss | Held-out log-loss |
+|---|---|---|---|---|
+| Dummy (prior) | 0.172 [0.159, 0.180] | 0.168 [0.149, 0.183] | 0.814 | 0.867 |
+| Random Forest A | 0.252 [0.228, 0.269] | 0.257 [0.235, 0.271] | 1.035 | 1.033 |
+| **Random Forest B** | **0.361 [0.315, 0.386]** | **0.372 [0.310, 0.413]** | 0.832 | 0.824 |
+| HistGradientBoosting A | 0.241 [0.205, 0.271] | 0.258 [0.222, 0.284] | 1.282 | 1.249 |
+| **HistGradientBoosting B** | **0.366 [0.337, 0.383]** | **0.389 [0.325, 0.435]** | 0.892 | 0.886 |
+
+- **Every trained model beats the Dummy on macro-F1 and balanced
+  accuracy.** All paired intervals exclude 0.
+- **No model has better accuracy than the Dummy.** Always predicting
+  check_call scores 0.75 (test) and 0.72 (held-out).
+- **Feature Set B beats A** on both sets:
+
+  | Paired B − A | Test | Held-out |
+  |---|---|---|
+  | RF macro-F1 | +0.108 [+0.060, +0.149] | +0.114 [+0.070, +0.144] |
+  | RF log-loss | −0.203 [−0.256, −0.152] | −0.209 [−0.284, −0.148] |
+  | HGB macro-F1 | +0.125 [+0.074, +0.160] | +0.131 [+0.077, +0.182] |
+  | HGB log-loss | −0.391 [−0.568, −0.169] | −0.363 [−0.599, −0.127] |
+
+- **The gain is not a hyperparameter artifact.** The selected A and B
+  models use different settings, so every grid setting was compared on
+  validation with identical settings: B beat A in all 36 RF and all 48
+  HGB settings. The macro-F1 gain ranged +0.10 to +0.20 and log-loss
+  improved by 0.06 to 0.58.
+- **Permutation importance (RF-B, held-out):**
+  - Shuffling the opponent-history group costs 0.133 macro-F1 and adds
+    0.50 to log-loss. It is the most important group, ahead of the
+    current situation (0.066).
+  - For RF-A, current-hand betting history (0.069) and situation (0.064)
+    matter most.
+- **History length:** RF-B's log-loss falls from 0.94 (0–9 earlier
+  hands) to 0.81–0.83 (10+ hands). RF-A stays flat.
+- **Per-class F1:**
+
+  | Class | RF-B test | RF-B held-out | RF-A test | RF-A held-out |
+  |---|---|---|---|---|
+  | fold | 0.49 | 0.39 | 0.15 | 0.14 |
+  | raise_pot | 0.28 | 0.39 | 0.18 | 0.21 |
+  | all_in | 0.00 | 0.02 | 0.02 | 0.00 |
+
+  all_in is essentially not predicted. HGB does best on all_in, with
+  F1 0.11 (test) and 0.05 (held-out).
+- **Per style (held-out log-loss, Dummy → RF-B):**
+
+  | Style | Dummy | RF-B |
+  |---|---|---|
+  | calling_station | 0.359 | 0.197 |
+  | maniac | 1.406 | 1.308 |
+  | nit | 0.947 | 0.891 |
+  | solid | 0.893 | 1.054 (worse than Dummy) |
+
+**Unexpected results and explanations**
+
+1. **Selected models are poorly calibrated.** Their log-loss is no better
+   than the Dummy's: RF-B vs Dummy is +0.019 [−0.069, +0.095] on test and
+   −0.043 [−0.137, +0.048] on held-out. The A models are worse than the
+   Dummy. Validation macro-F1 favours deep forests and class-balanced
+   weights, which give overconfident or distorted probabilities:
+   - RF-B train log-loss is 0.31, against 0.68 on validation;
+   - shuffling feature groups in RF-A *improves* its log-loss, a sign of
+     overconfidence.
+
+   The same grid contains much better-calibrated settings. The lowest
+   validation log-loss is 0.521 for RF-B and 0.527 for HGB-B, against
+   0.786 for the Dummy, at macro-F1 0.38–0.40. That is a validation-only
+   observation; those settings were not evaluated on test data.
+2. **Shuffled-label controls score slightly above the Dummy on
+   macro-F1.** This is chance, not leakage:
+   - The Dummy always predicts check_call, so any model that sometimes
+     guesses other legal actions earns some minority-class F1.
+   - A random legal guess drawn from the prior scores 0.204–0.205.
+   - Every shuffled control has much worse log-loss than the Dummy.
+   - HGB-B's control reached 0.221 on held-out. Retrained on five other
+     shuffles it ranged 0.166–0.206 held-out and 0.172–0.190 test, with
+     log-loss 1.21–1.27.
+3. **Lower accuracy than the Dummy** is the expected price of predicting
+   minority actions; it is why macro-F1 and log-loss are the main
+   metrics.
+4. **all_in is not learned.** There are only 213 training rows, and the
+   bots' all-in decisions depend on private equity (≥ 0.9) that public
+   features cannot reveal.
+
+**Limitations**
+
+- **Test set.** It has only 5 matches, so its intervals are rough, and
+  per-style test results rest on one configuration for maniac and nit.
+  The 12 held-out matches give stronger evidence.
+- **Held-out opponents are close variants** of the training styles.
+- **Synthetic opponents** follow rules we wrote.
+- **Overfitting.** RF-B's train macro-F1 is 0.86, against 0.45 on
+  validation.
+
+**Provenance**
+
+- Training started at commit `c709e4f` with the then-uncommitted
+  training code, which was committed as `778aa77` a few minutes later.
+  `git diff` confirms the training code is unchanged since `778aa77`.
+- `train_opponent_models.py` now also records whether the working tree
+  had uncommitted changes at start.
+
+**Tests:** local, Python 3.12.3: 306 passed (285 earlier and 21 new).
+
+### Phase 3 approval and the Phase 4 probability model (2026-11-12)
+
+The project owner approved Phase 3 as the supervised-learning experiment.
+**After inspecting the Stage 3 results**, they decided that the Phase 4
+agent's model is selected by validation log-loss (see
+`docs/phase3_plan.md` section 13a). Stage 3 results are unchanged.
+
+**Selection (validation only):** among 84 Feature Set B settings, the
+lowest validation log-loss of legal-masked probabilities was 0.5209, for
+Random Forest grid #22: 300 trees, `max_depth=12`, `min_samples_leaf=20`,
+`max_features=0.5`, no class weighting.
+
+- The refit reproduced the grid value exactly.
+- The best HistGradientBoosting setting scored 0.5274. Random Forest minus
+  HGB on validation is −0.0066 [−0.0119, −0.0007] (5 matches).
+- The five lowest validation log-losses are all Random Forest settings
+  within 0.002 of each other.
+
+**Evaluation (not used for the choice).** Full report:
+[`results/phase3/probability_model_report.md`](../results/phase3/probability_model_report.md),
+figures 9–11.
+
+| Model | Test log-loss | Held-out log-loss | Top-label ECE (test + held-out) |
+|---|---|---|---|
+| Dummy | 0.814 | 0.867 | 0.011 |
+| RF-B, macro-F1 selected | 0.832 | 0.824 | 0.058 |
+| HGB-B, macro-F1 selected | 0.892 | 0.886 | 0.043 |
+| **RF-B, log-loss selected** | **0.656** | **0.676** | **0.014** |
+
+- **Against the Dummy (paired):** log-loss −0.157 [−0.211, −0.108] on test
+  and −0.191 [−0.253, −0.128] on held-out. Brier score is also better on
+  both sets.
+- **Against the macro-F1-selected RF-B:** log-loss −0.176 (test) and
+  −0.148 (held-out), with intervals excluding 0.
+- **The cost is lower macro-F1:** 0.295 (test) and 0.324 (held-out),
+  against 0.361 and 0.372.
+- **Calibration:** reliability bins track the diagonal, with two mild
+  exceptions:
+  - raise_pot is slightly over-predicted in its top equal-count bin
+    (probabilities 0.26–0.65): 0.394 predicted against 0.360 observed;
+  - all-in is under-predicted in its top bin: 0.029 predicted against
+    0.040 observed.
+
+  Raw and masked probabilities are almost identical for this model: only
+  0.1–0.2% of raw probability falls on illegal actions, against 3% for the
+  Dummy.
+- **Overfitting:** little. Skill over the Dummy (1 − log-loss ÷ Dummy
+  log-loss) is 0.37 on train and 0.34 on validation; the macro-F1-selected
+  RF-B fell from 0.66 to 0.14. Skill drops to 0.19 (test) and 0.22
+  (held-out). Three likely causes:
+  - set composition: the test set is half Solid rows;
+  - different configurations per set;
+  - mild optimism from selecting among 84 settings on 5 validation
+    matches.
+- **Solid opponents:**
+  - The candidate beats the Dummy on log-loss: 0.870 against 0.956 (test)
+    and 0.840 against 0.893 (held-out). The Stage 3 deficit was a
+    calibration problem.
+  - Solid's raises and all-ins depend on private equity, which the model
+    cannot see.
+  - The candidate also beats a label-informed style-prior reference in 11
+    of 12 style/set cells. That reference uses true style labels and is
+    not deployable.
+- **All-in:**
+  - 358 rows, all from maniac and solid configurations, and mostly on the
+    river.
+  - The candidate ranks all-in rows well (AUC 0.855) and gives them about
+    3× the probability of other rows (0.027 against 0.009).
+  - It never makes all-in the most likely action.
+  - No change was made to target it.
+- **Speed:** about 15 ms per batched prediction call.
+
+**CI for the final Stage 3 commit `49e3b7f`:** GitHub Actions run 25
+completed successfully on Ubuntu and Windows.
+
+**Tests:** local, Python 3.12.3: 312 passed (6 new calibration tests).
+
+### Next milestone
+
+Approval of the probability model and of the Phase 4 plan
+(`docs/phase4_plan.md`), before any Phase 4 implementation.

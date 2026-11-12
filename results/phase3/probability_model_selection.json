@@ -1,0 +1,117 @@
+{
+  "rule": "lowest validation log-loss of legal-masked probabilities among Feature Set B settings (Random Forest and HistGradientBoosting grids); ties: higher validation macro-F1",
+  "decision_note": "Chosen after inspecting the Stage 3 classification results (macro-F1-selected models were poorly calibrated). Test and held-out data were not used for the choice.",
+  "candidates": 84,
+  "families": {
+    "random_forest": {
+      "grid_index": 22,
+      "params": {
+        "n_estimators": 300,
+        "max_depth": 12,
+        "min_samples_leaf": 20,
+        "max_features": 0.5,
+        "class_weight": null
+      },
+      "seed": 2305977157,
+      "val_log_loss": 0.5208870168825678,
+      "val_macro_f1": 0.3785904853201955,
+      "val_accuracy": 0.7925682031984949,
+      "rank_in_family": 1,
+      "refit_matches_grid": true
+    },
+    "hist_gradient_boosting": {
+      "grid_index": 2,
+      "params": {
+        "learning_rate": 0.05,
+        "max_iter": 200,
+        "max_leaf_nodes": 15,
+        "l2_regularization": 1.0,
+        "class_weight": null
+      },
+      "seed": 2887016095,
+      "val_log_loss": 0.5274379666773003,
+      "val_macro_f1": 0.39490817527130084,
+      "val_accuracy": 0.7883349012229539,
+      "rank_in_family": 1,
+      "refit_matches_grid": true
+    }
+  },
+  "winner": {
+    "family": "random_forest",
+    "grid_index": 22,
+    "params": {
+      "n_estimators": 300,
+      "max_depth": 12,
+      "min_samples_leaf": 20,
+      "max_features": 0.5,
+      "class_weight": null
+    },
+    "seed": 2305977157,
+    "val_log_loss": 0.5208870168825678,
+    "val_macro_f1": 0.3785904853201955,
+    "val_accuracy": 0.7925682031984949,
+    "rank_in_family": 1,
+    "refit_matches_grid": true
+  },
+  "validation_rf_minus_hgb": {
+    "accuracy": {
+      "value": 0.0042333019755409484,
+      "ci_low": -0.00867804454729526,
+      "ci_high": 0.01611570247933891,
+      "share_positive": 0.7135
+    },
+    "macro_f1": {
+      "value": -0.01631768995110533,
+      "ci_low": -0.025712676560632308,
+      "ci_high": -0.01078799214039089,
+      "share_positive": 0.0
+    },
+    "balanced_accuracy": {
+      "value": -0.022046012167294293,
+      "ci_low": -0.027304605851412422,
+      "ci_high": -0.01660834230406183,
+      "share_positive": 0.0
+    },
+    "log_loss": {
+      "value": -0.006550949794732475,
+      "ci_low": -0.011862057689449812,
+      "ci_high": -0.0007265395591055657,
+      "share_positive": 0.0095
+    }
+  },
+  "runner_up_margin_val_log_loss": 0.0009649999999999936,
+  "top5": [
+    {
+      "model": "random_forest",
+      "grid_index": 22,
+      "val_log_loss": 0.520887,
+      "val_macro_f1": 0.37859
+    },
+    {
+      "model": "random_forest",
+      "grid_index": 34,
+      "val_log_loss": 0.521852,
+      "val_macro_f1": 0.378181
+    },
+    {
+      "model": "random_forest",
+      "grid_index": 10,
+      "val_log_loss": 0.521976,
+      "val_macro_f1": 0.378422
+    },
+    {
+      "model": "random_forest",
+      "grid_index": 32,
+      "val_log_loss": 0.522784,
+      "val_macro_f1": 0.366539
+    },
+    {
+      "model": "random_forest",
+      "grid_index": 8,
+      "val_log_loss": 0.522809,
+      "val_macro_f1": 0.36532
+    }
+  ],
+  "git_commit_at_start": "49e3b7f62b1c310665d209b5fcd5089796c6f5b0",
+  "seconds": 35.94256256500012
+}
