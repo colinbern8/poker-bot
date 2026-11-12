@@ -227,10 +227,29 @@ def test_rows_describe_the_state_before_the_action(frame: pd.DataFrame) -> None:
 
 def test_feature_columns_select_only_observable_features(frame: pd.DataFrame) -> None:
     features = feature_columns(frame)
-    assert features and all(column.startswith("obs_") for column in features)
+    assert features == [c for c in frame.columns if c.startswith("obs_")]
     excluded = set(frame.columns) - set(features)
-    assert {"id_deal_seed", "hidden_actor_hole_cards", "hidden_agent_equity",
-            "label_actor_agent", "out_actor_net_chips", "act_category"} <= excluded
+
+    # Every identifier, target, hidden, label and outcome column is excluded.
+    for prefix in ("id_", "act_", "hidden_", "label_", "out_"):
+        group = {c for c in frame.columns if c.startswith(prefix)}
+        assert group and group <= excluded, prefix
+    assert {
+        "id_match", "id_deal_seed",  # identifiers (the deal seed determines the cards)
+        "hidden_actor_hole_cards", "hidden_opponent_hole_cards",  # hidden cards
+        "hidden_agent_equity", "hidden_agent_reason",  # agent internals
+        "label_actor_agent", "label_actor_role",  # true style labels
+        "out_actor_net_chips", "out_went_to_showdown", "out_final_board",  # future outcomes
+    } <= excluded
+
+    # No feature name refers to private or future information.
+    forbidden = ("hole", "hidden", "label", "agent", "role", "net", "showdown",
+                 "final", "seed", "match", "equity", "reason", "loose", "aggress", "bluff")
+    for column in features:
+        assert not any(word in column for word in forbidden), column
+
+    # Every feature value can be computed at decision time by either player
+    # (proven by test_observable_features_are_reproducible_from_public_information).
 
 
 # --- Identifiers ---------------------------------------------------------------------------
