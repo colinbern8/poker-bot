@@ -12,7 +12,11 @@ Notation (all in chips, from the hero's ``Observation``):
 * ``a``: chips the hero adds with a bet or raise (``LegalAction.chips_added``);
 * ``r``: chips the opponent must add to call that bet;
 * ``p_fold, p_call, p_raise``: the opponent's predicted responses
-  (``p_raise`` = half-pot + pot + all-in raises), legal-masked.
+  (``p_raise`` = half-pot + pot + all-in raises), legal-masked;
+* ``e_c``: the hero's equity **when the bet is called**, against the
+  opponent's estimated continuing range (:mod:`hybridpoker.range_equity`;
+  the strongest ``p_call + p_raise`` fraction of the opponent's possible
+  hands). Without a range estimate, ``e_c = e``.
 
 Equations:
 
@@ -24,7 +28,7 @@ check (c = 0)              e * P
 call (c > 0)               e * (P - x + c') - c'   with c' = min(c, stack),
                            x = c - c' returned to the opponent (short call)
 bet / raise of a chips     p_fold * P
-                           + p_call * [e * (P + a' + r') - a']
+                           + p_call * [e_c * (P + a' + r') - a']
                            + p_raise * (-a)
                            with r' = min(r, opponent stack) and
                            a' = a - (r - r') (uncalled chips returned)
@@ -37,8 +41,12 @@ bet / raise of a chips     p_fold * P
 2. *A re-raise is a loss of the bet.* If the opponent re-raises, the hero is
    assumed to give up and lose the ``a`` chips just added. This is
    conservative: it ignores any chance of calling or winning.
-3. *Equity is fixed.* The same equity (against a random hand) is used in
-   every branch; the opponent's action does not narrow its range here.
+3. *Equity when called.* A called bet is valued with ``e_c``, the hero's
+   equity against the opponent's estimated continuing range (strongest-hand
+   percentile approximation; see :mod:`hybridpoker.range_equity`). Checks
+   and calls of the opponent's bet still use ``e`` (against a random hand),
+   like the ProbabilityAgent: the opponent's own earlier bets do not narrow
+   its range here.
 4. *All-in.* If the hero's bet puts either player all-in, the opponent can
    only fold or call. The opponent's legal-action mask (in the hypothetical
    state) then gives ``p_raise = 0`` automatically.
@@ -117,9 +125,16 @@ def ev_bet(
     opponent_bet: float,
     opponent_stack: float,
     response: ResponseProbabilities,
+    called_equity: float | None = None,
 ) -> float:
-    """A bet or raise that adds ``chips_added`` chips; see the module table."""
+    """A bet or raise that adds ``chips_added`` chips; see the module table.
+
+    ``called_equity`` is ``e_c``, the hero's equity when the bet is called
+    (defaults to ``equity``, the equity against a random hand).
+    """
     _check_equity(equity)
+    called_equity = equity if called_equity is None else called_equity
+    _check_equity(called_equity)
     if chips_added <= 0:
         raise ValueError("A bet or raise must add chips.")
     new_bet = own_bet + chips_added
@@ -128,7 +143,7 @@ def ev_bet(
         raise ValueError("A bet or raise must exceed the opponent's bet.")
     opponent_call = min(to_match, opponent_stack)
     committed = chips_added - (to_match - opponent_call)  # uncalled chips come back
-    called = equity * (pot + committed + opponent_call) - committed
+    called = called_equity * (pot + committed + opponent_call) - committed
     return response.fold * pot + response.call * called + response.raise_ * (-chips_added)
 
 
@@ -142,9 +157,14 @@ class ActionValue:
 
 
 def action_value(
-    observation: Observation, action: LegalAction, equity: float, response: ResponseProbabilities | None
+    observation: Observation,
+    action: LegalAction,
+    equity: float,
+    response: ResponseProbabilities | None,
+    called_equity: float | None = None,
 ) -> ActionValue:
-    """EV of a legal hero action. ``response`` is required for bets and raises only."""
+    """EV of a legal hero action. ``response`` (and optionally ``called_equity``)
+    apply to bets and raises only."""
     o = observation
     if action.category is ActionCategory.FOLD:
         return ActionValue(action.category, ev_fold(), "fold: 0")
@@ -158,10 +178,12 @@ def action_value(
     if action.category in RAISE_CATEGORIES:
         if response is None:
             raise ValueError("A bet or raise needs the opponent's predicted response.")
-        ev = ev_bet(equity, o.pot_size, action.chips_added, o.own_bet, o.opponent_bet, o.opponent_stack, response)
+        ev = ev_bet(equity, o.pot_size, action.chips_added, o.own_bet, o.opponent_bet, o.opponent_stack, response,
+                    called_equity)
+        called = equity if called_equity is None else called_equity
         return ActionValue(
             action.category, ev,
             f"{action.category.value} to {action.bet_to}: P(fold) {response.fold:.2f}, P(call) {response.call:.2f}, "
-            f"P(raise) {response.raise_:.2f} -> {ev:+.2f}",
+            f"P(raise) {response.raise_:.2f}, equity if called {called:.2f} -> {ev:+.2f}",
         )
     raise ValueError(f"Unknown action {action.category}.")

@@ -1,9 +1,9 @@
 # Phase 4 Plan: Hybrid Agent and Profitability Experiment
 
 Status: **approved 2026-11-12, with refinements (section 8). Stages 4A
-and 4B implemented on branch `phase-4-ev-agents`. Stage 4B found an
-all-in overvaluation in the approved EV rule (section 10); a decision on
-it is needed before Stage 4C.**
+and 4B are implemented on `phase-4-ev-agents`, including the
+continuing-range correction (section 11). A structural issue remains: the
+one-step rule prefers all-in. A decision on it is needed before Stage 4C.**
 Competition presentation: **December 7–9, 2026**.
 
 ## 1. Research question
@@ -286,3 +286,99 @@ No equation was changed. A decision is needed before Stage 4C:
 | **A. Equity against the calling range (recommended)** | In the "called" branch, value the hero's hand against the opponent's likely **continuing range**: the top share of hands, where the share is the predicted P(call) + P(re-raise). Ranking: preflop by the cached 169-class equity, postflop by made-hand strength on the board. | Removes the main flaw (callers are stronger than random). Explainable. The opponent model then informs both fold chances and caller strength, which strengthens the research question. Same rule for both agents. | About 2–4× equity time per decision. A new approximation (hands are ranked by current strength) that needs its own tests. |
 | B. Restrict bet sizes (e.g. no all-in below a fixed equity) | Ad hoc rule | Quick | Arbitrary threshold; doesn't fix the underlying bias for other bet sizes |
 | C. Keep as is and document | None | No extra work | The experiment would mostly measure an artifact of the rule |
+
+## 11. Continuing-range correction (Option A, implemented 2026-11-12)
+
+**Change.** In a bet's "called" branch, the hero's equity is now `e_c`, its
+equity against the opponent's **estimated continuing range**: the strongest
+`q = P(call) + P(re-raise)` fraction of the opponent's unblocked hands.
+The fold and re-raise branches are unchanged; a re-raise still loses the
+bet. Checks and calls of an opponent's bet still use equity against a
+random hand, like the ProbabilityAgent.
+
+**Both agents use the identical calculation.** Only `q` differs, because
+it comes from their opponent models. Code: `range_equity.py` and
+`ev_agent.called_equities`.
+
+**How hands are ranked** (public information only; the board and the
+hero's cards are blockers):
+
+- *Preflop:* the cached 169-class equity, the same table the bots use.
+- *Postflop:* made-hand strength on the actual board. Exact on the river.
+
+**Is this justified?** The scripted opponents continue when their own
+equity against a random hand clears a threshold, so a strength ranking
+matches their rule closely:
+
+- *Preflop:* the match is essentially exact.
+- *Postflop:* the made-hand ranking agrees with the bots' own criterion
+  with a rank correlation of 0.96 on a dry flop and 0.87 on a draw-heavy
+  flop. It under-rates draws, which makes the estimated range slightly too
+  strong, erring toward caution.
+
+**Known approximations:**
+
+- The strongest-hand percentile is not a reconstruction of the opponent's
+  real range. The bots also bluff randomly.
+- Earlier actions in the hand are ignored, so the opponent's range is
+  assumed to start uniform. This leaves some residual optimism after the
+  opponent has already called earlier streets.
+
+**Estimator (fixed during the review).** The first version used separate
+200-sample estimates per bet. Their noise (about ±0.03) was larger than
+the correction for wide ranges, and sometimes gave an "equity if called"
+*above* the random-hand equity. The final version uses common random
+numbers:
+
+- One shared run of 400 samples draws opponent hands from all hands and
+  measures both the range equity and the all-hands equity from the same
+  draws.
+- Only their difference is added to the agent's usual equity. A full range
+  gives exactly 0.
+- Narrow ranges get top-up samples.
+
+Tests confirm that the corrections for wide ranges are small,
+non-positive and low-noise (standard deviation under 0.01 across seeds).
+
+**Audit.** 300 fixed decision situations from the Phase 3 *validation*
+split, each decided with the same seed by both agents under the old and
+new rules (`results/phase4/stage4b_rule_audit.md`):
+
+| Configuration | All-in | All-in with equity < 0.70 | Median equity of all-ins | Decisions changed |
+|---|---|---|---|---|
+| Frequency, old | 46.0% | 28.3% | 0.61 | |
+| Frequency, new | 43.0% | 25.3% | 0.62 | 3.0% |
+| ML, old | 47.3% | 29.7% | 0.61 | |
+| **ML, new** | **32.7%** | **15.7%** | **0.71** | **24.7%** |
+
+- **Runtime** (warm caches, new rule): median total 435 ms (ML) and
+  523 ms (Frequency); 95th percentile 523 ms and 625 ms. Equity is about
+  225 ms, the range correction 190–290 ms, the model 32 ms (ML) or 2 ms
+  (Frequency). The old rule took about 230–260 ms in total.
+- **Opponent adaptation:** for QQ on a K-7-2 flop, the ML agent's shove EV
+  falls from +108 after watching a calling station to +10 after watching
+  a nit.
+
+**What the correction does not fix (a decision is needed before
+Stage 4C).**
+
+1. **The one-step rule makes all-in the best bet whenever the hero is
+   ahead of the calling range.** The called branch is worth
+   `e_c·P + (2e_c − 1)·a`, which grows with the bet size `a` whenever
+   `e_c > 0.5`. Checking can never compete, because future betting is
+   ignored. This comes from the approved "no future betting" assumption,
+   not from the range approximation. All-in remains the chosen action in
+   33% (ML) and 43% (Frequency) of the audited spots.
+2. **All-in responses are poorly covered in training.** 41 of the ML
+   agent's 98 all-ins lead to states with fewer than 30 training rows.
+   Preflop all-in openings have none.
+3. **The Frequency control hardly benefits.** Its global prior gives
+   `q ≈ 0.94–0.96` in every state, so its estimated calling range is nearly
+   random, and it changed only 3% of decisions. The primary comparison
+   would therefore partly measure how differently the two agents handle
+   all-ins.
+
+Against the very loose bots (calling stations and maniacs call shoves
+about 85% of the time in training), shoving strong hands may genuinely be
+profitable, so the high all-in rate is not proven to be a mistake. Stage
+4C's development matches on master seed 5000 can measure it per opponent.

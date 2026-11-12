@@ -72,11 +72,12 @@ SPOTS = [
 def describe(agent, obs, seed: int) -> list[str]:
     agent.act(obs, random.Random(seed))
     d = agent.diagnostics[-1]
-    lines = [f"- **{agent.name}** chose **{d.chosen}** (equity {d.equity:.3f})",
+    lines = [f"- **{agent.name}** chose **{d.chosen}** (equity vs a random hand {d.equity:.3f})",
              "  - EVs: " + ", ".join(f"{k} {v:+.2f}" for k, v in d.action_evs.items())]
     for name, p in d.opponent_probabilities.items():
         cov = d.coverage[name]
-        lines.append(f"  - if {name}: opponent fold {p[0]:.2f} / call {p[1]:.2f} / raise {sum(p[2:]):.2f}; "
+        lines.append(f"  - if {name}: opponent fold {p[0]:.2f} / call {p[1]:.2f} / raise {sum(p[2:]):.2f} "
+                     f"-> continues {d.continue_fraction[name]:.2f}, equity if called {d.called_equity[name]:.3f}; "
                      f"training coverage `{cov['key']}` = {cov['training_rows']} rows{' (LOW)' if cov['low'] else ''}")
     return lines
 
@@ -84,6 +85,8 @@ def describe(agent, obs, seed: int) -> list[str]:
 def main() -> None:
     md = ["# Stage 4B: example decisions (illustrative only)", "",
           "Hand-picked spots, each decided by both EV agents with the same seed (identical equity). "
+          "Bets are valued with the hero's equity against the opponent's estimated continuing range "
+          "(strongest P(call)+P(re-raise) fraction of its possible hands). "
           "The ML agent has seen no hands of this opponent here (history = training priors). "
           "Not a tournament; not evidence of playing strength.", ""]
     for title, holes, board, actions in SPOTS:

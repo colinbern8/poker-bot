@@ -1,0 +1,148 @@
+{
+  "summary": [
+    {
+      "configuration": "frequency_old",
+      "spots": 300,
+      "fold": "2.3%",
+      "check_call": "50.7%",
+      "raise_half_pot": "0.7%",
+      "raise_pot": "0.3%",
+      "all_in": "46.0%",
+      "all-in with equity < 0.70": "28.3%"
+    },
+    {
+      "configuration": "frequency_new",
+      "spots": 300,
+      "fold": "2.3%",
+      "check_call": "53.7%",
+      "raise_half_pot": "0.7%",
+      "raise_pot": "0.3%",
+      "all_in": "43.0%",
+      "all-in with equity < 0.70": "25.3%"
+    },
+    {
+      "configuration": "ml_old",
+      "spots": 300,
+      "fold": "2.3%",
+      "check_call": "39.7%",
+      "raise_half_pot": "8.3%",
+      "raise_pot": "2.3%",
+      "all_in": "47.3%",
+      "all-in with equity < 0.70": "29.7%"
+    },
+    {
+      "configuration": "ml_new",
+      "spots": 300,
+      "fold": "2.3%",
+      "check_call": "63.0%",
+      "raise_half_pot": "1.0%",
+      "raise_pot": "1.0%",
+      "all_in": "32.7%",
+      "all-in with equity < 0.70": "15.7%"
+    }
+  ],
+  "timing": [
+    {
+      "configuration": "frequency_new",
+      "component": "equity",
+      "median ms": 224.57321499996397,
+      "95th pct ms": 272.91199100016
+    },
+    {
+      "configuration": "frequency_new",
+      "component": "model",
+      "median ms": 1.8973609999193286,
+      "95th pct ms": 2.513704050011256
+    },
+    {
+      "configuration": "frequency_new",
+      "component": "range",
+      "median ms": 287.26690399980725,
+      "95th pct ms": 364.8340667000639
+    },
+    {
+      "configuration": "frequency_new",
+      "component": "total",
+      "median ms": 522.5587060001544,
+      "95th pct ms": 624.5979441502869
+    },
+    {
+      "configuration": "ml_new",
+      "component": "equity",
+      "median ms": 225.866490000044,
+      "95th pct ms": 278.3307148001768
+    },
+    {
+      "configuration": "ml_new",
+      "component": "model",
+      "median ms": 32.27379450004264,
+      "95th pct ms": 39.76818355017713
+    },
+    {
+      "configuration": "ml_new",
+      "component": "range",
+      "median ms": 190.35107749982672,
+      "95th pct ms": 215.03831555025954
+    },
+    {
+      "configuration": "ml_new",
+      "component": "total",
+      "median ms": 435.04513049992966,
+      "95th pct ms": 522.7387233996525
+    },
+    {
+      "configuration": "frequency_old",
+      "component": "equity",
+      "median ms": 225.0529445000211,
+      "95th pct ms": 275.7579785000871
+    },
+    {
+      "configuration": "frequency_old",
+      "component": "model",
+      "median ms": 1.9034435001685779,
+      "95th pct ms": 2.5552691500024594
+    },
+    {
+      "configuration": "frequency_old",
+      "component": "range",
+      "median ms": 0.006927499953235383,
+      "95th pct ms": 0.008608299935985997
+    },
+    {
+      "configuration": "frequency_old",
+      "component": "total",
+      "median ms": 229.2802595000012,
+      "95th pct ms": 282.04255270011345
+    },
+    {
+      "configuration": "ml_old",
+      "component": "equity",
+      "median ms": 222.47815899982015,
+      "95th pct ms": 257.9542259501068
+    },
+    {
+      "configuration": "ml_old",
+      "component": "model",
+      "median ms": 32.40181149999444,
+      "95th pct ms": 39.49353754992445
+    },
+    {
+      "configuration": "ml_old",
+      "component": "range",
+      "median ms": 0.006986499784034095,
+      "95th pct ms": 0.009033499577526529
+    },
+    {
+      "configuration": "ml_old",
+      "component": "total",
+      "median ms": 257.9082605000167,
+      "95th pct ms": 301.32323709995035
+    }
+  ],
+  "changed": {
+    "frequency": 0.03,
+    "ml": 0.24666666666666667
+  },
+  "agreement_new": 0.8833333333333333,
+  "spots": 300
+}

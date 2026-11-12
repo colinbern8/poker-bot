@@ -19,8 +19,14 @@ Decision procedure, identical for both:
 2. For every legal bet/raise, the opponent's hypothetical observation after
    it (:mod:`hybridpoker.counterfactual`, public information only), and the
    opponent model's legal-masked response probabilities, in one batched call.
-3. EV of every legal action with the approved equations (:mod:`hybridpoker.ev`).
-4. The highest EV wins. Ties (within 1e-9 chips) go to the action committing
+3. For every bet, the hero's equity **if called**: against the opponent's
+   estimated continuing range, the strongest ``P(call) + P(re-raise)``
+   fraction of its unblocked hands (:mod:`hybridpoker.range_equity`),
+   estimated as the step-1 equity plus a low-noise correction from one
+   shared simulation. The same function and sample count are used by both
+   agents; only the predicted probabilities differ.
+4. EV of every legal action with the approved equations (:mod:`hybridpoker.ev`).
+5. The highest EV wins. Ties (within 1e-9 chips) go to the action committing
    **fewer additional chips**, then to the earlier action in ``CLASS_ORDER``.
 
 Every decision is recorded in ``agent.diagnostics``: equity, all action EVs,
@@ -54,6 +60,7 @@ from hybridpoker.observation import Observation, PublicHandSummary
 from hybridpoker.opponent_history import HistoryPriors
 from hybridpoker.opponent_predictor import PHASE4_MODEL_PATH, OpponentPredictor
 from hybridpoker.opponent_tracker import OpponentTracker
+from hybridpoker.range_equity import RANGE_EQUITY_SAMPLES, opponent_ranking, range_adjustments, top_count
 from hybridpoker.state_coverage import COVERAGE_PATH, LOW_COVERAGE_THRESHOLD, coverage_key, load_coverage
 
 FREQUENCY_PRIOR_PATH = Path("results/phase3/frequency_prior.json")
@@ -62,6 +69,29 @@ EQUITY_SAMPLES = 500
 TIE_TOLERANCE = 1e-9
 
 EquityFunction = Callable[[Observation, int, random.Random], float]
+# (observation, equity vs a random hand, continuing fractions, samples, rng) -> equity if called, per fraction
+CalledEquityFunction = Callable[[Observation, float, list, int, random.Random], list]
+
+
+def called_equities(observation: Observation, equity: float, fractions: list, samples: int,
+                    rng: random.Random) -> list:
+    """Hero equity if each bet is called: against the strongest ``fraction`` of hands.
+
+    The equity against a random hand (the same estimate the ProbabilityAgent uses) is
+    corrected by the low-noise difference "range minus all hands" from
+    :func:`hybridpoker.range_equity.range_adjustments` (one shared run for all bets).
+    A fraction of 0 (the opponent never continues) gives the called branch no weight,
+    so the plain equity is returned; a range covering every hand needs no correction.
+    """
+    positive = sorted({f for f in fractions if f > 0.0})
+    if not positive:
+        return [equity for _ in fractions]
+    ranking = opponent_ranking(tuple(observation.hole_cards), tuple(observation.board_cards))
+    if all(top_count(ranking, f) >= ranking.size for f in positive):
+        return [equity for _ in fractions]
+    adjustments = range_adjustments(observation.hole_cards, observation.board_cards, positive, samples,
+                                    seed=rng.getrandbits(63))
+    return [equity if f <= 0.0 else min(1.0, max(0.0, equity + adjustments[f])) for f in fractions]
 
 
 # --- Opponent probability models ---------------------------------------------------------
@@ -154,10 +184,13 @@ class DecisionDiagnostics:
     opponent_probabilities: dict[str, list[float]] = field(default_factory=dict)  # masked, per raise category
     opponent_raw_probabilities: dict[str, list[float]] = field(default_factory=dict)
     coverage: dict[str, dict[str, Any]] = field(default_factory=dict)  # per raise category
+    continue_fraction: dict[str, float] = field(default_factory=dict)  # P(call) + P(re-raise), per raise
+    called_equity: dict[str, float] = field(default_factory=dict)  # equity vs the continuing range, per raise
     hypothetical_obs: dict[str, dict[str, Any]] = field(default_factory=dict)  # obs_ columns, per raise category
     opponent_history_hands: int = 0
     equity_seconds: float = 0.0
     model_seconds: float = 0.0
+    range_seconds: float = 0.0
     total_seconds: float = 0.0
 
 
@@ -174,11 +207,15 @@ class EVAgent(Agent):
         equity_samples: int = EQUITY_SAMPLES,
         equity_fn: EquityFunction = hand_strength,
         coverage: dict[str, Any] | None = None,
+        called_equity_fn: CalledEquityFunction = called_equities,
+        range_samples: int = RANGE_EQUITY_SAMPLES,
     ) -> None:
         super().__init__(name)
         self.response_model = response_model
         self.equity_samples = equity_samples
         self.equity_fn = equity_fn
+        self.called_equity_fn = called_equity_fn
+        self.range_samples = range_samples
         self.coverage_counts = (coverage or {}).get("counts", {})
         self.low_coverage_threshold = (coverage or {}).get("low_coverage_threshold", LOW_COVERAGE_THRESHOLD)
         priors = response_model.priors
@@ -187,8 +224,9 @@ class EVAgent(Agent):
 
     def config(self) -> dict[str, Any]:
         return {**super().config(), "response_model": self.response_model.config(),
-                "equity_samples": self.equity_samples, "tie_break": "fewest additional chips, then CLASS_ORDER",
-                "decision_rule": "one-step EV (hybridpoker.ev)"}
+                "equity_samples": self.equity_samples, "range_samples": self.range_samples,
+                "tie_break": "fewest additional chips, then CLASS_ORDER",
+                "decision_rule": "one-step EV (hybridpoker.ev), called branch vs continuing range"}
 
     def observe_hand_end(self, summary: PublicHandSummary) -> None:
         if self.tracker is not None:
@@ -216,7 +254,13 @@ class EVAgent(Agent):
 
         responses = {a.category: ResponseProbabilities.from_action_probabilities(predicted.masked[i])
                      for i, a in enumerate(raises)}
-        values = [action_value(observation, a, equity, responses.get(a.category)) for a in observation.legal_actions]
+        range_start = time.perf_counter()
+        fractions = {c: min(1.0, r.call + r.raise_) for c, r in responses.items()}
+        estimates = self.called_equity_fn(observation, equity, list(fractions.values()), self.range_samples, rng)
+        called = dict(zip(fractions, estimates))
+        range_done = time.perf_counter()
+        values = [action_value(observation, a, equity, responses.get(a.category), called.get(a.category))
+                  for a in observation.legal_actions]
         chips = {a.category: a.chips_added for a in observation.legal_actions}
         chosen = self.choose(values, chips)
         reason = f"{chosen.explanation} (best of: " + ", ".join(
@@ -228,6 +272,7 @@ class EVAgent(Agent):
             opponent_history_hands=(int(round(np.expm1(self.tracker.history_features()["b_log_prior_hands"])))
                                     if self.tracker is not None else 0),
             equity_seconds=equity_done - start, model_seconds=model_done - model_start,
+            range_seconds=range_done - range_start,
         )
         for i, (action, hypothetical) in enumerate(zip(raises, hypotheticals)):
             cols = observation_columns(hypothetical)
@@ -238,6 +283,8 @@ class EVAgent(Agent):
             diag.opponent_raw_probabilities[name] = predicted.raw[i].tolist()
             diag.coverage[name] = {"key": key, "training_rows": count, "low": count < self.low_coverage_threshold}
             diag.hypothetical_obs[name] = cols
+            diag.continue_fraction[name] = fractions[action.category]
+            diag.called_equity[name] = called[action.category]
         diag.total_seconds = time.perf_counter() - start
         self.diagnostics.append(diag)
         return Decision(chosen.category, reason, equity)

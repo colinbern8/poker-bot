@@ -1048,6 +1048,47 @@ call took 2 ms (Frequency) and about 52 ms (ML, including feature
 building). Stage 4C will measure median and 95th-percentile latency with
 the cache warmed.
 
+### Stage 4B continued: continuing-range correction (2026-11-12)
+
+The project owner approved Option A. Its implementation and review are in
+`docs/phase4_plan.md` section 11.
+
+**Change.** A bet's "called" branch now uses the hero's equity against the
+opponent's estimated continuing range: the strongest
+`P(call) + P(re-raise)` fraction of its unblocked hands, using public
+information only. The same calculation is used for both agents.
+
+**Estimator defect found and fixed.** Independent 200-sample estimates
+were noisier than the correction itself, so they were replaced by a
+common-random-numbers difference: one shared run of 400 samples.
+
+**Audit** (300 fixed validation-split spots):
+
+- The ML agent's all-in rate fell from 47.3% to 32.7%.
+- Its all-ins with equity below 0.70 fell from 29.7% to 15.7%.
+- The Frequency agent changed only slightly: all-in 46.0% to 43.0%.
+
+**Runtime:** median 435 ms (ML) and 523 ms (Frequency) per decision; 95th
+percentile 523 ms and 625 ms. About 2× the old rule.
+
+**Tests:** local, Python 3.12.3: 399 passed. New tests:
+
+- `test_range_equity.py` (12): blockers, rankings, exactness on the river,
+  monotonicity, seeding, and the low-noise estimator.
+- `test_ev_agent.py` (+9): always-calling, always-folding and
+  frequently-re-raising opponents; strong vs weak hands; small vs large
+  bets; preflop and postflop; all-ins and short stacks; QQ no longer
+  shoving against a selective opponent; and public-only inputs.
+
+The Phase 2 regression hashes still match.
+
+**Remaining issue.** All-in is still the chosen action in 33–43% of
+audited spots, because the one-step rule's called-branch value grows with
+bet size whenever the hero is ahead of the calling range (the approved
+"no future betting" assumption). All-in responses are also poorly covered
+in the training data. A decision is needed before Stage 4C.
+
 ### Next milestone
 
-Stage 4B review and a decision on the all-in finding, before Stage 4C.
+Stage 4B review and a decision on the remaining all-in tendency, before
+Stage 4C.
