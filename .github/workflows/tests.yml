@@ -1,0 +1,33 @@
+# Runs the test suite on Linux and Windows every time code is pushed
+# or a pull request is opened. Results appear as a check mark on GitHub.
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Download the repository code
+        uses: actions/checkout@v6
+
+      - name: Install Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -e .
+
+      - name: Run tests
+        run: python -m pytest
