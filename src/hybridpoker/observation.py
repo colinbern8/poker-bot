@@ -28,8 +28,8 @@ class PublicAction:
     is_all_in: bool
 
     def short(self) -> str:
-        """Compact text form, e.g. ``button:raise_pot:6``."""
-        return f"{self.position}:{self.category.value}:{self.bet_to}"
+        """Compact text form, e.g. ``preflop:button:raise_pot:6``."""
+        return f"{self.street}:{self.position}:{self.category.value}:{self.bet_to}"
 
 
 @dataclass(frozen=True)
