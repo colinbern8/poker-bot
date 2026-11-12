@@ -1,0 +1,211 @@
+{
+  "configs": [
+    {
+      "aggression": 0.0,
+      "bluff_rate": 0.0,
+      "equity_samples": 200,
+      "family": "calling_station",
+      "looseness": 1.0,
+      "name": "calling_station",
+      "pool": "train",
+      "variant": 0
+    },
+    {
+      "aggression": 0.0,
+      "bluff_rate": 0.095,
+      "equity_samples": 200,
+      "family": "calling_station",
+      "looseness": 0.965,
+      "name": "calling_station_v1",
+      "pool": "train",
+      "variant": 1
+    },
+    {
+      "aggression": 0.019,
+      "bluff_rate": 0.0,
+      "equity_samples": 200,
+      "family": "calling_station",
+      "looseness": 1.0,
+      "name": "calling_station_v2",
+      "pool": "train",
+      "variant": 2
+    },
+    {
+      "aggression": 0.0,
+      "bluff_rate": 0.027,
+      "equity_samples": 200,
+      "family": "calling_station",
+      "looseness": 1.0,
+      "name": "calling_station_v3",
+      "pool": "heldout",
+      "variant": 3
+    },
+    {
+      "aggression": 0.85,
+      "bluff_rate": 0.35,
+      "equity_samples": 200,
+      "family": "maniac",
+      "looseness": 0.75,
+      "name": "maniac",
+      "pool": "train",
+      "variant": 0
+    },
+    {
+      "aggression": 0.844,
+      "bluff_rate": 0.348,
+      "equity_samples": 200,
+      "family": "maniac",
+      "looseness": 0.733,
+      "name": "maniac_v1",
+      "pool": "train",
+      "variant": 1
+    },
+    {
+      "aggression": 0.855,
+      "bluff_rate": 0.432,
+      "equity_samples": 200,
+      "family": "maniac",
+      "looseness": 0.776,
+      "name": "maniac_v2",
+      "pool": "train",
+      "variant": 2
+    },
+    {
+      "aggression": 0.798,
+      "bluff_rate": 0.364,
+      "equity_samples": 200,
+      "family": "maniac",
+      "looseness": 0.849,
+      "name": "maniac_v3",
+      "pool": "heldout",
+      "variant": 3
+    },
+    {
+      "aggression": 0.3,
+      "bluff_rate": 0.0,
+      "equity_samples": 200,
+      "family": "nit",
+      "looseness": 0.1,
+      "name": "nit",
+      "pool": "train",
+      "variant": 0
+    },
+    {
+      "aggression": 0.208,
+      "bluff_rate": 0.087,
+      "equity_samples": 200,
+      "family": "nit",
+      "looseness": 0.11,
+      "name": "nit_v1",
+      "pool": "heldout",
+      "variant": 1
+    },
+    {
+      "aggression": 0.285,
+      "bluff_rate": 0.0,
+      "equity_samples": 200,
+      "family": "nit",
+      "looseness": 0.173,
+      "name": "nit_v2",
+      "pool": "train",
+      "variant": 2
+    },
+    {
+      "aggression": 0.386,
+      "bluff_rate": 0.02,
+      "equity_samples": 200,
+      "family": "nit",
+      "looseness": 0.199,
+      "name": "nit_v3",
+      "pool": "train",
+      "variant": 3
+    },
+    {
+      "aggression": 0.6,
+      "bluff_rate": 0.08,
+      "equity_samples": 200,
+      "family": "solid",
+      "looseness": 0.45,
+      "name": "solid",
+      "pool": "train",
+      "variant": 0
+    },
+    {
+      "aggression": 0.597,
+      "bluff_rate": 0.09,
+      "equity_samples": 200,
+      "family": "solid",
+      "looseness": 0.501,
+      "name": "solid_v1",
+      "pool": "train",
+      "variant": 1
+    },
+    {
+      "aggression": 0.519,
+      "bluff_rate": 0.112,
+      "equity_samples": 200,
+      "family": "solid",
+      "looseness": 0.496,
+      "name": "solid_v2",
+      "pool": "heldout",
+      "variant": 2
+    },
+    {
+      "aggression": 0.619,
+      "bluff_rate": 0.054,
+      "equity_samples": 200,
+      "family": "solid",
+      "looseness": 0.396,
+      "name": "solid_v3",
+      "pool": "train",
+      "variant": 3
+    }
+  ],
+  "deal_count": 60,
+  "master_seed": 3000,
+  "matches": [
+    {
+      "deal_count": 60,
+      "hero": "maniac",
+      "number": 0,
+      "scored_role": "both",
+      "seed": 4893748196568738415,
+      "split": "pilot_pool",
+      "villain": "nit_v2"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station_v1",
+      "number": 1,
+      "scored_role": "both",
+      "seed": 8170453091648955620,
+      "split": "pilot_pool",
+      "villain": "solid_v1"
+    },
+    {
+      "deal_count": 60,
+      "hero": "nit_v3",
+      "number": 2,
+      "scored_role": "both",
+      "seed": 4703245784241242117,
+      "split": "pilot_pool",
+      "villain": "solid_v3"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station",
+      "number": 3,
+      "scored_role": "villain",
+      "seed": 794622549962316490,
+      "split": "pilot_heldout",
+      "villain": "solid_v2"
+    }
+  ],
+  "name": "phase3_pilot",
+  "prior_splits": [
+    "pilot_pool"
+  ],
+  "schema_version": 1,
+  "seat_swap": true,
+  "split_attempt": null
+}

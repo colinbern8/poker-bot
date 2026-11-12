@@ -1,0 +1,607 @@
+{
+  "configs": [
+    {
+      "aggression": 0.0,
+      "bluff_rate": 0.0,
+      "equity_samples": 200,
+      "family": "calling_station",
+      "looseness": 1.0,
+      "name": "calling_station",
+      "pool": "train",
+      "variant": 0
+    },
+    {
+      "aggression": 0.0,
+      "bluff_rate": 0.095,
+      "equity_samples": 200,
+      "family": "calling_station",
+      "looseness": 0.965,
+      "name": "calling_station_v1",
+      "pool": "train",
+      "variant": 1
+    },
+    {
+      "aggression": 0.019,
+      "bluff_rate": 0.0,
+      "equity_samples": 200,
+      "family": "calling_station",
+      "looseness": 1.0,
+      "name": "calling_station_v2",
+      "pool": "train",
+      "variant": 2
+    },
+    {
+      "aggression": 0.0,
+      "bluff_rate": 0.027,
+      "equity_samples": 200,
+      "family": "calling_station",
+      "looseness": 1.0,
+      "name": "calling_station_v3",
+      "pool": "heldout",
+      "variant": 3
+    },
+    {
+      "aggression": 0.85,
+      "bluff_rate": 0.35,
+      "equity_samples": 200,
+      "family": "maniac",
+      "looseness": 0.75,
+      "name": "maniac",
+      "pool": "train",
+      "variant": 0
+    },
+    {
+      "aggression": 0.844,
+      "bluff_rate": 0.348,
+      "equity_samples": 200,
+      "family": "maniac",
+      "looseness": 0.733,
+      "name": "maniac_v1",
+      "pool": "train",
+      "variant": 1
+    },
+    {
+      "aggression": 0.855,
+      "bluff_rate": 0.432,
+      "equity_samples": 200,
+      "family": "maniac",
+      "looseness": 0.776,
+      "name": "maniac_v2",
+      "pool": "train",
+      "variant": 2
+    },
+    {
+      "aggression": 0.798,
+      "bluff_rate": 0.364,
+      "equity_samples": 200,
+      "family": "maniac",
+      "looseness": 0.849,
+      "name": "maniac_v3",
+      "pool": "heldout",
+      "variant": 3
+    },
+    {
+      "aggression": 0.3,
+      "bluff_rate": 0.0,
+      "equity_samples": 200,
+      "family": "nit",
+      "looseness": 0.1,
+      "name": "nit",
+      "pool": "train",
+      "variant": 0
+    },
+    {
+      "aggression": 0.208,
+      "bluff_rate": 0.087,
+      "equity_samples": 200,
+      "family": "nit",
+      "looseness": 0.11,
+      "name": "nit_v1",
+      "pool": "heldout",
+      "variant": 1
+    },
+    {
+      "aggression": 0.285,
+      "bluff_rate": 0.0,
+      "equity_samples": 200,
+      "family": "nit",
+      "looseness": 0.173,
+      "name": "nit_v2",
+      "pool": "train",
+      "variant": 2
+    },
+    {
+      "aggression": 0.386,
+      "bluff_rate": 0.02,
+      "equity_samples": 200,
+      "family": "nit",
+      "looseness": 0.199,
+      "name": "nit_v3",
+      "pool": "train",
+      "variant": 3
+    },
+    {
+      "aggression": 0.6,
+      "bluff_rate": 0.08,
+      "equity_samples": 200,
+      "family": "solid",
+      "looseness": 0.45,
+      "name": "solid",
+      "pool": "train",
+      "variant": 0
+    },
+    {
+      "aggression": 0.597,
+      "bluff_rate": 0.09,
+      "equity_samples": 200,
+      "family": "solid",
+      "looseness": 0.501,
+      "name": "solid_v1",
+      "pool": "train",
+      "variant": 1
+    },
+    {
+      "aggression": 0.519,
+      "bluff_rate": 0.112,
+      "equity_samples": 200,
+      "family": "solid",
+      "looseness": 0.496,
+      "name": "solid_v2",
+      "pool": "heldout",
+      "variant": 2
+    },
+    {
+      "aggression": 0.619,
+      "bluff_rate": 0.054,
+      "equity_samples": 200,
+      "family": "solid",
+      "looseness": 0.396,
+      "name": "solid_v3",
+      "pool": "train",
+      "variant": 3
+    }
+  ],
+  "deal_count": 60,
+  "master_seed": 3000,
+  "matches": [
+    {
+      "deal_count": 60,
+      "hero": "nit",
+      "number": 0,
+      "scored_role": "both",
+      "seed": 3108214740313166683,
+      "split": "validation",
+      "villain": "nit_v3"
+    },
+    {
+      "deal_count": 60,
+      "hero": "solid_v1",
+      "number": 1,
+      "scored_role": "both",
+      "seed": 263982331672754040,
+      "split": "train",
+      "villain": "calling_station"
+    },
+    {
+      "deal_count": 60,
+      "hero": "maniac",
+      "number": 2,
+      "scored_role": "both",
+      "seed": 3711393798606970792,
+      "split": "validation",
+      "villain": "calling_station_v2"
+    },
+    {
+      "deal_count": 60,
+      "hero": "nit_v2",
+      "number": 3,
+      "scored_role": "both",
+      "seed": 2894440136027975485,
+      "split": "train",
+      "villain": "maniac_v2"
+    },
+    {
+      "deal_count": 60,
+      "hero": "solid_v3",
+      "number": 4,
+      "scored_role": "both",
+      "seed": 1636270047714680430,
+      "split": "train",
+      "villain": "maniac_v1"
+    },
+    {
+      "deal_count": 60,
+      "hero": "solid",
+      "number": 5,
+      "scored_role": "both",
+      "seed": 5779732063526543670,
+      "split": "test",
+      "villain": "calling_station_v1"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station",
+      "number": 6,
+      "scored_role": "both",
+      "seed": 193221692472107453,
+      "split": "train",
+      "villain": "nit_v3"
+    },
+    {
+      "deal_count": 60,
+      "hero": "nit",
+      "number": 7,
+      "scored_role": "both",
+      "seed": 8536389630322839563,
+      "split": "train",
+      "villain": "maniac"
+    },
+    {
+      "deal_count": 60,
+      "hero": "maniac_v2",
+      "number": 8,
+      "scored_role": "both",
+      "seed": 1153947687429842635,
+      "split": "train",
+      "villain": "solid_v1"
+    },
+    {
+      "deal_count": 60,
+      "hero": "maniac_v1",
+      "number": 9,
+      "scored_role": "both",
+      "seed": 4332003650947916052,
+      "split": "train",
+      "villain": "calling_station_v2"
+    },
+    {
+      "deal_count": 60,
+      "hero": "solid",
+      "number": 10,
+      "scored_role": "both",
+      "seed": 9106032615370946170,
+      "split": "validation",
+      "villain": "nit_v2"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station_v1",
+      "number": 11,
+      "scored_role": "both",
+      "seed": 7000053987377291034,
+      "split": "test",
+      "villain": "solid_v3"
+    },
+    {
+      "deal_count": 60,
+      "hero": "maniac",
+      "number": 12,
+      "scored_role": "both",
+      "seed": 7843196509890020929,
+      "split": "test",
+      "villain": "nit_v3"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station",
+      "number": 13,
+      "scored_role": "both",
+      "seed": 3435950858805364569,
+      "split": "train",
+      "villain": "maniac_v2"
+    },
+    {
+      "deal_count": 60,
+      "hero": "nit",
+      "number": 14,
+      "scored_role": "both",
+      "seed": 7461453960802503784,
+      "split": "validation",
+      "villain": "maniac_v1"
+    },
+    {
+      "deal_count": 60,
+      "hero": "solid_v1",
+      "number": 15,
+      "scored_role": "both",
+      "seed": 9172565578135099489,
+      "split": "train",
+      "villain": "solid"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station_v2",
+      "number": 16,
+      "scored_role": "both",
+      "seed": 9107716978986000046,
+      "split": "validation",
+      "villain": "calling_station_v1"
+    },
+    {
+      "deal_count": 60,
+      "hero": "nit_v2",
+      "number": 17,
+      "scored_role": "both",
+      "seed": 2910734287186016096,
+      "split": "train",
+      "villain": "solid_v3"
+    },
+    {
+      "deal_count": 60,
+      "hero": "maniac_v2",
+      "number": 18,
+      "scored_role": "both",
+      "seed": 3799427431793108457,
+      "split": "train",
+      "villain": "nit_v3"
+    },
+    {
+      "deal_count": 60,
+      "hero": "maniac_v1",
+      "number": 19,
+      "scored_role": "both",
+      "seed": 1087921841421326354,
+      "split": "train",
+      "villain": "maniac"
+    },
+    {
+      "deal_count": 60,
+      "hero": "solid",
+      "number": 20,
+      "scored_role": "both",
+      "seed": 2950793006419650291,
+      "split": "train",
+      "villain": "calling_station"
+    },
+    {
+      "deal_count": 60,
+      "hero": "nit",
+      "number": 21,
+      "scored_role": "both",
+      "seed": 2912474134525875949,
+      "split": "train",
+      "villain": "calling_station_v1"
+    },
+    {
+      "deal_count": 60,
+      "hero": "solid_v1",
+      "number": 22,
+      "scored_role": "both",
+      "seed": 3097978212008396141,
+      "split": "test",
+      "villain": "solid_v3"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station_v2",
+      "number": 23,
+      "scored_role": "both",
+      "seed": 4229698364879931030,
+      "split": "train",
+      "villain": "nit_v2"
+    },
+    {
+      "deal_count": 60,
+      "hero": "nit_v3",
+      "number": 24,
+      "scored_role": "both",
+      "seed": 4033981128576664143,
+      "split": "train",
+      "villain": "maniac_v1"
+    },
+    {
+      "deal_count": 60,
+      "hero": "maniac_v2",
+      "number": 25,
+      "scored_role": "both",
+      "seed": 145894088660277940,
+      "split": "train",
+      "villain": "solid"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station_v1",
+      "number": 26,
+      "scored_role": "both",
+      "seed": 7331214781242756439,
+      "split": "train",
+      "villain": "maniac"
+    },
+    {
+      "deal_count": 60,
+      "hero": "solid_v3",
+      "number": 27,
+      "scored_role": "both",
+      "seed": 6448916993585744694,
+      "split": "test",
+      "villain": "calling_station"
+    },
+    {
+      "deal_count": 60,
+      "hero": "nit",
+      "number": 28,
+      "scored_role": "both",
+      "seed": 9168866548373558861,
+      "split": "train",
+      "villain": "nit_v2"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station_v2",
+      "number": 29,
+      "scored_role": "both",
+      "seed": 4567930187765961443,
+      "split": "train",
+      "villain": "solid_v1"
+    },
+    {
+      "deal_count": 60,
+      "hero": "solid",
+      "number": 30,
+      "scored_role": "both",
+      "seed": 3333288497517718913,
+      "split": "train",
+      "villain": "nit_v3"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station_v1",
+      "number": 31,
+      "scored_role": "both",
+      "seed": 9119898863633376295,
+      "split": "train",
+      "villain": "maniac_v1"
+    },
+    {
+      "deal_count": 60,
+      "hero": "maniac_v2",
+      "number": 32,
+      "scored_role": "both",
+      "seed": 1593180374096722068,
+      "split": "train",
+      "villain": "solid_v3"
+    },
+    {
+      "deal_count": 60,
+      "hero": "maniac",
+      "number": 33,
+      "scored_role": "both",
+      "seed": 1835779356418195843,
+      "split": "train",
+      "villain": "nit_v2"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station",
+      "number": 34,
+      "scored_role": "both",
+      "seed": 2437361171303909401,
+      "split": "train",
+      "villain": "calling_station_v2"
+    },
+    {
+      "deal_count": 60,
+      "hero": "solid_v1",
+      "number": 35,
+      "scored_role": "both",
+      "seed": 2729776935229612125,
+      "split": "train",
+      "villain": "nit"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station_v3",
+      "number": 36,
+      "scored_role": "hero",
+      "seed": 405804262913872372,
+      "split": "heldout",
+      "villain": "maniac"
+    },
+    {
+      "deal_count": 60,
+      "hero": "nit_v3",
+      "number": 37,
+      "scored_role": "villain",
+      "seed": 3767257806751381828,
+      "split": "heldout",
+      "villain": "calling_station_v3"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station_v3",
+      "number": 38,
+      "scored_role": "hero",
+      "seed": 1431616394905800687,
+      "split": "heldout",
+      "villain": "solid_v1"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station",
+      "number": 39,
+      "scored_role": "villain",
+      "seed": 6333275663665230442,
+      "split": "heldout",
+      "villain": "maniac_v3"
+    },
+    {
+      "deal_count": 60,
+      "hero": "nit_v3",
+      "number": 40,
+      "scored_role": "villain",
+      "seed": 7280399842884675349,
+      "split": "heldout",
+      "villain": "maniac_v3"
+    },
+    {
+      "deal_count": 60,
+      "hero": "solid",
+      "number": 41,
+      "scored_role": "villain",
+      "seed": 7567682224541431959,
+      "split": "heldout",
+      "villain": "maniac_v3"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station_v1",
+      "number": 42,
+      "scored_role": "villain",
+      "seed": 4264878228700868040,
+      "split": "heldout",
+      "villain": "nit_v1"
+    },
+    {
+      "deal_count": 60,
+      "hero": "nit_v1",
+      "number": 43,
+      "scored_role": "hero",
+      "seed": 6344863878253913027,
+      "split": "heldout",
+      "villain": "maniac_v2"
+    },
+    {
+      "deal_count": 60,
+      "hero": "nit_v1",
+      "number": 44,
+      "scored_role": "hero",
+      "seed": 8260073274886500957,
+      "split": "heldout",
+      "villain": "solid_v3"
+    },
+    {
+      "deal_count": 60,
+      "hero": "calling_station",
+      "number": 45,
+      "scored_role": "villain",
+      "seed": 7452557101726702876,
+      "split": "heldout",
+      "villain": "solid_v2"
+    },
+    {
+      "deal_count": 60,
+      "hero": "solid_v2",
+      "number": 46,
+      "scored_role": "hero",
+      "seed": 9202805936334633582,
+      "split": "heldout",
+      "villain": "maniac_v1"
+    },
+    {
+      "deal_count": 60,
+      "hero": "nit",
+      "number": 47,
+      "scored_role": "villain",
+      "seed": 2867121738086213083,
+      "split": "heldout",
+      "villain": "solid_v2"
+    }
+  ],
+  "name": "phase3",
+  "prior_splits": [
+    "train"
+  ],
+  "schema_version": 1,
+  "seat_swap": true,
+  "split_attempt": 0
+}

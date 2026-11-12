@@ -1,6 +1,6 @@
 # Phase 3 Plan: Supervised Opponent Modeling
 
-Status: **design approved 2026-11-12; implementation plan awaiting approval.**
+Status: **design and implementation plan approved 2026-11-12. Stage 1 (pilot) implemented; awaiting pilot review.**
 Branch: `phase-3-machine-learning`.
 Competition presentation: **December 7–9, 2026**.
 
@@ -183,13 +183,23 @@ minutes with 4 worker processes. The pilot confirms this.
 
 The manifest records:
 
-- schema version, master seed and git commit;
+- schema version and master seed;
 - all 16 configurations with parameters and pool membership;
 - for every match: number, master seed, hero and villain configuration,
-  split (`train`, `validation`, `test` or `heldout`), the scored role for
-  held-out matches, and the deal count;
+  split (`train`, `validation`, `test` or `heldout`; the pilot uses
+  `pilot_pool` and `pilot_heldout`), the scored role (`both`, or the
+  role of the held-out configuration), and the deal count;
 - the accepted split attempt number;
-- software versions.
+- `prior_splits`: the splits allowed to fit the history priors (`train`;
+  `pilot_pool` in the pilot).
+
+The manifest deliberately contains **no timestamps, git commit or
+software versions**, so rebuilding it gives byte-identical JSON (audit
+L11). Those run-level details are recorded in each match's
+`metadata.json` (Phase 2 format: versions and git commit) and in
+`generation_summary.json` (timings, worker count, machine, versions, git
+commit) next to the raw logs. `scripts/build_manifests.py --check`
+verifies the committed manifests.
 
 Each match's `metadata.json` (Phase 2 format) also stores the match
 number, split and manifest hash in its `extra` field. A run is complete
@@ -317,13 +327,18 @@ for the final report.
 
 1. Predict probabilities for all five classes.
 2. Set probabilities of illegal actions (from `obs_legal_*`) to 0.
-3. Add a floor of 1e-6 to each legal action and renormalize to sum
-   to 1. This keeps log-loss finite when a model gives 0 to a legal
-   action.
-4. The predicted class is the most probable legal action.
+3. Renormalize the legal probabilities to sum to 1 (if a model gave
+   every legal action 0, use a uniform distribution over legal actions).
+4. Raise every legal probability to at least 1e-6 and renormalize again,
+   so each row sums to exactly 1. This keeps log-loss finite when a model
+   gives 0 to a legal action.
+5. Keep the raw (unmasked) probabilities unchanged alongside the masked
+   ones for diagnostics, e.g. probability wasted on illegal actions.
+6. The predicted class is the most probable legal action.
 
 The same masking is applied to every model, including the Dummy
-baseline, so comparisons are fair.
+baseline, so comparisons are fair. Implemented and tested in Stage 1 as
+`action_probabilities.mask_and_renormalize`.
 
 ## 9. Evaluation
 
@@ -393,6 +408,32 @@ manifest.
 
 - Configuration generator, manifest builder, parallel generation script,
   loader, Feature Sets A and B, and leakage tests L1–L11.
+- Pairing-balance tests: every training-pool configuration plays exactly
+  6 matches, no pair repeats, no self-pairs, per-split appearances add
+  up, and every held-out configuration meets three different families.
+- Probability masking, clipping and renormalization, with raw
+  probabilities kept for diagnostics, and its tests.
+- Each audit is also tested against a deliberately leaky input, so a
+  passing audit is meaningful.
+
+Stage 1 files:
+
+| File | Purpose |
+|---|---|
+| `src/hybridpoker/opponent_configs.py` | 16 configurations, held-out choice |
+| `src/hybridpoker/dataset_manifest.py` | Pairings, roles, seeds, splits, manifest JSON |
+| `src/hybridpoker/dataset_generation.py` | Play one manifest match and write its logs |
+| `src/hybridpoker/dataset_loader.py` | Load complete runs, check them against the manifest |
+| `src/hybridpoker/features.py` | Feature Set A |
+| `src/hybridpoker/opponent_history.py` | Feature Set B, player role, priors |
+| `src/hybridpoker/action_probabilities.py` | Fixed class order, legal mask, clipping |
+| `src/hybridpoker/leakage.py` | Audits L1–L11 |
+| `scripts/build_manifests.py` | Write or `--check` the committed manifests |
+| `scripts/generate_dataset.py` | Parallel generation from a manifest |
+| `scripts/pilot_report.py` | Pilot report (`results/phase3/pilot_report.md`) |
+| `data/manifests/*.json` | Committed manifests |
+| `tests/test_*` (7 new files + `conftest.py`) | Tests for all of the above |
+
 - 4 pilot matches with pilot seeds:
   - 3 training-pool pairings covering all four preset families;
   - 1 held-out configuration against a training-pool configuration;
@@ -483,3 +524,4 @@ must not overrun much past Nov 22.
 | Date | Change |
 |---|---|
 | 2026-11-12 | Plan written from the approved decisions. |
+| 2026-11-12 | Implementation plan and six detail decisions approved. Added: pairing-balance tests; probability clipping with renormalization and preserved raw probabilities. Manifest excludes git commit and versions (kept in run metadata and the generation summary) so it rebuilds byte-identically. Pilot split names `pilot_pool` / `pilot_heldout`. |
