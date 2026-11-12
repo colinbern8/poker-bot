@@ -140,7 +140,9 @@ def main() -> None:
            f"- {runtime['workers']} worker processes on {runtime['cpu_count']} CPUs.",
            f"- Git commit recorded per match (at the moment each match was written): "
            + ", ".join(f"`{c}` x {n}" for c, n in sorted(commits.items())) + "; summary commit at start: "
-           f"`{(runtime['git_commit_at_start'] or 'not recorded')[:7]}`, at end: `{runtime['git_commit_at_end'][:7]}`.",
+           + (f"`{runtime['git_commit_at_start'][:7]}`" if runtime["git_commit_at_start"]
+              else "not recorded (this summary predates the field)")
+           + f", at end: `{runtime['git_commit_at_end'][:7]}`.",
            f"- Wall time: **{runtime['wall_seconds'] / 60:.1f} min** for {total_decisions:,} decisions "
            f"(**{runtime['decisions_per_wall_second']:.1f} decisions/s overall**, "
            f"{runtime['decisions_per_process_second']:.1f} decisions/s per process).",
