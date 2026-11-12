@@ -383,3 +383,13 @@ independent match.
 Phase 3: generate the dataset per the plan above, engineer features from
 `obs_` columns, and train supervised opponent models against a simple
 baseline. It needs a plan approved before work starts.
+
+## Phase 3: Supervised opponent modeling (in progress)
+
+Branch: `phase-3-machine-learning`.
+
+The approved design is in [`docs/phase3_plan.md`](phase3_plan.md). It
+covers the 16 opponent configurations, the 48 matches from master seed
+3000, the 26/5/5 + 12 held-out match splits, Feature Sets A and B, the
+models, metrics and leakage tests. No Phase 3 code or data exists yet.
+The four-match pilot comes first and stops for review.
