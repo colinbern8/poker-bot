@@ -391,5 +391,114 @@ Branch: `phase-3-machine-learning`.
 The approved design is in [`docs/phase3_plan.md`](phase3_plan.md). It
 covers the 16 opponent configurations, the 48 matches from master seed
 3000, the 26/5/5 + 12 held-out match splits, Feature Sets A and B, the
-models, metrics and leakage tests. No Phase 3 code or data exists yet.
-The four-match pilot comes first and stops for review.
+models, metrics and leakage tests.
+
+### Stage 1: pilot (2026-11-12): completed work
+
+- `opponent_configs.py`: 4 presets plus 3 seeded variants each. One
+  variant per preset is held out (calling_station_v3, maniac_v3, nit_v1,
+  solid_v2).
+- `dataset_manifest.py`:
+  - 36 training-pool matches from a round-robin schedule (each
+    configuration plays exactly 6, no repeated pairs);
+  - a balanced 26/5/5 split, accepted on the first draw;
+  - 12 held-out matches;
+  - a 4-match pilot with separate seeds.
+  Both manifests are committed under `data/manifests/` and rebuild
+  byte-identically.
+- `dataset_generation.py`, `scripts/generate_dataset.py`: parallel
+  generation from a manifest.
+- `dataset_loader.py`: accepts only complete runs that match the manifest
+  (seed, configurations, manifest hash).
+- `features.py`: Feature Set A, 47 features (situation, legal actions,
+  board texture, betting history).
+- `opponent_history.py`: Feature Set B, with 13 history features from
+  earlier deals only. The mirror hand is excluded, the player role comes
+  from public seating, and rates use alpha = 10 smoothing toward
+  train-only priors.
+- `action_probabilities.py`:
+  - fixed class order;
+  - legal-action mask, a 1e-6 floor and renormalization;
+  - raw probabilities kept for diagnostics.
+- `leakage.py`: audits L1–L11. Each is also tested against a deliberately
+  leaky input.
+- `scripts/pilot_report.py` produces
+  [`results/phase3/pilot_report.md`](../results/phase3/pilot_report.md).
+
+### Engineering decisions (Stage 1)
+
+| Decision | Reason |
+|---|---|
+| Manifest has no timestamps, versions or git commit | It must rebuild byte-identically. Those details are in each run's `metadata.json` and in `generation_summary.json`. |
+| Feature builders select an explicit column list first | They physically cannot read hidden, label, outcome or id columns. |
+| Player role from `id_seat_swap` and `obs_position` | Tracks "the opponent at this seat" the way a real player could, without reading labels. |
+| History counts are summed per deal, then shifted by one deal | Excluding the whole current deal (both seatings) is built into the computation, not a filter that could be forgotten. |
+| Audits tested against deliberate leaks | A passing audit only means something if it fails on a leak. |
+
+### Pilot results (4 matches, 60 deals each; validation only, not used for any reported result)
+
+- **Size:** 3,669 decision rows (3,133 scored). Rows per match ranged
+  from 698 (maniac vs nit_v2) to 1,052; the mean was 917, or 5.8–8.8
+  decisions per hand.
+- **Runtime:** 93.8 s wall time with 4 worker processes on 4 CPUs.
+  Each process ran at 14.0 decisions/s while running in parallel, about
+  half the single-process rate from Phase 2. The preflop-cache warm-up
+  took up to 16.7 s per worker.
+- **Projection (extrapolated, not measured):** about 44,000 rows for
+  48 matches, about 13 min wall time with 4 workers.
+- **Actions:**
+
+  | Action | Rows | Share |
+  |---|---|---|
+  | check_call | 2,810 | 76.6% |
+  | raise_half_pot | 420 | 11.4% |
+  | raise_pot | 258 | 7.0% |
+  | fold | 147 | 4.0% |
+  | all_in | 34 | 0.9% |
+
+  `all_in` is below 1% and is flagged as a rare class. Action mixes differ
+  clearly by style: calling-station configurations chose check_call 95%
+  of the time; maniacs raised 57% of the time; nits folded 14% of the
+  time.
+- **Features:**
+  - No missing values in A or B.
+  - All history rates lie within [0, 1].
+  - At deal 0 the history features equal the priors, with zero counts.
+  - Earlier-hand counts never decrease.
+  - `a_legal_check_call` is constant: check or call is always legal.
+  - By deals 40–59, average history features differ by style. For
+    example, the facing-a-bet fold rate is 0.28 for nits and 0.01 for
+    calling stations, against a prior of 0.15. This is descriptive only,
+    not a model result.
+- **Audits:** L1–L11 all passed on the pilot data:
+  - 3,669 rows replayed with fake hole cards gave 0 mismatches;
+  - the player role matched in 100% of rows;
+  - all 52 seeds are distinct;
+  - a regenerated match was byte-identical (223,957 bytes).
+
+### Tests executed (Stage 1)
+
+Local, Linux, Python 3.12.3: `python -m pytest` gave
+`279 passed in 101.36s` (183 from earlier phases and 96 new).
+
+### Known problems and limitations (Stage 1)
+
+- **Held-out configurations are close to their presets.** For example,
+  calling_station_v3 differs from calling_station only by bluff rate
+  0.027. The held-out evaluation therefore tests generalization to near
+  variants, not to new styles.
+- **Rare classes.** `all_in` is 0.9% of rows overall, and calling
+  stations never chose `raise_pot` or `all_in`. Macro-F1 will be noisy on
+  rare classes, and accuracy alone would be misleading: always predicting
+  check_call scores 77%.
+- **Family balance.** Maniac matches have shorter hands, so maniacs
+  produce fewer rows (296 of 3,669 in the pilot).
+- **Sampled audits.** L3 truncation checks a sample of 150 rows, and L4/L5
+  check sampled deals per match. L2 and L6–L10 cover every row.
+- **Parallel speed.** Throughput per process roughly halves when 4
+  processes share 4 CPUs.
+
+### Next milestone
+
+Pilot review by the project owner. If approved: Stage 2, generating the
+48-match dataset from the committed manifest.

@@ -1,0 +1,250 @@
+{
+  "manifest": "phase3_pilot",
+  "size": {
+    "total_rows": 3669,
+    "scored_rows": 3133,
+    "per_match": [
+      {
+        "match": 0,
+        "split": "pilot_pool",
+        "hero": "maniac",
+        "villain": "nit_v2",
+        "hands": 120,
+        "rows": 698,
+        "rows/hand": 5.816666666666666,
+        "hero rows": 296,
+        "villain rows": 402,
+        "scored rows": 698
+      },
+      {
+        "match": 1,
+        "split": "pilot_pool",
+        "hero": "calling_station_v1",
+        "villain": "solid_v1",
+        "hands": 120,
+        "rows": 1052,
+        "rows/hand": 8.766666666666667,
+        "hero rows": 560,
+        "villain rows": 492,
+        "scored rows": 1052
+      },
+      {
+        "match": 2,
+        "split": "pilot_pool",
+        "hero": "nit_v3",
+        "villain": "solid_v3",
+        "hands": 120,
+        "rows": 911,
+        "rows/hand": 7.591666666666667,
+        "hero rows": 480,
+        "villain rows": 431,
+        "scored rows": 911
+      },
+      {
+        "match": 3,
+        "split": "pilot_heldout",
+        "hero": "calling_station",
+        "villain": "solid_v2",
+        "hands": 120,
+        "rows": 1008,
+        "rows/hand": 8.4,
+        "hero rows": 536,
+        "villain rows": 472,
+        "scored rows": 472
+      }
+    ]
+  },
+  "runtime": {
+    "workers": 4,
+    "wall_seconds": 93.84085650099996,
+    "warmup_seconds": 16.690327370999967,
+    "per_match": [
+      {
+        "number": 0,
+        "seconds": 44.61913101900018,
+        "decisions": 698,
+        "dec/s": 15.64351398288708
+      },
+      {
+        "number": 1,
+        "seconds": 77.74606156300001,
+        "decisions": 1052,
+        "dec/s": 13.531232050224592
+      },
+      {
+        "number": 2,
+        "seconds": 65.81392893799989,
+        "decisions": 911,
+        "dec/s": 13.842054633422796
+      },
+      {
+        "number": 3,
+        "seconds": 73.73387234200004,
+        "decisions": 1008,
+        "dec/s": 13.67078613916533
+      }
+    ],
+    "decisions_per_second_per_process": 14.00846878919328,
+    "projected_full_rows": 44028.0,
+    "projected_full_single_process_minutes": 52.38259877240002,
+    "projected_full_wall_minutes": 13.373821815950006,
+    "machine": {
+      "platform": "Linux-6.18.44-fc-v378-x86_64-with-glibc2.39",
+      "cpu_count": 4
+    }
+  },
+  "actions": {
+    "overall": {
+      "fold": 147,
+      "check_call": 2810,
+      "raise_half_pot": 420,
+      "raise_pot": 258,
+      "all_in": 34
+    },
+    "by_family": {
+      "calling_station": {
+        "fold": 2,
+        "check_call": 1044,
+        "raise_half_pot": 50,
+        "raise_pot": 0,
+        "all_in": 0
+      },
+      "maniac": {
+        "fold": 0,
+        "check_call": 127,
+        "raise_half_pot": 90,
+        "raise_pot": 77,
+        "all_in": 2
+      },
+      "nit": {
+        "fold": 125,
+        "check_call": 667,
+        "raise_half_pot": 62,
+        "raise_pot": 28,
+        "all_in": 0
+      },
+      "solid": {
+        "fold": 20,
+        "check_call": 972,
+        "raise_half_pot": 218,
+        "raise_pot": 153,
+        "all_in": 32
+      }
+    },
+    "rare_classes_below_1pct": [
+      "all_in"
+    ]
+  },
+  "features": {
+    "feature_set_a_shape": [
+      3669,
+      47
+    ],
+    "feature_set_b_shape": [
+      3669,
+      60
+    ],
+    "missing_values_a": 0,
+    "missing_values_b": 0,
+    "constant_columns_a": [
+      "a_legal_check_call"
+    ],
+    "b_rates_within_0_1": true,
+    "deal0_equals_priors_with_zero_counts": true,
+    "prior_hand_counts_never_decrease": true,
+    "max_prior_hands": 118,
+    "priors": {
+      "open_rates": {
+        "check": 0.7167155425219941,
+        "half": 0.15953079178885632,
+        "pot": 0.11143695014662756,
+        "allin": 0.012316715542521995
+      },
+      "face_rates": {
+        "fold": 0.15376569037656904,
+        "call": 0.7280334728033473,
+        "half": 0.08472803347280335,
+        "pot": 0.029288702928870293,
+        "allin": 0.0041841004184100415
+      },
+      "vpip": 0.6461318051575932,
+      "pfr": 0.1833810888252149,
+      "alpha": 10.0,
+      "fitted_rows": 2661
+    }
+  },
+  "audits": [
+    {
+      "audit_id": "L1",
+      "name": "Feature-name allowlist",
+      "passed": true,
+      "detail": "60 feature names checked"
+    },
+    {
+      "audit_id": "L2",
+      "name": "Private columns scrambled: features unchanged",
+      "passed": true,
+      "detail": "3669 rows, sets ['A', 'B']"
+    },
+    {
+      "audit_id": "L3",
+      "name": "Future truncation: features unchanged",
+      "passed": true,
+      "detail": "150 rows truncated, sets ['A', 'B']"
+    },
+    {
+      "audit_id": "L4",
+      "name": "History uses only earlier deals",
+      "passed": true,
+      "detail": "24 (match, deal) checks"
+    },
+    {
+      "audit_id": "L5",
+      "name": "Mirror hand of the current deal excluded",
+      "passed": true,
+      "detail": "20 deals checked"
+    },
+    {
+      "audit_id": "L6",
+      "name": "Public replay with fake hole cards",
+      "passed": true,
+      "detail": "3669 rows replayed, 0 mismatches"
+    },
+    {
+      "audit_id": "L7",
+      "name": "Player role from public seating equals true role",
+      "passed": true,
+      "detail": "3669 rows, 100% match"
+    },
+    {
+      "audit_id": "L8",
+      "name": "Split integrity",
+      "passed": true,
+      "detail": "2 manifests, 4 loaded matches"
+    },
+    {
+      "audit_id": "L9",
+      "name": "Seed uniqueness",
+      "passed": true,
+      "detail": "52 match seeds distinct"
+    },
+    {
+      "audit_id": "L10",
+      "name": "Priors fitted on training rows only",
+      "passed": true,
+      "detail": "fitted on 2661 rows; 1008 other rows perturbed"
+    },
+    {
+      "audit_id": "L11a",
+      "name": "Manifests rebuild byte-identically",
+      "passed": true,
+      "detail": "['phase3', 'phase3_pilot'] identical"
+    },
+    {
+      "audit_id": "L11b",
+      "name": "Regenerated match is byte-identical",
+      "passed": true,
+      "detail": "match_00: 223957 bytes identical"
+    }
+  ]
+}
