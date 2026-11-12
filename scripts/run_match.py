@@ -40,8 +40,8 @@ def main() -> None:
 
     print(f"hero={args.hero} deals={args.deals} seed={args.seed} seat_swap={not args.no_seat_swap}")
     header = f"{'villain':<16}{'bb/100':>9}{'95% CI':>20}{'SE paired':>11}{'SE naive':>10}{'hands/s':>9}{'dec/s':>8}"
-    print(header)
-    print("-" * len(header))
+    print(header, flush=True)
+    print("-" * len(header), flush=True)
 
     for villain_name in villains:
         hero = make_agent(args.hero, args.hero_samples)
@@ -57,7 +57,8 @@ def main() -> None:
             f"{villain_name:<16}{paired.bb_per_100:>+9.1f}"
             f"{f'[{paired.ci_low:+.1f}, {paired.ci_high:+.1f}]':>20}"
             f"{paired.standard_error:>11.1f}{naive.standard_error:>10.1f}"
-            f"{len(match.hands) / elapsed:>9.1f}{decisions / elapsed:>8.1f}"
+            f"{len(match.hands) / elapsed:>9.1f}{decisions / elapsed:>8.1f}",
+            flush=True,
         )
 
         if not args.no_log:

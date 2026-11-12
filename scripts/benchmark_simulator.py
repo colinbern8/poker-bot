@@ -1,4 +1,4 @@
-"""Measure simulator speed for three matchups.
+"""Measure simulator speed for four matchups (scripted-only and probability).
 
 Usage:
     python scripts/benchmark_simulator.py --deals 100
@@ -6,7 +6,7 @@ Usage:
 
 Matchups (default equity samples: probability 500, style bots 200):
     random vs random            no equity calculations at all
-    solid vs solid              StyleAgent vs StyleAgent
+    solid vs solid, maniac vs nit   scripted StyleAgent vs StyleAgent
     probability vs solid        ProbabilityAgent vs StyleAgent
 
 The preflop equity cache is filled first and timed separately, so the
@@ -29,7 +29,12 @@ from hybridpoker.agents.probability import ProbabilityParameters
 from hybridpoker.agents.strength import RANK_ORDER, preflop_equity
 from hybridpoker.match import run_match
 
-MATCHUPS = [("random", "random"), ("solid", "solid"), ("probability", "solid")]
+MATCHUPS = [
+    ("random", "random"),  # no equity calculations
+    ("solid", "solid"),  # scripted StyleAgent vs StyleAgent
+    ("maniac", "nit"),  # scripted StyleAgent vs StyleAgent
+    ("probability", "solid"),  # ProbabilityAgent vs StyleAgent
+]
 
 
 def all_hand_classes() -> list[str]:

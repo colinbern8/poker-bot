@@ -187,3 +187,199 @@ exact value:
 
 Phase 2: heads-up simulator, a probability-based agent, simple opponent
 bots, and hand logging. It needs a plan approved before work starts.
+
+Phase 1 was merged into `main` through pull request #2.
+
+## Phase 2: Heads-up simulator, agents and hand logs (2026-11-12)
+
+Branch: `phase-2-simulator`.
+
+### Completed work
+
+- `game.py`: heads-up NLHE settings (blinds 1/2, 100 BB stacks reset each
+  hand, no antes or rake, PokerKit cash-game mode).
+- `actions.py`:
+  - five abstract categories with legal-action masking
+  - pot-size raise amounts clamped to PokerKit's legal range
+  - actual chip amounts (`bet_to`, `chips_added`, all-in flag)
+- `observation.py`: the acting player's view. It includes own cards only,
+  never the opponent's.
+- `simulator.py`:
+  - seeded deck handed card-by-card to PokerKit
+  - full hand loop including all-in run-outs
+  - state recorded before each decision
+  - chip-conservation check
+- `agents/`:
+  - `RandomAgent`
+  - `StyleAgent` with presets calling_station, maniac, nit and solid
+  - `ProbabilityAgent` (baseline), with a logged reason for every decision
+  - a cached preflop equity per hand class
+- `match.py`:
+  - seat-swapped (duplicate) matches with paired deal seeds
+  - one master seed per match
+  - opaque `match_id`
+- `metrics.py`: bb/100 with a 95% CI using the deal pair as the
+  independent unit.
+- `hand_log.py`:
+  - `decisions.csv`, `hands.csv` and `metadata.json`
+  - prefixed column groups
+  - the `feature_columns()` selector
+  - atomic writes: a run is complete only if `metadata.json` exists
+- Scripts: `run_match.py` and `benchmark_simulator.py`.
+- Docs: `docs/simulator.md`.
+
+### Important engineering decisions
+
+| Decision | Reason |
+|---|---|
+| Own seeded deck, cards handed to PokerKit | PokerKit's own dealing cannot be seeded; this makes every hand replayable. |
+| `fold` masked when checking is free | Folding for free is never better. PokerKit also warns about it. |
+| Category and actual amounts logged separately | Clamping can turn a pot raise into an all-in. The category is the intent; the amounts are what happened. |
+| Seat-swapped deals with paired seeds | Both agents play both sides of every deal, which cancels much of the card luck. |
+| CI over deal pairs, not hands | The two hands of a pair share cards and are correlated. A test shows identical strategies give exactly 0 per pair. |
+| Column prefixes (`id_`, `obs_`, `act_`, `hidden_`, `label_`, `out_`) and `feature_columns()` | Model inputs can only come from public, pre-decision information. |
+| Bot parameters only in `metadata.json` | Private bot settings never appear in per-decision rows. |
+| Opaque `match_id` from full agent configs, seed and deal count | Combined logs can be grouped and split by independent match. |
+| Atomic log writes, flushed output | An interrupted run cannot leave files that look complete. This was found when the long matches were stopped (see below). |
+
+### Tests executed
+
+Local run (Linux, Python 3.12.3), `python -m pytest`: 183 tests passed.
+
+| File | Tests | Covers |
+|---|---|---|
+| `test_actions.py` | 14 | legal masks, raise sizes, clamping, all-in, chip movements, observations |
+| `test_simulator.py` | 17 | showdown, split and fold payouts, uncalled raises, all-in run-outs, legality and payout consistency over 400 random hands, no opponent-card leakage, reproducibility |
+| `test_agents.py` | 29 | random legality, style differences, calling station never folds or raises, probability decisions on river spots with known exact equities |
+| `test_match.py` | 7 | seat swapping, paired cards, identical strategies give 0 per pair, reproducibility, match ids |
+| `test_metrics.py` | 9 | bb/100 and CI on hand-computed examples |
+| `test_hand_log.py` | 17 | column groups, public-information replay, pre-action state, feature selector exclusions, ids, amounts, byte-identical logs, atomic writes |
+
+The GitHub Actions results for the final commit are shown on the Phase 2
+pull request.
+
+### Simulator speed (clean benchmark)
+
+`python scripts/benchmark_simulator.py --deals 50`: one process on an idle
+machine (Linux container, 4 vCPU Intel Xeon, Python 3.12.3), default equity
+samples (probability 500, style bots 200), preflop cache filled first
+(36.9 s), 100 hands per matchup.
+
+| Matchup | Hands/s | Decisions/s | ms per decision | Decisions per hand |
+|---|---|---|---|---|
+| random vs random (no equity) | 1,312.9 | 4,463.9 | 0.22 | 3.40 |
+| solid vs solid (scripted only) | 2.7 | 22.3 | 44.89 | 8.18 |
+| maniac vs nit (scripted only) | 4.9 | 26.8 | 37.35 | 5.43 |
+| probability vs solid | 1.6 | 12.9 | 77.67 | 8.26 |
+
+**Bottleneck.** A cProfile run of probability vs solid attributed 99.9% of
+run time to `estimate_equity`, including 96.2% inside PokerKit's hand
+evaluator (`StandardHighHand.from_game`). Game logic (legal actions and
+PokerKit state updates) took about 0.1%. The random-vs-random row confirms
+this: without equity, a decision costs 0.22 ms instead of 37–78 ms.
+
+### Sanity matches (diagnostic only)
+
+The five planned 1,000-deal matches were stopped after about 12 minutes to
+save time. None had finished, so **no results from them exist**. One
+(vs random) had finished playing but was interrupted while writing its
+logs; that led to the atomic-write fix above.
+
+Replacement diagnostic matches: probability agent vs each opponent, 75
+seat-swapped deals (150 hands) each, seed 2026, default settings, 5
+processes in parallel (139 s in total). **These results are diagnostic
+only. With 75 deal pairs the intervals are wide, and they are not evidence
+about agent strength.** Their purpose is to show that full matches complete
+and log correctly.
+
+| Opponent | Hero bb/100 | 95% CI (deal pairs) | SE paired | SE naive (per hand) |
+|---|---|---|---|---|
+| random | +1167.3 | [+441.5, +1893.2] | 370.3 | 420.5 |
+| calling_station | +175.3 | [+115.0, +235.7] | 30.8 | 44.6 |
+| maniac | +1118.0 | [+644.3, +1591.7] | 241.7 | 439.0 |
+| nit | −15.7 | [−249.8, +218.4] | 119.4 | 137.3 |
+| solid | +87.3 | [−215.1, +389.7] | 154.3 | 289.7 |
+
+All five runs wrote complete logs: 150 hands each, 5,569 decision rows in
+total (2,805 hero, 2,764 villain). The paired standard error was below the
+naive one in every match.
+
+### Log audit on the diagnostic logs
+
+- 45 columns, of which 26 are `obs_` features.
+- Rebuilding every row's `obs_` values from the public history and board
+  with **fake hole cards** gave **0 mismatches in 5,569 rows**. The
+  features contain no private information.
+- `(id_match, id_hand_index, id_decision_index)` is present and unique for
+  every row.
+- `act_bet_to` equals the legal amount for the chosen category in every
+  row. 1,387 bet and raise rows used 59 distinct actual amounts. 56
+  half-pot or pot raises were capped to all-in and are recorded as such
+  (`act_is_all_in`).
+
+### Phase 3 dataset-generation plan (recommended, not yet implemented)
+
+**Goal:** 20,000–50,000 opponent decision rows, reproducible and split by
+independent match.
+
+1. **Generate with scripted agents only.** Use StyleAgent against
+   StyleAgent, at 22–27 decisions/s per process. Both seats are bots with
+   known settings, so every row is a labelled opponent decision. Keep the
+   probability agent for evaluation matches, where its 500 samples matter.
+2. **Vary opponent parameters.** Use the 4 presets plus 3 randomly shifted
+   variants of each (looseness, aggression and bluff rate each moved by up
+   to ±0.10, kept within [0, 1]). That gives 16 configurations, each with a
+   unique name such as `maniac_v2`. Variant parameters are drawn from a
+   seeded generator, written to a dataset manifest, and stored in each
+   match's `metadata.json`, never in rows.
+3. **Matches and seeds.** Each match pairs one configuration with a
+   counterpart drawn from the other configurations, for 60 deals
+   (120 hands, about 600–1,000 rows). Every match gets its own master seed
+   from a recorded list (e.g. 10000, 10001, …), and seeds are never reused.
+   About 48 matches gives about 40,000 rows.
+4. **Run time.** At about 25 decisions/s per process, 40,000 rows take
+   about 27 minutes in one process. Running 4 independent matches at once
+   on 4 cores should take about 7–10 minutes, plus a cache warm-up per
+   process. This estimate needs confirming in Phase 3.
+5. **Splits, fixed before any training.**
+   - Group every split by `id_match`. Both seatings of a deal and all hands
+     of a match stay together, so shared cards never cross splits.
+   - Train / validation / test: about 70 / 15 / 15 of the matches built from
+     the 12 training configurations.
+   - **Held-out evaluation set:** the 4 configurations never seen in
+     training (one variant per preset), in their own matches with new
+     seeds. This tests generalization to unseen opponents, not just new
+     cards.
+   - Record the split assignment in the manifest.
+6. **Leakage rules.**
+   - Model inputs come only from `feature_columns()`.
+   - Targets come from `act_category` (and optionally `act_bet_to`).
+   - Labels come from `label_actor_agent`, for evaluation only.
+   - `id_*`, `hidden_*`, `label_*` and `out_*` columns are never inputs.
+     `id_deal_seed` determines the cards.
+   - The `obs_history` text must be turned into features using only actions
+     before the current decision. It already contains nothing else.
+7. **Storage.** Raw runs go under `data/raw/simulations/<dataset>/`, which
+   git ignores. The small manifest (configurations, seeds, splits) is
+   committed so the dataset can be regenerated exactly.
+
+### Known problems and limitations
+
+- **Speed.** Monte Carlo equity dominates run time. Statistically
+  meaningful probability-agent evaluations (hundreds to thousands of deal
+  pairs) will take tens of minutes to hours. They are not optimized in this
+  phase, by decision.
+- **No progress output.** `run_match.py` reports only at the end of each
+  match; there are no partial results.
+- **Synthetic opponents.** Models will learn rules we wrote. This is stated
+  openly and can be checked against known parameters.
+- **Abstract actions.** Only five actions, with fixed 100 BB stacks.
+- **Untuned thresholds.** The probability agent's thresholds are set by
+  reasoning, not tuned.
+- **Normal-approximation CI.** It is too narrow with very few deal pairs.
+
+### Next milestone
+
+Phase 3: generate the dataset per the plan above, engineer features from
+`obs_` columns, and train supervised opponent models against a simple
+baseline. It needs a plan approved before work starts.

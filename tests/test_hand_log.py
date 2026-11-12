@@ -273,3 +273,11 @@ def test_match_id_depends_on_configuration_and_seed() -> None:
     assert base != match_id("maniac", 1)  # different opponent
     assert base != match_id("nit", 1, samples=FAST + 1)  # different bot configuration
     assert base.startswith("m") and "nit" not in base
+
+
+def test_completed_run_has_no_temporary_files(match_and_agents, tmp_path: Path) -> None:
+    match, hero, villain = match_and_agents
+    out = tmp_path / "run"
+    write_run(match, hero, villain, out)
+    write_run(match, hero, villain, out)  # rewriting the same run is safe
+    assert sorted(p.name for p in out.iterdir()) == ["decisions.csv", "hands.csv", "metadata.json"]

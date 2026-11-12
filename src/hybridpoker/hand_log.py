@@ -29,9 +29,10 @@ Bot parameters (looseness, aggression, ...) are written only to
 from __future__ import annotations
 
 import json
+import os
 import platform
 import subprocess
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from datetime import datetime, timezone
 from importlib.metadata import version
 from pathlib import Path
@@ -237,16 +238,34 @@ def write_run(
     out_dir: Path,
     extra: dict[str, Any] | None = None,
 ) -> dict[str, Path]:
-    """Write decisions.csv, hands.csv, and metadata.json into ``out_dir``."""
+    """Write decisions.csv, hands.csv, and metadata.json into ``out_dir``.
+
+    Each file is written under a temporary name and renamed only when it is
+    complete, and ``metadata.json`` is written last. A run directory is
+    therefore complete if and only if it contains ``metadata.json``; an
+    interrupted run never leaves files that look finished.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
     paths = {
         "decisions": out_dir / "decisions.csv",
         "hands": out_dir / "hands.csv",
         "metadata": out_dir / "metadata.json",
     }
-    decisions_frame(match).to_csv(paths["decisions"], index=False, lineterminator="\n")
-    pd.DataFrame(hand_rows(match)).to_csv(paths["hands"], index=False, lineterminator="\n")
-    paths["metadata"].write_text(
-        json.dumps(run_metadata(match, hero, villain, extra), indent=2) + "\n", encoding="utf-8"
+    paths["metadata"].unlink(missing_ok=True)  # mark the directory incomplete first
+
+    def replace_atomically(path: Path, write: Callable[[Path], None]) -> None:
+        temporary = path.with_name(path.name + ".tmp")
+        write(temporary)
+        os.replace(temporary, path)
+
+    replace_atomically(
+        paths["decisions"],
+        lambda p: decisions_frame(match).to_csv(p, index=False, lineterminator="\n"),
     )
+    replace_atomically(
+        paths["hands"],
+        lambda p: pd.DataFrame(hand_rows(match)).to_csv(p, index=False, lineterminator="\n"),
+    )
+    metadata_text = json.dumps(run_metadata(match, hero, villain, extra), indent=2) + "\n"
+    replace_atomically(paths["metadata"], lambda p: p.write_text(metadata_text, encoding="utf-8"))
     return paths

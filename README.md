@@ -126,7 +126,7 @@ With the virtual environment active:
 python -m pytest
 ```
 
-Expected result: all tests pass (`182 passed` as of Phase 2). The full
+Expected result: all tests pass (`183 passed` as of Phase 2). The full
 suite takes about a minute.
 
 If you see `No module named pytest`, the virtual environment is not active.
