@@ -5,8 +5,9 @@ An explainable Texas Hold'em poker AI for a university AI course project.
 **Research question:** Can supervised machine learning-based opponent modeling
 improve decisions made by a probability-based poker agent?
 
-**Current status:** Phase 0, which covers project setup only. There is no poker AI logic yet.
-See [`docs/progress.md`](docs/progress.md).
+**Current status:** Phase 1, the probability engine (equity and pot odds).
+See [`docs/progress.md`](docs/progress.md) for progress and
+[`docs/probability_engine.md`](docs/probability_engine.md) for how the math works.
 
 ## Technology
 
@@ -21,7 +22,8 @@ See [`docs/progress.md`](docs/progress.md).
 poker-bot/
 ├── src/hybridpoker/      # project source code (the `hybridpoker` package)
 ├── tests/                # automated tests (pytest)
-├── docs/progress.md      # progress log, decisions, and results
+├── scripts/              # helper scripts (e.g. benchmarks)
+├── docs/                 # progress log and explanations of the math
 ├── pyproject.toml        # project settings and dependency ranges
 ├── requirements.txt      # exact tested dependency versions
 ├── .devcontainer/        # GitHub Codespaces configuration
@@ -35,7 +37,14 @@ poker-bot/
 1. On GitHub, click **Code → Codespaces → Create codespace on this branch**.
 2. Wait for the setup to finish. It automatically installs Python 3.12, creates
    a `.venv` virtual environment, and installs all dependencies.
-3. Open a new terminal and run the tests (see [Running tests](#running-tests)).
+3. Open a new terminal. If the prompt does not start with `(.venv)`, activate
+   the virtual environment first:
+
+   ```bash
+   source .venv/bin/activate
+   ```
+
+4. Run the tests (see [Running tests](#running-tests)).
 
 > **Already have a Codespace that shows Python 3.14 (or anything other than 3.12)?**
 > It was created before this configuration existed. Open the Command Palette
@@ -116,7 +125,10 @@ With the virtual environment active:
 python -m pytest
 ```
 
-Expected result: all tests pass (`13 passed` as of Phase 0).
+Expected result: all tests pass (`82 passed` as of Phase 1).
+
+If you see `No module named pytest`, the virtual environment is not active.
+Activate it (see [Setup](#setup)) and try again.
 
 Useful variations:
 
@@ -130,6 +142,27 @@ python -m pytest tests/test_smoke.py
 
 Tests also run automatically on **Ubuntu and Windows** through GitHub Actions
 on every push. Results appear as a ✓ or ✗ next to each commit on GitHub.
+
+## Using the probability engine
+
+```python
+from hybridpoker.equity import estimate_equity
+from hybridpoker.pot_odds import call_expected_value, pot_odds
+
+# Ace-king on a T-9-2 flop against one random hand, 2000 simulations.
+result = estimate_equity("AsKh", "Td9d2c", opponent_count=1, sample_count=2000, seed=42)
+print(result.equity, result.standard_error)
+
+# Facing a 10-chip bet into a 20-chip pot: pot_size = 30, call_amount = 10.
+print(pot_odds(pot_size=30, call_amount=10))  # 0.25
+print(call_expected_value(result.equity, pot_size=30, call_amount=10))
+```
+
+Measure engine speed on your machine:
+
+```bash
+python scripts/benchmark_equity.py
+```
 
 ## Updating dependencies
 
