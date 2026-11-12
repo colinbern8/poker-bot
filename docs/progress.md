@@ -105,6 +105,14 @@ Branch: `phase-1-equity-engine`.
 
 Local run (Linux, Python 3.12.3), `python -m pytest`: `82 passed in 12.83s`.
 
+GitHub Actions run 43276364776 on commit `398dabe`:
+
+- `windows-latest`: `platform win32 -- Python 3.12.10`, `82 passed in 20.70s`
+- `ubuntu-latest`: Python 3.12.16, `82 passed in 21.72s`
+
+This includes `test_seeded_results_are_identical_across_platforms`, so the
+same seed gives the same equity on Windows as on Linux.
+
 - `tests/test_equity.py` (43 tests):
   - validation
   - split pots for 1, 2, 3, 5 and 9 opponents
