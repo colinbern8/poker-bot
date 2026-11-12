@@ -1,0 +1,275 @@
+{
+  "feature_sets": {
+    "A": {
+      "columns": [
+        "a_street_preflop",
+        "a_street_flop",
+        "a_street_turn",
+        "a_street_river",
+        "a_position_button",
+        "a_pot_bb",
+        "a_to_call_bb",
+        "a_pot_odds",
+        "a_own_stack_bb",
+        "a_opp_stack_bb",
+        "a_eff_stack_bb",
+        "a_spr",
+        "a_own_bet_bb",
+        "a_opp_bet_bb",
+        "a_facing_bet",
+        "a_legal_fold",
+        "a_legal_raise_half_pot",
+        "a_legal_raise_pot",
+        "a_legal_all_in",
+        "a_bet_to_fold_bb",
+        "a_bet_to_check_call_bb",
+        "a_bet_to_raise_half_pot_bb",
+        "a_bet_to_raise_pot_bb",
+        "a_bet_to_all_in_bb",
+        "a_board_cards",
+        "a_board_high_rank",
+        "a_board_broadway",
+        "a_board_paired",
+        "a_board_trips",
+        "a_board_max_suit",
+        "a_board_straightness",
+        "a_board_rank_spread",
+        "a_actions_this_street",
+        "a_raises_this_street",
+        "a_raises_this_hand",
+        "a_actor_raises_hand",
+        "a_opp_raises_hand",
+        "a_prev_none",
+        "a_prev_check_call",
+        "a_prev_raise_half_pot",
+        "a_prev_raise_pot",
+        "a_prev_all_in",
+        "a_preflop_aggressor_actor",
+        "a_preflop_aggressor_opp",
+        "a_opp_all_in",
+        "a_streets_with_raise"
+      ],
+      "dropped_constant": [
+        "a_legal_check_call"
+      ],
+      "models": {
+        "random_forest": {
+          "selected_grid_index": 26,
+          "params": {
+            "n_estimators": 300,
+            "max_depth": 24,
+            "min_samples_leaf": 1,
+            "max_features": 0.5,
+            "class_weight": null
+          },
+          "seed": 1650709957,
+          "validation": {
+            "val_macro_f1": 0.2845995950131651,
+            "val_log_loss": 0.8802363393453965,
+            "val_accuracy": 0.7375352775164629,
+            "val_balanced_accuracy": 0.2704603026083881,
+            "val_macro_f1_raw": 0.2845995950131651,
+            "val_all_in_f1": 0.06060606060606061
+          },
+          "refit_identical": true,
+          "missing_training_classes": []
+        },
+        "hist_gradient_boosting": {
+          "selected_grid_index": 5,
+          "params": {
+            "learning_rate": 0.05,
+            "max_iter": 200,
+            "max_leaf_nodes": 31,
+            "l2_regularization": 0.0,
+            "class_weight": "balanced"
+          },
+          "seed": 2018125422,
+          "validation": {
+            "val_macro_f1": 0.2801684599032314,
+            "val_log_loss": 1.1606783097643696,
+            "val_accuracy": 0.45319849482596425,
+            "val_balanced_accuracy": 0.48213839767925115,
+            "val_macro_f1_raw": 0.2801684599032314,
+            "val_all_in_f1": 0.0673076923076923
+          },
+          "refit_identical": true,
+          "missing_training_classes": []
+        },
+        "dummy": {
+          "params": {
+            "strategy": "prior"
+          },
+          "validation": {
+            "val_macro_f1": 0.17401009832580389,
+            "val_log_loss": 0.7861375784783203,
+            "val_accuracy": 0.7699905926622765,
+            "val_balanced_accuracy": 0.2,
+            "val_macro_f1_raw": 0.17401009832580389,
+            "val_all_in_f1": 0.0
+          },
+          "missing_training_classes": []
+        }
+      }
+    },
+    "B": {
+      "columns": [
+        "a_street_preflop",
+        "a_street_flop",
+        "a_street_turn",
+        "a_street_river",
+        "a_position_button",
+        "a_pot_bb",
+        "a_to_call_bb",
+        "a_pot_odds",
+        "a_own_stack_bb",
+        "a_opp_stack_bb",
+        "a_eff_stack_bb",
+        "a_spr",
+        "a_own_bet_bb",
+        "a_opp_bet_bb",
+        "a_facing_bet",
+        "a_legal_fold",
+        "a_legal_raise_half_pot",
+        "a_legal_raise_pot",
+        "a_legal_all_in",
+        "a_bet_to_fold_bb",
+        "a_bet_to_check_call_bb",
+        "a_bet_to_raise_half_pot_bb",
+        "a_bet_to_raise_pot_bb",
+        "a_bet_to_all_in_bb",
+        "a_board_cards",
+        "a_board_high_rank",
+        "a_board_broadway",
+        "a_board_paired",
+        "a_board_trips",
+        "a_board_max_suit",
+        "a_board_straightness",
+        "a_board_rank_spread",
+        "a_actions_this_street",
+        "a_raises_this_street",
+        "a_raises_this_hand",
+        "a_actor_raises_hand",
+        "a_opp_raises_hand",
+        "a_prev_none",
+        "a_prev_check_call",
+        "a_prev_raise_half_pot",
+        "a_prev_raise_pot",
+        "a_prev_all_in",
+        "a_preflop_aggressor_actor",
+        "a_preflop_aggressor_opp",
+        "a_opp_all_in",
+        "a_streets_with_raise",
+        "b_log_prior_hands",
+        "b_log_prior_decisions",
+        "b_open_check",
+        "b_open_half",
+        "b_open_pot",
+        "b_open_allin",
+        "b_face_fold",
+        "b_face_call",
+        "b_face_half",
+        "b_face_pot",
+        "b_face_allin",
+        "b_vpip",
+        "b_pfr"
+      ],
+      "dropped_constant": [
+        "a_legal_check_call"
+      ],
+      "models": {
+        "random_forest": {
+          "selected_grid_index": 3,
+          "params": {
+            "n_estimators": 300,
+            "max_depth": null,
+            "min_samples_leaf": 1,
+            "max_features": 0.5,
+            "class_weight": "balanced"
+          },
+          "seed": 2305977157,
+          "validation": {
+            "val_macro_f1": 0.45365539221056955,
+            "val_log_loss": 0.6775268832586647,
+            "val_accuracy": 0.7283631232361242,
+            "val_balanced_accuracy": 0.5215696999188972,
+            "val_macro_f1_raw": 0.45365539221056955,
+            "val_all_in_f1": 0.19230769230769232
+          },
+          "refit_identical": true,
+          "missing_training_classes": []
+        },
+        "hist_gradient_boosting": {
+          "selected_grid_index": 7,
+          "params": {
+            "learning_rate": 0.05,
+            "max_iter": 200,
+            "max_leaf_nodes": 31,
+            "l2_regularization": 1.0,
+            "class_weight": "balanced"
+          },
+          "seed": 2887016095,
+          "validation": {
+            "val_macro_f1": 0.44401249102965334,
+            "val_log_loss": 0.7469940022972151,
+            "val_accuracy": 0.7133113828786454,
+            "val_balanced_accuracy": 0.567108655821205,
+            "val_macro_f1_raw": 0.44401249102965334,
+            "val_all_in_f1": 0.08064516129032258
+          },
+          "refit_identical": true,
+          "missing_training_classes": []
+        },
+        "dummy": {
+          "params": {
+            "strategy": "prior"
+          },
+          "validation": {
+            "val_macro_f1": 0.17401009832580389,
+            "val_log_loss": 0.7861375784783203,
+            "val_accuracy": 0.7699905926622765,
+            "val_balanced_accuracy": 0.2,
+            "val_macro_f1_raw": 0.17401009832580389,
+            "val_all_in_f1": 0.0
+          },
+          "missing_training_classes": []
+        }
+      }
+    }
+  },
+  "priors": {
+    "open_rates": {
+      "check": 0.7010958904109589,
+      "half": 0.13657534246575342,
+      "pot": 0.15013698630136987,
+      "allin": 0.012191780821917807
+    },
+    "face_rates": {
+      "fold": 0.11373986448961457,
+      "call": 0.7175385982450294,
+      "half": 0.11196267910696435,
+      "pot": 0.05287126513384428,
+      "allin": 0.003887593024547373
+    },
+    "vpip": 0.6858377659574468,
+    "pfr": 0.23803191489361702,
+    "alpha": 10.0,
+    "fitted_rows": 23603
+  },
+  "selection_rule": "max validation macro-F1 of legal-masked predictions; ties: lower masked log-loss, then grid order",
+  "rows": {
+    "train": 23603,
+    "validation": 4252,
+    "test": 4895,
+    "heldout": 5570
+  },
+  "manifest_hash": "bde45493a95a8cb66576b006005dfed72593965879262533594687136dabe233",
+  "quick": false,
+  "seconds": 1751.3466057960004,
+  "versions": {
+    "python": "3.12.3",
+    "scikit-learn": "1.9.1",
+    "numpy": "2.5.4",
+    "pandas": "3.1.1",
+    "git_commit_at_start": "c709e4f57e26e4a759b684e6fd546e01e489905d"
+  }
+}

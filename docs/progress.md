@@ -636,7 +636,171 @@ By style family:
 - **Accuracy is easy to inflate.** Predicting check_call every time
   scores 72% on rows used.
 
+### Next milestone (Stage 2)
+
+The project owner approved Stage 2 on 2026-11-12 and authorized Stage 3.
+Validation macro-F1 stays the selection metric, and per-class precision,
+recall and F1 are reported.
+
+### Stage 3: model training and evaluation (2026-11-12)
+
+Full results are in
+[`results/phase3/model_results.md`](../results/phase3/model_results.md),
+with figures in `docs/figures/phase3/`. Trained models
+(`models/phase3/`) and predictions (`data/processed/phase3/`) are kept
+locally and not committed.
+
+**Completed work**
+
+- `opponent_model.py`:
+  - feature matrices;
+  - a train-only preprocessor that fixes the column order, drops
+    columns that are constant in training data (only
+    `a_legal_check_call`) and rejects missing values;
+  - seeded models;
+  - probabilities always in the fixed five-class order.
+- `evaluation.py`:
+  - accuracy, macro-F1, balanced accuracy, log-loss and per-class
+    precision/recall/F1, all checked against scikit-learn;
+  - match-level and paired bootstrap.
+- `scripts/train_opponent_models.py` ran the full approved grids (36
+  Random Forest and 48 HistGradientBoosting settings, each on A and B):
+  - fitted on train;
+  - selected by validation macro-F1 of legal-masked predictions;
+  - every selected model, refitted, gave bit-identical predictions;
+  - shuffled-label controls trained with the same settings.
+  It took 29.2 min.
+- `scripts/evaluate_opponent_models.py` produced:
+  - metrics on raw and legal-masked probabilities;
+  - 2,000-resample match-level bootstrap;
+  - paired comparisons;
+  - per-style, per-street and history-length breakdowns;
+  - permutation importance by feature group;
+  - eight figures.
+- `scripts/shuffled_control_spread.py`: a diagnostic described under
+  unexpected results.
+- matplotlib 3.11.2 added and pinned, with its dependencies.
+
+**Engineering decisions (Stage 3)**
+
+| Decision | Reason |
+|---|---|
+| Random Forest with `n_jobs=1` | With several threads, scikit-learn adds the trees' probabilities in thread-completion order, so a refit differed in the last digits. One thread makes results bit-reproducible. |
+| HistGradientBoosting with `early_stopping=False` | Its internal early stopping holds out random rows, which would break match-level splitting. |
+| A class missing from training would get probability 0 (then floored), never be dropped | All five classes are always scored; the task never changes silently. No selected model was missing any class. |
+| Primary metrics on legal-masked probabilities; raw reported separately | Masked predictions are what an agent would use. Raw results show how much probability each model put on illegal actions. |
+| Per-style comparison uses log-loss and balanced accuracy, not macro-F1 | Macro-F1 averages over all five classes, so styles that never use some actions are capped. |
+| No rebalancing of the data | The approved grid's `class_weight` option was the only reweighting, and it was chosen by validation. |
+
+**Results (legal-masked; 95% match-level bootstrap intervals)**
+
+| Model | Test macro-F1 (5 matches) | Held-out macro-F1 (12 matches) | Test log-loss | Held-out log-loss |
+|---|---|---|---|---|
+| Dummy (prior) | 0.172 [0.159, 0.180] | 0.168 [0.149, 0.183] | 0.814 | 0.867 |
+| Random Forest A | 0.252 [0.228, 0.269] | 0.257 [0.235, 0.271] | 1.035 | 1.033 |
+| **Random Forest B** | **0.361 [0.315, 0.386]** | **0.372 [0.310, 0.413]** | 0.832 | 0.824 |
+| HistGradientBoosting A | 0.241 [0.205, 0.271] | 0.258 [0.222, 0.284] | 1.282 | 1.249 |
+| **HistGradientBoosting B** | **0.366 [0.337, 0.383]** | **0.389 [0.325, 0.435]** | 0.892 | 0.886 |
+
+- **Every trained model beats the Dummy on macro-F1 and balanced
+  accuracy.** All paired intervals exclude 0.
+- **No model has better accuracy than the Dummy.** Always predicting
+  check_call scores 0.75 (test) and 0.72 (held-out).
+- **Feature Set B beats A** on both sets:
+
+  | Paired B − A | Test | Held-out |
+  |---|---|---|
+  | RF macro-F1 | +0.108 [+0.060, +0.149] | +0.114 [+0.070, +0.144] |
+  | RF log-loss | −0.203 [−0.256, −0.152] | −0.209 [−0.284, −0.148] |
+  | HGB macro-F1 | +0.125 [+0.074, +0.160] | +0.131 [+0.077, +0.182] |
+  | HGB log-loss | −0.391 [−0.568, −0.169] | −0.363 [−0.599, −0.127] |
+
+- **The gain is not a hyperparameter artifact.** The selected A and B
+  models use different settings, so every grid setting was compared on
+  validation with identical settings: B beat A in all 36 RF and all 48
+  HGB settings. The macro-F1 gain ranged +0.10 to +0.20 and log-loss
+  improved by 0.06 to 0.58.
+- **Permutation importance (RF-B, held-out):**
+  - Shuffling the opponent-history group costs 0.133 macro-F1 and adds
+    0.50 to log-loss. It is the most important group, ahead of the
+    current situation (0.066).
+  - For RF-A, current-hand betting history (0.069) and situation (0.064)
+    matter most.
+- **History length:** RF-B's log-loss falls from 0.94 (0–9 earlier
+  hands) to 0.81–0.83 (10+ hands). RF-A stays flat.
+- **Per-class F1:**
+
+  | Class | RF-B test | RF-B held-out | RF-A test | RF-A held-out |
+  |---|---|---|---|---|
+  | fold | 0.49 | 0.39 | 0.15 | 0.14 |
+  | raise_pot | 0.28 | 0.39 | 0.18 | 0.21 |
+  | all_in | 0.00 | 0.02 | 0.02 | 0.00 |
+
+  all_in is essentially not predicted. HGB does best on all_in, with
+  F1 0.11 (test) and 0.05 (held-out).
+- **Per style (held-out log-loss, Dummy → RF-B):**
+
+  | Style | Dummy | RF-B |
+  |---|---|---|
+  | calling_station | 0.359 | 0.197 |
+  | maniac | 1.406 | 1.308 |
+  | nit | 0.947 | 0.891 |
+  | solid | 0.893 | 1.054 (worse than Dummy) |
+
+**Unexpected results and explanations**
+
+1. **Selected models are poorly calibrated.** Their log-loss is no better
+   than the Dummy's: RF-B vs Dummy is +0.019 [−0.069, +0.095] on test and
+   −0.043 [−0.137, +0.048] on held-out. The A models are worse than the
+   Dummy. Validation macro-F1 favours deep forests and class-balanced
+   weights, which give overconfident or distorted probabilities:
+   - RF-B train log-loss is 0.31, against 0.68 on validation;
+   - shuffling feature groups in RF-A *improves* its log-loss, a sign of
+     overconfidence.
+
+   The same grid contains much better-calibrated settings. The lowest
+   validation log-loss is 0.521 for RF-B and 0.527 for HGB-B, against
+   0.786 for the Dummy, at macro-F1 0.38–0.40. That is a validation-only
+   observation; those settings were not evaluated on test data.
+2. **Shuffled-label controls score slightly above the Dummy on
+   macro-F1.** This is chance, not leakage:
+   - The Dummy always predicts check_call, so any model that sometimes
+     guesses other legal actions earns some minority-class F1.
+   - A random legal guess drawn from the prior scores 0.204–0.205.
+   - Every shuffled control has much worse log-loss than the Dummy.
+   - HGB-B's control reached 0.221 on held-out. Retrained on five other
+     shuffles it ranged 0.166–0.206 held-out and 0.172–0.190 test, with
+     log-loss 1.21–1.27.
+3. **Lower accuracy than the Dummy** is the expected price of predicting
+   minority actions; it is why macro-F1 and log-loss are the main
+   metrics.
+4. **all_in is not learned.** There are only 213 training rows, and the
+   bots' all-in decisions depend on private equity (≥ 0.9) that public
+   features cannot reveal.
+
+**Limitations**
+
+- **Test set.** It has only 5 matches, so its intervals are rough, and
+  per-style test results rest on one configuration for maniac and nit.
+  The 12 held-out matches give stronger evidence.
+- **Held-out opponents are close variants** of the training styles.
+- **Synthetic opponents** follow rules we wrote.
+- **Overfitting.** RF-B's train macro-F1 is 0.86, against 0.45 on
+  validation.
+
+**Provenance**
+
+- Training started at commit `c709e4f` with the then-uncommitted
+  training code, which was committed as `778aa77` a few minutes later.
+  `git diff` confirms the training code is unchanged since `778aa77`.
+- `train_opponent_models.py` now also records whether the working tree
+  had uncommitted changes at start.
+
+**Tests:** local, Python 3.12.3: 306 passed (285 earlier and 21 new).
+
 ### Next milestone
 
-Stage 2 review by the project owner. If approved: Stage 3, model
-training and evaluation per `docs/phase3_plan.md`.
+Stage 3 review by the project owner, before merging or starting Phase 4.
+Phase 4 will feed predicted probabilities into the agent, so it needs a
+decision on calibration: keep the macro-F1-selected models, or select by
+validation log-loss for the agent.

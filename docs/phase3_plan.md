@@ -1,6 +1,6 @@
 # Phase 3 Plan: Supervised Opponent Modeling
 
-Status: **Stage 1 pilot approved 2026-11-12. Stage 2 full dataset generated and audited; awaiting review before Stage 3.**
+Status: **Stages 1-2 approved 2026-11-12. Stage 3 models trained and evaluated; awaiting review before merging or Phase 4.**
 Branch: `phase-3-machine-learning`.
 Competition presentation: **December 7–9, 2026**.
 
@@ -526,3 +526,4 @@ must not overrun much past Nov 22.
 | 2026-11-12 | Plan written from the approved decisions. |
 | 2026-11-12 | Implementation plan and six detail decisions approved. Added: pairing-balance tests; probability clipping with renormalization and preserved raw probabilities. Manifest excludes git commit and versions (kept in run metadata and the generation summary) so it rebuilds byte-identically. Pilot split names `pilot_pool` / `pilot_heldout`. |
 | 2026-11-12 | Stage 2: full dataset generated (43,856 rows; 38,320 used). `generate_dataset.py` records the git commit and working-tree state at the start of a run; report tables escape `|`. No changes to strategies, features or splits. |
+| 2026-11-12 | Stage 3: Random Forest uses `n_jobs=1` (multi-threaded prediction was not bit-reproducible). Added reports (no change to models or selection): same-settings A vs B on validation, calibration note, random-guess references for the shuffled-label control, shuffled-control spread over 5 extra seeds. Per-style figure uses log-loss because per-style macro-F1 is capped. Balanced accuracy added to the metrics as approved. |

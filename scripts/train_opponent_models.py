@@ -30,6 +30,7 @@ from __future__ import annotations
 import argparse
 import json
 import platform
+import subprocess
 import time
 from importlib.metadata import version
 from pathlib import Path
@@ -68,6 +69,16 @@ KEEP_COLUMNS = ("id_match", "id_match_number", "id_deal_index", "obs_street", "a
                 "label_actor_family", "label_actor_agent", "eval_set")
 
 
+def working_tree_dirty() -> bool | None:
+    """True if tracked files had uncommitted changes when training started (None if git is unavailable)."""
+    try:
+        result = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"],
+                                capture_output=True, text=True, check=True)
+        return bool(result.stdout.strip())
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
 def validation_scores(model, x_val, y_val, legal_val) -> dict:
     proba = class_probabilities(model, x_val)
     masked = mask_and_renormalize(proba, legal_val).masked
@@ -85,6 +96,7 @@ def main() -> None:
     args = parser.parse_args()
     start_all = time.perf_counter()
     commit = _git_commit()
+    dirty = working_tree_dirty()
 
     manifest = load_manifest(DEFAULT_MANIFEST_DIR / MAIN_MANIFEST_NAME)
     frame = load_dataset(manifest, args.raw)
@@ -173,7 +185,8 @@ def main() -> None:
         "quick": args.quick,
         "seconds": time.perf_counter() - start_all,
         "versions": {"python": platform.python_version(), "scikit-learn": version("scikit-learn"),
-                     "numpy": version("numpy"), "pandas": version("pandas"), "git_commit_at_start": commit},
+                     "numpy": version("numpy"), "pandas": version("pandas"), "git_commit_at_start": commit,
+                     "working_tree_dirty_at_start": dirty},
     })
     (RESULTS_DIR / "training_summary.json").write_text(json.dumps(summary, indent=2, default=str) + "\n",
                                                         encoding="utf-8")

@@ -174,6 +174,18 @@ def main() -> None:
         candidates = [f"random_forest_{fs}", f"hist_gradient_boosting_{fs}"]
         best[fs] = max(candidates, key=lambda m: point[m]["validation"]["masked"]["macro_f1"])
 
+    # Reference for the shuffled-label control: guess an action at random from the training
+    # prior restricted to legal actions (the Dummy's masked probabilities). macro-F1 rewards any
+    # minority-class guesses, so a random legal guesser already scores above the always-check_call Dummy.
+    guess_rng = np.random.default_rng(derive_seed(3000, "random_legal_guess") % 2**32)
+    cumulative = probs["dummy_A"]["masked"].cumsum(axis=1)
+    guesses = (guess_rng.random((len(y), 1)) > cumulative).sum(axis=1).clip(0, 4)
+    random_guess = {s: evaluate(y[masks[s]], np.eye(5)[guesses[masks[s]]]) for s in REPORT_SETS}
+    # A second reference: every legal action equally likely (what class-balanced weighting tends toward).
+    uniform_cumulative = (legal / legal.sum(axis=1, keepdims=True)).cumsum(axis=1)
+    uniform_guesses = (guess_rng.random((len(y), 1)) > uniform_cumulative).sum(axis=1).clip(0, 4)
+    uniform_guess = {s: evaluate(y[masks[s]], np.eye(5)[uniform_guesses[masks[s]]]) for s in REPORT_SETS}
+
     # --- Per style, by street, by history length -----------------------------------------
     per_style = {}
     for s in REPORT_SETS:
@@ -246,6 +258,32 @@ def main() -> None:
                                       "macro_f1_drop_std": float(np.std(drops_f1)),
                                       "log_loss_increase_mean": float(np.mean(drops_ll))}
                 permutation[best[fs]][s] = {"baseline_macro_f1": base["macro_f1"], "groups": results}
+
+    # --- Same settings, A vs B (validation, every grid point) -----------------------------------
+    tuning = pd.read_csv(RESULTS_DIR / "tuning_results.csv")
+    same_settings, calibration_rows = {}, []
+    for name in ("random_forest", "hist_gradient_boosting"):
+        part = tuning[tuning["model"] == name]
+        a = part[part["feature_set"] == "A"].set_index("grid_index")
+        b = part[part["feature_set"] == "B"].set_index("grid_index")
+        d_f1, d_ll = b["val_macro_f1"] - a["val_macro_f1"], b["val_log_loss"] - a["val_log_loss"]
+        same_settings[name] = {"configs": int(len(d_f1)), "b_better_macro_f1": int((d_f1 > 0).sum()),
+                               "b_better_log_loss": int((d_ll < 0).sum()),
+                               "macro_f1_diff_min": float(d_f1.min()), "macro_f1_diff_median": float(d_f1.median()),
+                               "macro_f1_diff_max": float(d_f1.max()), "log_loss_diff_min": float(d_ll.min()),
+                               "log_loss_diff_median": float(d_ll.median()), "log_loss_diff_max": float(d_ll.max()),
+                               "a": a, "b": b}
+        for fs, frame_fs in (("A", a), ("B", b)):
+            by_ll = frame_fs.loc[frame_fs["val_log_loss"].idxmin()]
+            by_f1 = frame_fs.loc[frame_fs["val_macro_f1"].idxmax()]
+            calibration_rows.append({"model": MODEL_LABELS[f"{name}_{fs}"],
+                                     "selected (max val macro-F1): macro-F1": by_f1["val_macro_f1"],
+                                     "selected: val log-loss": by_f1["val_log_loss"],
+                                     "lowest val log-loss in grid": by_ll["val_log_loss"],
+                                     "its val macro-F1": by_ll["val_macro_f1"],
+                                     "its class_weight": by_ll["class_weight"] if isinstance(by_ll["class_weight"], str) else "None",
+                                     "its grid index": int(by_ll.name)})
+    dummy_val_ll = point["dummy_A"]["validation"]["masked"]["log_loss"]
 
     # --- Figures ------------------------------------------------------------------------------
     figures = {}
@@ -331,26 +369,29 @@ def main() -> None:
         ax.set_ylim(0, 1)
         ax.set_ylabel("F1")
         ax.set_title(f"Per-class F1 - {s.replace('heldout', 'held-out')} set", loc="left", fontsize=10)
-    axes[0, 1].legend(frameon=False, fontsize=8, loc="upper right")
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
+    fig.legend(*axes[0, 0].get_legend_handles_labels(), loc="lower center", ncols=3, frameon=False, fontsize=9)
     figures["per_class_f1"] = save(fig, "fig4_per_class_f1.png")
 
-    # 5. Per-style macro-F1, A vs B (held-out and test).
+    # 5. Per-style log-loss, A vs B (held-out and test). Log-loss, not macro-F1: per-style
+    # macro-F1 is capped for styles that never use some actions, so it is not comparable.
     fig, axes = new_figure(1, 2, (11, 3.6))
     for c, s in enumerate(REPORT_SETS):
         ax = axes[0, c]
         yy = np.arange(len(FAMILIES))
         for k, (m, color) in enumerate((("dummy_A", COLOR_DUMMY), (best["A"], COLOR_A), (best["B"], COLOR_B))):
-            vals = [per_style[s][f][m]["macro_f1"] for f in FAMILIES]
+            vals = [per_style[s][f][m]["log_loss"] for f in FAMILIES]
             ax.barh(yy + (k - 1) * 0.26, vals, 0.23, color=color, label=MODEL_LABELS[m])
-        ax.set_yticks(yy, [f"{f}\n({per_style[s][f]['rows']} rows, {per_style[s][f]['matches']} matches)"
+        def plural(n: int) -> str:
+            return f"{n} match" if n == 1 else f"{n} matches"
+
+        ax.set_yticks(yy, [f"{f}\n({per_style[s][f]['rows']} rows, {plural(per_style[s][f]['matches'])})"
                            for f in FAMILIES], fontsize=8)
         ax.invert_yaxis()
-        ax.set_xlim(0, 1)
-        ax.set_xlabel("macro-F1 (legal-masked)")
+        ax.set_xlabel("log-loss, legal-masked (lower is better)")
         ax.set_title(f"By opponent style - {s.replace('heldout', 'held-out')} set", loc="left", fontsize=10)
-    axes[0, 1].legend(frameon=False, fontsize=8, loc="lower right")
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
+    fig.legend(*axes[0, 0].get_legend_handles_labels(), loc="lower center", ncols=3, frameon=False, fontsize=9)
     figures["per_style"] = save(fig, "fig5_per_style.png")
 
     # 6. Effect of history length: macro-F1 by number of earlier hands observed.
@@ -368,8 +409,8 @@ def main() -> None:
         ax.set_ylabel("macro-F1" if metric == "macro_f1" else "log-loss")
         ax.set_title(("macro-F1 (higher is better)" if metric == "macro_f1" else "log-loss (lower is better)")
                      + " - test + held-out", loc="left", fontsize=10)
-    axes[0, 0].legend(frameon=False, fontsize=8)
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
+    fig.legend(*axes[0, 0].get_legend_handles_labels(), loc="lower center", ncols=3, frameon=False, fontsize=9)
     figures["history_effect"] = save(fig, "fig6_history_effect.png")
 
     # 7. Permutation importance by feature group.
@@ -388,11 +429,45 @@ def main() -> None:
         fig.tight_layout()
         figures["permutation_importance"] = save(fig, "fig7_permutation_importance.png")
 
+    # 8. Same settings, A vs B, every grid point (validation).
+    fig, axes = new_figure(1, 2, (11, 4.6))
+    markers = {"random_forest": ("o", SERIES[2], "Random Forest settings"),
+               "hist_gradient_boosting": ("^", SERIES[3], "HistGradientBoosting settings")}
+    for c, (col, nice) in enumerate((("val_macro_f1", "validation macro-F1 (higher is better)"),
+                                     ("val_log_loss", "validation log-loss (lower is better)"))):
+        ax = axes[0, c]
+        ax.grid(axis="y", color=GRID, linewidth=0.8)
+        lo, hi = np.inf, -np.inf
+        for name, (marker, color, label) in markers.items():
+            a, b = same_settings[name]["a"][col], same_settings[name]["b"][col]
+            ax.scatter(a, b, marker=marker, s=46, color=color, edgecolor=SURFACE, linewidth=1, label=label, zorder=3)
+            lo, hi = min(lo, a.min(), b.min()), max(hi, a.max(), b.max())
+        pad = (hi - lo) * 0.05
+        ax.plot([lo - pad, hi + pad], [lo - pad, hi + pad], color=INK_2, linewidth=1, linestyle="--", zorder=2)
+        ax.set_xlim(lo - pad, hi + pad)
+        ax.set_ylim(lo - pad, hi + pad)
+        ax.set_xlabel("Feature Set A")
+        ax.set_ylabel("Feature Set B (same settings)")
+        ax.set_title(nice, loc="left", fontsize=10)
+        where = "above" if col == "val_macro_f1" else "below"
+        ax.text(0.98, 0.04 if col == "val_macro_f1" else 0.96, f"points {where} the dashed line: B better",
+                transform=ax.transAxes, ha="right", va="bottom" if col == "val_macro_f1" else "top",
+                fontsize=8, color=INK_2)
+    fig.suptitle("Every hyperparameter setting trained on both feature sets (validation set only)",
+                 x=0.01, ha="left", fontsize=10, color=INK_2)
+    fig.tight_layout(rect=(0, 0.06, 1, 1))
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="lower center", ncols=2, frameon=False, fontsize=9)
+    figures["same_settings"] = save(fig, "fig8_same_settings_a_vs_b.png")
+
     # --- Report -----------------------------------------------------------------------------
     metrics_out = {"best_by_feature_set": best, "point": point, "bootstrap": boot, "paired_differences": diffs,
                    "per_style": per_style, "history_bins": history, "by_street": by_street,
                    "predicted_shares": share_rows, "permutation_importance": permutation,
-                   "resamples": RESAMPLES, "figures": figures}
+                   "resamples": RESAMPLES, "figures": figures, "random_legal_guess": random_guess, "uniform_legal_guess": uniform_guess,
+                   "same_settings_validation": {k: {kk: vv for kk, vv in v.items() if kk not in ("a", "b")}
+                                                for k, v in same_settings.items()},
+                   "calibration_validation": calibration_rows}
     (RESULTS_DIR / "metrics.json").write_text(json.dumps(metrics_out, indent=2, default=float) + "\n",
                                               encoding="utf-8")
 
@@ -447,10 +522,15 @@ def main() -> None:
         rows = []
         for f in FAMILIES:
             e = per_style[s][f]
-            rows.append({"style": f, "rows": e["rows"], "matches": e["matches"],
-                         **{f"{MODEL_LABELS[m]} macro-F1": e[m]["macro_f1"] for m in MAIN_MODELS},
-                         **{f"{MODEL_LABELS[m]} log-loss": e[m]["log_loss"] for m in (best["A"], best["B"])}})
+            for m in MAIN_MODELS:
+                rows.append({"style": f, "rows": e["rows"], "matches": e["matches"], "model": MODEL_LABELS[m],
+                             "macro-F1": e[m]["macro_f1"], "balanced acc.": e[m]["balanced_accuracy"],
+                             "log-loss": e[m]["log_loss"], "accuracy": e[m]["accuracy"]})
         md += [f"## 5. By opponent style - {s.replace('heldout', 'held-out')} set (point estimates)", "",
+               "Caution: macro-F1 always averages over all five classes, and a class that a style never uses "
+               "scores 0, so per-style macro-F1 is capped (e.g. calling stations almost only check/call) and is not "
+               "comparable across styles. Log-loss and balanced accuracy are better per-style comparisons. "
+               "Each style has only 1-4 matches per set, so these are point estimates without intervals.", "",
                md_table(pd.DataFrame(rows)), ""]
 
     rows = []
@@ -495,9 +575,36 @@ def main() -> None:
             if "shuffled" in k:
                 rows.append({"set": s, "comparison": k, "macro-F1": fmt_diff(v["macro_f1"]),
                              "log-loss": fmt_diff(v["log_loss"])})
+    guess_rows = [{"set": s, "Dummy macro-F1": point["dummy_A"][s]["masked"]["macro_f1"],
+                   "random legal guess (prior) macro-F1": random_guess[s]["macro_f1"],
+                   "random legal guess (uniform) macro-F1": uniform_guess[s]["macro_f1"],
+                   **{f"{MODEL_LABELS[m]} macro-F1": point[m][s]["masked"]["macro_f1"]
+                      for m in models if "shuffled" in m}} for s in REPORT_SETS]
     md += ["## 10. Shuffled-label control (audit L13)", "",
-           "Models trained with the selected settings on randomly permuted training labels. "
-           "They should do no better than the Dummy baseline.", "", md_table(pd.DataFrame(rows)), ""]
+           "Models trained with the selected settings on randomly permuted training labels. They should learn "
+           "nothing. **Log-loss is the clean check**: every shuffled model is worse than the Dummy. Their macro-F1 "
+           "can sit slightly above the Dummy's because the Dummy always predicts check_call (macro-F1 = check_call "
+           "F1 / 5), while any model that sometimes guesses other *legal* actions earns some minority-class F1 by "
+           "chance. The 'random legal guess' reference (actions drawn at random from the training prior, restricted "
+           "to legal actions) and the 'uniform' version (every legal action equally likely, which class-balanced weighting tends toward) show the size of that effect.", "", md_table(pd.DataFrame(rows)), "",
+           md_table(pd.DataFrame(guess_rows)), ""]
+    md += ["## 11. Same settings, A vs B (validation, every grid point)", "",
+           "Feature Set B was compared with A using **identical** hyperparameters for every setting in both grids "
+           "(validation set only). This separates the effect of the history features from the effect of the "
+           "selected hyperparameters (the selected A and B models use different settings).", "",
+           md_table(pd.DataFrame([{"model": k, "settings": v["configs"], "B better macro-F1": v["b_better_macro_f1"],
+                                   "B better log-loss": v["b_better_log_loss"],
+                                   "B - A macro-F1 (min / median / max)":
+                                       f"{v['macro_f1_diff_min']:+.3f} / {v['macro_f1_diff_median']:+.3f} / {v['macro_f1_diff_max']:+.3f}",
+                                   "B - A log-loss (min / median / max)":
+                                       f"{v['log_loss_diff_min']:+.3f} / {v['log_loss_diff_median']:+.3f} / {v['log_loss_diff_max']:+.3f}"}
+                                  for k, v in same_settings.items()])), ""]
+    md += ["## 12. Calibration note (validation only)", "",
+           f"The approved selection metric (validation macro-F1) favours deep forests and balanced class weights, "
+           f"whose probabilities are poorly calibrated: the selected models' validation log-loss is close to or "
+           f"worse than the Dummy's ({dummy_val_ll:.3f}). Other settings in the same grid reach much lower "
+           "validation log-loss at some cost in macro-F1. These rows are validation results only; no other model "
+           "was evaluated on test or held-out data.", "", md_table(pd.DataFrame(calibration_rows)), ""]
     md += ["## Figures", "", *(f"- `{p}`" for p in figures.values()), "",
            f"Evaluation took {(time.perf_counter() - start) / 60:.1f} min.", ""]
     (RESULTS_DIR / "model_results.md").write_text("\n".join(md), encoding="utf-8")
