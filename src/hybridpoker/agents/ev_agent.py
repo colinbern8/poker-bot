@@ -8,6 +8,11 @@ opponent probability model plugged in:
   legal-masked in each hypothetical state. It is deliberately simple: it
   ignores the betting situation and the opponent's history, so it may be
   weaker than a context-aware frequency baseline would be.
+* :class:`SituationFrequencyResponseModel` (the **Situation-Aware Frequency
+  EV Agent**, the stronger control): training-split action frequencies
+  conditioned on the public betting situation (street, facing a bet, facing
+  an all-in, raises this street), with fixed hierarchical shrinkage for sparse
+  situations (:mod:`hybridpoker.situation_frequency`). No opponent history.
 * :class:`MLResponseModel` (the **ML EV Agent**, treatment): the frozen
   Phase 3 Random Forest (Feature Set B, setting #22) with live opponent
   history from :class:`~hybridpoker.opponent_tracker.OpponentTracker`.
@@ -61,6 +66,7 @@ from hybridpoker.opponent_history import HistoryPriors
 from hybridpoker.opponent_predictor import PHASE4_MODEL_PATH, OpponentPredictor
 from hybridpoker.opponent_tracker import OpponentTracker
 from hybridpoker.range_equity import RANGE_EQUITY_SAMPLES, opponent_ranking, range_adjustments, top_count
+from hybridpoker.situation_frequency import SITUATION_PRIOR_PATH, SituationFrequencies
 from hybridpoker.state_coverage import COVERAGE_PATH, LOW_COVERAGE_THRESHOLD, coverage_key, load_coverage
 
 FREQUENCY_PRIOR_PATH = Path("results/phase3/frequency_prior.json")
@@ -140,6 +146,34 @@ class FrequencyResponseModel(ResponseModel):
 
     def config(self) -> dict[str, Any]:
         return {"name": self.name, "shares": [round(float(s), 12) for s in self.shares]}
+
+
+class SituationFrequencyResponseModel(ResponseModel):
+    """Training-split frequencies per betting situation, smoothed, legal-masked (stronger control).
+
+    Conditions on street, facing a bet, facing an all-in and raises this street
+    (capped at 3); see :mod:`hybridpoker.situation_frequency`. It ignores the
+    opponent's history and every other feature of the hand.
+    """
+
+    name = "situation_frequency_prior"
+
+    def __init__(self, frequencies: SituationFrequencies) -> None:
+        self.frequencies = frequencies
+
+    @classmethod
+    def load(cls, path: Path = SITUATION_PRIOR_PATH) -> SituationFrequencyResponseModel:
+        return cls(SituationFrequencies.load(path))
+
+    def predict(self, observations, tracker) -> MaskedProbabilities:
+        rows = [observation_columns(o) for o in observations]
+        raw = np.vstack([self.frequencies.predict(r) for r in rows])
+        return mask_and_renormalize(raw, legal_mask(pd.DataFrame(rows)))
+
+    def config(self) -> dict[str, Any]:
+        return {"name": self.name, "smoothing_rows": self.frequencies.smoothing_rows,
+                "levels": "global > street > facing bet > facing all-in > raises this street (cap 3)",
+                "training_rows": self.frequencies.rows("global")}
 
 
 class MLResponseModel(ResponseModel):
@@ -293,6 +327,12 @@ class EVAgent(Agent):
 def make_frequency_ev_agent(name: str = "ev_frequency", equity_samples: int = EQUITY_SAMPLES) -> EVAgent:
     """The Frequency EV Agent (control)."""
     return EVAgent(name, FrequencyResponseModel.load(), equity_samples, coverage=load_coverage(COVERAGE_PATH))
+
+
+def make_situation_ev_agent(name: str = "ev_situation", equity_samples: int = EQUITY_SAMPLES) -> EVAgent:
+    """The Situation-Aware Frequency EV Agent (stronger control)."""
+    return EVAgent(name, SituationFrequencyResponseModel.load(), equity_samples,
+                   coverage=load_coverage(COVERAGE_PATH))
 
 
 def make_ml_ev_agent(name: str = "ev_ml", equity_samples: int = EQUITY_SAMPLES,
