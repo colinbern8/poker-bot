@@ -49,19 +49,141 @@ tests/test_smoke.py .............                                        [100%]
 ============================== 13 passed in 1.15s ==============================
 ```
 
-Windows results come from GitHub Actions. They were not run locally.
+Windows (GitHub Actions, run 43113218578, `windows-latest`):
+`platform win32 -- Python 3.12.10, pytest-9.2.0` with `13 passed in 2.17s`.
+Ubuntu (same run): success.
 
 ### Experimental results
 
-None yet. Phase 0 contains no experiments.
+None. Phase 0 contains no experiments.
+
+### Known problems (resolved)
+
+- Codespaces setup was verified manually by the project owner. The virtual
+  environment must be activated in each new terminal
+  (`source .venv/bin/activate`); the README now says so.
+- Windows compatibility was confirmed by GitHub Actions (above).
+- Seeded card dealing is handled in Phase 1 by our own equity simulator.
+
+Merged into `main` through pull request #1.
+
+## Phase 1: Probability engine (2026-11-12)
+
+Branch: `phase-1-equity-engine`.
+
+### Completed work
+
+- `src/hybridpoker/equity.py`:
+  - `estimate_equity` is a seeded Monte Carlo equity estimate for
+    1 to 9 opponents, with win, tie and loss rates and the standard error.
+  - `exact_river_equity` is exact heads-up river equity by enumerating
+    all 990 opponent hands.
+  - `summarize_pot_shares` and `hero_pot_share` hold the split-pot
+    accounting.
+  - `parse_cards` provides input parsing and validation.
+- `src/hybridpoker/pot_odds.py`:
+  - `pot_odds` gives the break-even equity.
+  - `call_expected_value` gives the simplified EV of calling compared with
+    folding.
+- `scripts/benchmark_equity.py` measures speed.
+- `docs/probability_engine.md` is a plain-language explanation of the math.
+
+### Important engineering decisions
+
+| Decision | Reason |
+|---|---|
+| Own Monte Carlo loop instead of PokerKit's `calculate_equities` | PokerKit's function has no seed parameter, so results could not be reproduced. PokerKit is still used for all hand evaluation (`StandardHighHand`). |
+| `seed` is a required keyword argument | Forces every experiment to record its seed (CLAUDE.md rule 8). |
+| Split pots count as 1/n of the pot | Correct equity for ties. A royal-flush board gives 1/(players). |
+| Standard error from fractional pot shares | A binary win/loss indicator misstates uncertainty when splits are common. |
+| `pot_size` includes the opponent's bet and excludes the hero's call; `call_amount > pot_size` is rejected | One consistent convention across the project. The check catches the most common mistake, leaving the bet out of the pot. It is listed as assumption 7 of the simplified heads-up API in `docs/probability_engine.md`. |
+| Exact enumeration limited to heads-up river | 990 combinations take about 0.3 s. Two opponents would need about 450,000, which takes minutes. |
+| No decision rule (call/fold) in Phase 1 | CLAUDE.md rule 7 says to separate math from decision rules. Rules come in Phase 2. |
+| No new dependencies | Only the standard library and PokerKit are used. |
+
+### Tests executed
+
+Local run (Linux, Python 3.12.3), `python -m pytest`: `82 passed in 12.83s`.
+
+GitHub Actions run 43276364776 on commit `398dabe`:
+
+- `windows-latest`: `platform win32 -- Python 3.12.10`, `82 passed in 20.70s`
+- `ubuntu-latest`: Python 3.12.16, `82 passed in 21.72s`
+
+This includes `test_seeded_results_are_identical_across_platforms`, so the
+same seed gives the same equity on Windows as on Linux.
+
+After adding the hand-counted river tests (8 more tests), the local run gave
+`90 passed in 16.38s`. CI results for the final commit are shown on the
+Phase 1 pull request.
+
+- `tests/test_equity.py` (51 tests):
+  - hand-counted river examples, with exact answers derived on paper and
+    checked against both exact enumeration and Monte Carlo
+  - validation
+  - split pots for 1, 2, 3, 5 and 9 opponents
+  - the standard-error formula
+  - exact river enumeration
+  - Monte Carlo within 4 SE of exact in 4 river spots
+  - reproducibility, including fixed regression values checked on Windows
+    in CI
+  - preflop sanity orderings
+- `tests/test_pot_odds.py` (26 tests):
+  - worked examples
+  - EV equals 0 exactly at pot odds
+  - EV extremes
+  - validation
+- `tests/test_smoke.py` (13 tests): unchanged from Phase 0.
+
+### Benchmark measurements
+
+`python scripts/benchmark_equity.py` on the cloud development container
+(Linux, 4 vCPU Intel Xeon, Python 3.12.3), with 5,000 samples per spot:
+
+| Spot | Samples per second | Equity ± SE |
+|---|---|---|
+| AsKh preflop, 1 opponent | 3,257 | 0.665 ± 0.007 |
+| AsKh on Td9d2c, 1 opponent | 3,096 | 0.500 ± 0.007 |
+| AsKh on Td9d2c4s7h, 1 opponent | 3,435 | 0.345 ± 0.007 |
+| AsKh preflop, 5 opponents | 1,608 | 0.278 ± 0.006 |
+| Exact river (990 hands) | 0.288 s total | |
+
+These are timings on one machine, not accuracy results.
+
+### Monte Carlo vs exact river equity (from development checks)
+
+3,000 to 4,000 samples, single seeds. All estimates were within 2 SE of the
+exact value:
+
+| Hand | Board | Exact equity | Exact tie rate |
+|---|---|---|---|
+| AsKd | Ah7c2d9sJh | 0.8889 | 0.0061 |
+| Td9d | 8d7c2s3hKh | 0.1258 | 0.0091 |
+| 2c3d | AhKhQhJh5s | 0.0081 | 0.0162 |
+| 5c5d | AhAdAsKcKd | 0.4773 | 0.9545 |
+
+### Mathematical limitations
+
+- Opponent hands are assumed uniformly random. This ignores what their
+  betting reveals. The ML opponent model is meant to address this.
+- Call EV assumes no future betting, full equity realization, a heads-up
+  final pot, no rake, and `call_amount <= pot_size`. These are the
+  simplified heads-up API assumptions in `docs/probability_engine.md`.
+- Independent verification covers hand-counted river spots only. Preflop,
+  flop and turn equities are checked for consistency (ordering, multiway
+  trends, agreement with the same engine), not against published values.
+- The standard error uses a normal approximation. It is unreliable for very
+  small `sample_count` and is NaN for a single sample.
+- Exact enumeration is heads-up river only.
 
 ### Known problems
 
-- GitHub Codespaces setup was validated for JSON syntax only. It has not been
-  run in an actual Codespace yet.
-- Windows compatibility depends on the GitHub Actions run.
-- PokerKit card dealing is not yet seeded/reproducible.
+- Speed: about 3,000 samples per second heads-up. A decision with 1,000
+  samples costs about 0.3 s, so a 10,000-hand experiment with several
+  decisions per hand could take hours. Options for Phase 2 and 4 are
+  fewer samples, caching preflop equities, or exact river calculation.
 
 ### Next milestone
 
-Phase 1, to be defined and approved before work starts.
+Phase 2: heads-up simulator, a probability-based agent, simple opponent
+bots, and hand logging. It needs a plan approved before work starts.
