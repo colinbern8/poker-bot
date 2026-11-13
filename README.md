@@ -10,7 +10,13 @@ history with `main` and **must never be merged into `main` or any code branch**.
 - `backup_checkpoints.py`: validates each finished file against the frozen manifest
   (hero, opponent, seed, deal count, no error, complete hands, result hash) before copying.
 
-To restore after losing the evaluation machine, copy `checkpoints/jobs` and `checkpoints/replays` to
-`data/processed/phase4_final/` in a checkout of `phase4-freeze`, then rerun
-`python scripts/run_phase4_final.py --run --workers 4`: completed matches are skipped and only the
-missing ones are played, with identical results.
+Modes of `backup_checkpoints.py` (run from this worktree, for example `/workspaces/phase4-checkpoints`):
+
+| Command | What it does |
+|---|---|
+| `python backup_checkpoints.py --repo /workspaces/poker-bot --restore` | Copies the backed-up matches into the repo after checking SHA-256 and the manifest |
+| `python backup_checkpoints.py --repo /workspaces/poker-bot --validate` | Checks the matches on disk; copies nothing |
+| `python backup_checkpoints.py --repo /workspaces/poker-bot` | One backup now (validated new matches, commit, push) |
+| `python backup_checkpoints.py --repo /workspaces/poker-bot --every 15` | Backs up every 15 minutes; stops by itself once all 64 matches, 8 replays and the final report are saved |
+
+The full step-by-step guide is `docs/phase4_codespaces_guide.md` on branch `claude/dazzling-knuth-r4bzf1`.
