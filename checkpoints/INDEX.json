@@ -18,6 +18,15 @@
       "result_hash": "e1eb5d5bee9ddb950af1a69833b87a9acd52408f3f8b8d4789f474f380f826f2",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/ev_global__maniac_v2.json.gz": {
+      "sha256": "39f0e216fe1a286be70736544105e420623cbdeff6d4fc6ec486364bcf6bb08d",
+      "hero": "ev_global",
+      "opponent": "maniac_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "fd85826d2cba2533ffdf881224c95ec0b697d301a327fdd2b2d3194fb1a1aa6a",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/ev_global__solid.json.gz": {
       "sha256": "5e63f2c3a1ce31ce101b6f811be902febab435b6d4f9426a7ef52c4ea178d8eb",
       "hero": "ev_global",
@@ -61,6 +70,15 @@
       "deals": 500,
       "hands": 1000,
       "result_hash": "794497621ebe6204bc2713d91627eea4d234ee91cb800fcec6409e83967cfbe6",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__maniac_v1.json.gz": {
+      "sha256": "eeb10d7cef3f8291f60d89e5e3fa85fb42630c9e4c5eb2d499876a300c4fe8ef",
+      "hero": "ev_ml",
+      "opponent": "maniac_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "8dff498ac1796a21391b6830029eac170cd66236c9994fe15b451ee3b39cbfd3",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
     "jobs/ev_ml__solid.json.gz": {
@@ -117,6 +135,15 @@
       "result_hash": "397ec8a0fa90a5abe784f357835ab527ff6cd50d664bc878951d44eaadf67dc8",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/ev_situation__maniac_v2.json.gz": {
+      "sha256": "1db3e6d68a15e381c7c0545f55bda7e04e5ac2e3fc234ec36b7d7bedf02f521f",
+      "hero": "ev_situation",
+      "opponent": "maniac_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "62fff937d3b9fa1da9695b1d25377afc8b3b887878935613ced4cba467b0cfa4",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/ev_situation__solid.json.gz": {
       "sha256": "0440cfb2ead08248fb857fa43291731f864be733f9d708b128a40f40806c1489",
       "hero": "ev_situation",
@@ -171,6 +198,15 @@
       "result_hash": "ace4f1f7fa02838ffce20cebef17380b77679970c710c98c5b2f5054e2a2c4a4",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/probability__maniac_v2.json.gz": {
+      "sha256": "3b599137b83d6d8f0cf22e7fbc0f1cf05bd502846ef8dc3251b70a0a72751e32",
+      "hero": "probability",
+      "opponent": "maniac_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "0454845f7a5399a459c91972c1b5081a513f7c2325dcb4580bfa49764f7f63b2",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/probability__solid.json.gz": {
       "sha256": "a4bd482358402f00b1d849c7c8bc8a6f76166734c03cd33ce59f9999d7ba4515",
       "hero": "probability",
@@ -211,9 +247,9 @@
   "freeze_commit": "d50af2b04e00a58a2fe5104ae59da8f2f2ea7669",
   "freeze_tag": "phase4-freeze",
   "manifest_sha256": "213f4070247d8b8ca51334123b0221c7cbf09b053713f2bf0687462604306e16",
-  "updated": "2026-11-13T18:08:56+00:00",
+  "updated": "2026-11-13T18:38:58+00:00",
   "complete": {
-    "matches": 23,
+    "matches": 27,
     "of": 64,
     "replays": 0,
     "replays_of": 8
