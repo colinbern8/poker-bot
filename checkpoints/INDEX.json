@@ -81,6 +81,15 @@
       "result_hash": "0444c858f56b54c772eaac01ab48bdec82288c3f7bf4a35e36683bd549d2d30a",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/ev_ml__calling_station.json.gz": {
+      "sha256": "f001f998db89303b8420914cab53f81d29171dc13695d56fdea300804070161a",
+      "hero": "ev_ml",
+      "opponent": "calling_station",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "ff6938c841f74d32082497e453cc120c7ad4892db70fe6988af3cd7c6b7774c3",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/ev_ml__maniac.json.gz": {
       "sha256": "65ebbab67ffbe6944a337981c93dc7588ef8e938b93753e4fbe8325318101e30",
       "hero": "ev_ml",
@@ -319,9 +328,9 @@
   "freeze_commit": "d50af2b04e00a58a2fe5104ae59da8f2f2ea7669",
   "freeze_tag": "phase4-freeze",
   "manifest_sha256": "213f4070247d8b8ca51334123b0221c7cbf09b053713f2bf0687462604306e16",
-  "updated": "2026-11-13T20:09:04+00:00",
+  "updated": "2026-11-13T20:24:06+00:00",
   "complete": {
-    "matches": 35,
+    "matches": 36,
     "of": 64,
     "replays": 0,
     "replays_of": 8
