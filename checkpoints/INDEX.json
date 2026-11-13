@@ -72,6 +72,15 @@
       "result_hash": "8f43e8334a79177765f3eacad1d48319985554677722f158721745cf8ece823c",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/ev_global__nit.json.gz": {
+      "sha256": "382ff81b4b4c5788c16a6a2f7e15cd44aad32ec20280a3163a2d8f5839f8e4e1",
+      "hero": "ev_global",
+      "opponent": "nit",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "c6165de6120fc8428584540ec19bd2d178980b8bdebfb4fa300d5f9a595dde28",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/ev_global__solid.json.gz": {
       "sha256": "5e63f2c3a1ce31ce101b6f811be902febab435b6d4f9426a7ef52c4ea178d8eb",
       "hero": "ev_global",
@@ -297,6 +306,15 @@
       "result_hash": "324956593a96d882e2a194161103c90186f8c2d1f8e09a3477ccfb3534d3f666",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/ev_situation__nit.json.gz": {
+      "sha256": "6219488d970d65a9b358cda87827a8bae9b81748f5b0527331bb0e1920201a1b",
+      "hero": "ev_situation",
+      "opponent": "nit",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "d8f54c568a51fd81f3057a4273f0b7f20a4980778957f833875f6d1c913bdab9",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/ev_situation__solid.json.gz": {
       "sha256": "0440cfb2ead08248fb857fa43291731f864be733f9d708b128a40f40806c1489",
       "hero": "ev_situation",
@@ -454,9 +472,9 @@
   "freeze_commit": "d50af2b04e00a58a2fe5104ae59da8f2f2ea7669",
   "freeze_tag": "phase4-freeze",
   "manifest_sha256": "213f4070247d8b8ca51334123b0221c7cbf09b053713f2bf0687462604306e16",
-  "updated": "2026-11-13T22:24:17+00:00",
+  "updated": "2026-11-13T22:39:19+00:00",
   "complete": {
-    "matches": 50,
+    "matches": 52,
     "of": 64,
     "replays": 0,
     "replays_of": 8
