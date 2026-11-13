@@ -27,6 +27,15 @@
       "result_hash": "fd85826d2cba2533ffdf881224c95ec0b697d301a327fdd2b2d3194fb1a1aa6a",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/ev_global__maniac_v3.json.gz": {
+      "sha256": "175df524e789ad43fbd4fe68aebd6ba4fa14199b3673666d89b6d16864ade4af",
+      "hero": "ev_global",
+      "opponent": "maniac_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "8f43e8334a79177765f3eacad1d48319985554677722f158721745cf8ece823c",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/ev_global__solid.json.gz": {
       "sha256": "5e63f2c3a1ce31ce101b6f811be902febab435b6d4f9426a7ef52c4ea178d8eb",
       "hero": "ev_global",
@@ -79,6 +88,15 @@
       "deals": 500,
       "hands": 1000,
       "result_hash": "8dff498ac1796a21391b6830029eac170cd66236c9994fe15b451ee3b39cbfd3",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__maniac_v2.json.gz": {
+      "sha256": "cb51c3b2ff86742827817aebb8e07581c3265076ae1ddc2dbdd1598aaa5e3e7a",
+      "hero": "ev_ml",
+      "opponent": "maniac_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "9eedeabff1a4e2b3c72e950fac2b3293ffe53a10f0dff5100738b439e22436c4",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
     "jobs/ev_ml__solid.json.gz": {
@@ -142,6 +160,15 @@
       "deals": 500,
       "hands": 1000,
       "result_hash": "62fff937d3b9fa1da9695b1d25377afc8b3b887878935613ced4cba467b0cfa4",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__maniac_v3.json.gz": {
+      "sha256": "d37fc44cb189e1ac6fe2eb31883a50fd2925fbe13c279779fe3cec95e28617eb",
+      "hero": "ev_situation",
+      "opponent": "maniac_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "324956593a96d882e2a194161103c90186f8c2d1f8e09a3477ccfb3534d3f666",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
     "jobs/ev_situation__solid.json.gz": {
@@ -256,9 +283,9 @@
   "freeze_commit": "d50af2b04e00a58a2fe5104ae59da8f2f2ea7669",
   "freeze_tag": "phase4-freeze",
   "manifest_sha256": "213f4070247d8b8ca51334123b0221c7cbf09b053713f2bf0687462604306e16",
-  "updated": "2026-11-13T19:08:59+00:00",
+  "updated": "2026-11-13T19:24:01+00:00",
   "complete": {
-    "matches": 28,
+    "matches": 31,
     "of": 64,
     "replays": 0,
     "replays_of": 8
