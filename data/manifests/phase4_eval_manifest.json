@@ -1,0 +1,376 @@
+{
+  "analysis": {
+    "descriptive": "all six pairwise hero comparisons, win rates, all-in rates and all-in-hand results, low-coverage reliance, decision latency",
+    "document": "docs/phase4_analysis_plan.md",
+    "errors": "any match error or illegal action invalidates the run: no primary result is reported from an incomplete run; a fix is a documented protocol deviation and requires a new freeze",
+    "no_tuning": "no agent, model, seed, sample-size or analysis change after the freeze; final results are never used to tune anything",
+    "pairing": "paired differences between two heroes on the same deal pair against the same opponent (identical cards, seats and opponent random streams)",
+    "per_opponent": "descriptive only (16 comparisons: about 0.8 intervals would exclude 0 by chance at 5%)",
+    "primary": {
+      "control": "ev_situation",
+      "decision": "two-sided test at alpha = 0.05: the ML agent is better if the interval lies above 0, worse if below 0; otherwise no difference is detected",
+      "estimand": "equal-weight mean over the 16 opponents of the mean paired difference per deal pair (bb/100)",
+      "interval": "95% normal interval: mean +/- 1.96 x sqrt(sum over opponents of SE_o^2) / 16, SE_o = sample SD of the opponent's paired differences / sqrt(500)",
+      "name": "ML EV minus Situation-Aware Frequency EV",
+      "treatment": "ev_ml"
+    },
+    "secondary": [
+      {
+        "control": "ev_global",
+        "name": "ML EV minus Global Frequency EV",
+        "treatment": "ev_ml"
+      },
+      {
+        "control": "probability",
+        "name": "ML EV minus ProbabilityAgent",
+        "treatment": "ev_ml"
+      }
+    ],
+    "secondary_rule": "same estimator and 95% interval as the primary, not adjusted for multiplicity; supporting evidence only",
+    "sensitivity": "stratified bootstrap of the primary (deal pairs resampled within each opponent, 10000 replicates, seed derive_seed(4000, 'bootstrap', 'primary')); the decision uses the normal interval",
+    "subgroups": "training pool (12) vs held-out (4) opponents, and each style (4 opponents each), equal weight within the group; exploratory, no confirmatory claims",
+    "unit": "deal pair: the hero's net chips over both seatings of one deal, in bb/100 (chips / 2 hands / 2 chips per big blind x 100)"
+  },
+  "deals_per_match": 500,
+  "development_reference": {
+    "master_seed": 5000,
+    "report": "results/phase4/stage4c_dev_report.md"
+  },
+  "environment": {
+    "packages": {
+      "joblib": "1.6.0",
+      "numpy": "2.5.4",
+      "pandas": "3.1.1",
+      "pokerkit": "0.7.7",
+      "scikit-learn": "1.9.1"
+    },
+    "python": "3.12"
+  },
+  "freeze_tag": "phase4-freeze",
+  "frozen_files": {
+    "pyproject.toml": "0b7913cf36c9feccd127ef34243a9d6df12ae26f81e7b76b62c9ebbf990d3da3",
+    "requirements.txt": "c6a497817ccff08e362e61334e30a67cc6b36dae739f8ce9f12fff5571b01d5c",
+    "results/phase3/frequency_prior.json": "b519986ff03b05f917415790fe210f33f29b2b1858e748c194d72e701dc8ca2a",
+    "results/phase3/situation_frequency_prior.json": "62c29113e26441aa9c61d7e588fa11384698c0d9cce936d65e0f2d3c1538ef18",
+    "results/phase3/state_coverage.json": "b1acecbe4b68a8c87a877d816d33f27008e6077d502fe69f6f282c99f64dac68",
+    "scripts/build_phase4_manifest.py": "5646f29206242da5462454a5e5f3a7bd69d8c64809413d7edabf7208636f2e0b",
+    "scripts/run_phase4_final.py": "218e50fdaad699b8fc9eec2c8d2b00d4633d7fd32ba66beda5663d404e6c7ee7",
+    "src/hybridpoker/__init__.py": "eea1ebcd5f851d752e4a01b07587f97f9eac413a980522c12115a850860159fc",
+    "src/hybridpoker/action_probabilities.py": "ce80e343687af059be9b549752224b0562a28deb4dbc648b1443f17b9d44f939",
+    "src/hybridpoker/actions.py": "ac9409009b8614a50b1eecc91e4430e608a67d9f191164ec66a69d78118521eb",
+    "src/hybridpoker/agents/__init__.py": "440fafe979a2e4b9db3392a6875c582a4eb5839eb591589fa07342f5c10d8bcb",
+    "src/hybridpoker/agents/base.py": "c9799ef7df6aa5dcfef7dc73ce8091924b28052093d4d1a4247137167e64d011",
+    "src/hybridpoker/agents/ev_agent.py": "0e4ce0eb39989dffaf22a164c75c0f12acfd4dc87ab17b0bd3ac51a048368b1a",
+    "src/hybridpoker/agents/probability.py": "19b96cf2f5930982826012e103533826ffe196efd9b7472220831fa1ef46642f",
+    "src/hybridpoker/agents/simple.py": "1fe8952da6182e17307bd81c681c89f6b71ebeffa5c665c29a6fcee6d26d321a",
+    "src/hybridpoker/agents/strength.py": "d3160a0a13e035112d80a2f3fb1fcd690eaf3f35a50671d16597e584b5512ccf",
+    "src/hybridpoker/calibration.py": "029b0ff63e673d80962f37719721ab4a9bd94f157706b09ae6901036c30d5f85",
+    "src/hybridpoker/counterfactual.py": "48c1e5c3db864ff9d4d5c617c14452769e4d449195291999cdc8863dbb3d22b1",
+    "src/hybridpoker/dataset_generation.py": "ee84c7e69342962444956bf83848ca0b45316c8bb33cd4a8d32797dfc665c6f0",
+    "src/hybridpoker/dataset_loader.py": "a2132c50c109f1df067145d81ed0244da6ea2552be05b6cee3e6f24ce6dea058",
+    "src/hybridpoker/dataset_manifest.py": "afaebaada8cedd8ac695d38740ed179cacd53485001f8de0e4a82ff35eab7d15",
+    "src/hybridpoker/equity.py": "ac6015b25ee66cd55a88f644dd3550c67fbbb024fde9244dcb1a76539df1e1c6",
+    "src/hybridpoker/ev.py": "d715d45320e6341b46a61c94f2b91c528d99745e039bd5e6bee7f768a883024d",
+    "src/hybridpoker/evaluation.py": "37d1608b0f27abb7b5ae47a7b94864080688160415777fa7f0241020efa08789",
+    "src/hybridpoker/features.py": "7f809b47aae6fda121892322a4fc1d0597137f069be8521e4153c1207828f6d5",
+    "src/hybridpoker/game.py": "740210fe3dbaa60d50b9253e259ff4a1d1082a739cd49cc0337b815c0080fbd7",
+    "src/hybridpoker/hand_log.py": "941392bd00023b12482665c1df1e63968682a898b10060876c9813f8d5e95ea7",
+    "src/hybridpoker/leakage.py": "f407b3bef7e110accca901dd6b7d1e1448c0245f43546580d59f9d6ab2edca79",
+    "src/hybridpoker/match.py": "daa67f14200b3ff065916f6d33861b2c259ca65a93018d261d32ee5d7ac259a3",
+    "src/hybridpoker/metrics.py": "987fa48b05b535589fdb99f7cf68e5925f615b6769ebebe34da7ff74e26af628",
+    "src/hybridpoker/observation.py": "9488bafe1117c6abf73f0efbfa1b07b3d719b79587ca154bc58df690f8b6dfaa",
+    "src/hybridpoker/opponent_configs.py": "8881349a4a473c3e2f2b4e55bcfa124c7da288f8403c5504a3d70cffc29f3a12",
+    "src/hybridpoker/opponent_history.py": "8e95013dde37a99d2e6d1493bd191f3163d8726ef125cd447e79e412c32e4ce8",
+    "src/hybridpoker/opponent_model.py": "3217d45c4e8c2459155465c4c50d947a184a0775b663d92b8004e7686e470763",
+    "src/hybridpoker/opponent_predictor.py": "02407b98a6abbe7df0ad0a3207d1cd466d925d71e3499e3bd25d2dc30b2ce370",
+    "src/hybridpoker/opponent_tracker.py": "6b7b4b1a058860d56e13f6d3d37486699d04ddd6515f6b6abf9c1d109f8fa59d",
+    "src/hybridpoker/phase4_eval.py": "d51909c82bf4d1bfaa065a68d7cadd08426c40041be6f3ca7bd726a3c101e1e5",
+    "src/hybridpoker/phase4_final.py": "d0606a8f9f02a6d339f9d5ff8f389b6ee236aa875e64e6f3a593c60c3d22e624",
+    "src/hybridpoker/phase4_report.py": "71eb3978c8989176a88933bfef8a01250fb995bedcb135b84f9b8194e4f41770",
+    "src/hybridpoker/pot_odds.py": "1461c06edc4ce461b8f76a777890af30cf5bc51839640626f8ef79b8b07e4f2f",
+    "src/hybridpoker/range_equity.py": "dcb00bcdbcdfdb5f4236a67b66afd5a924fe3943f008ca64edac2315d4416c71",
+    "src/hybridpoker/reporting.py": "50c0fd191bdff80c00b91f451d84d488ee9a1c50c9e340e094cc5ad337063979",
+    "src/hybridpoker/seeding.py": "43936420b1d434519cc7bc6e0dcd8f27049a24eb348d2347af74b9ff54870bb5",
+    "src/hybridpoker/simulator.py": "dda0046375ea1a2ab77b944570a868ee0362326a6cb63b9814430659334a2324",
+    "src/hybridpoker/situation_frequency.py": "d816f7292ad5dba230cfa6711ae88cea5be1a88215c7dccab86c1bfd0d72ebce",
+    "src/hybridpoker/state_coverage.py": "c15659356e503f6ef73d9a6f12607904e74f6f431666c9a9ae5fa27a00b572dd"
+  },
+  "hero_configs": {
+    "ev_global": {
+      "class": "EVAgent",
+      "decision_rule": "one-step EV (hybridpoker.ev), called branch vs continuing range",
+      "equity_samples": 500,
+      "name": "ev_global",
+      "range_samples": 400,
+      "response_model": {
+        "name": "frequency_prior",
+        "shares": [
+          0.043384315553,
+          0.707367707495,
+          0.127187221963,
+          0.113036478414,
+          0.009024276575
+        ]
+      },
+      "tie_break": "fewest additional chips, then CLASS_ORDER"
+    },
+    "ev_ml": {
+      "class": "EVAgent",
+      "decision_rule": "one-step EV (hybridpoker.ev), called branch vs continuing range",
+      "equity_samples": 500,
+      "name": "ev_ml",
+      "range_samples": 400,
+      "response_model": {
+        "model_sha256": "5d4c8235e142a2fdd23a2b370def8183aabfad72b7998120cbe4fb711dda7b31",
+        "name": "random_forest_B_22"
+      },
+      "tie_break": "fewest additional chips, then CLASS_ORDER"
+    },
+    "ev_situation": {
+      "class": "EVAgent",
+      "decision_rule": "one-step EV (hybridpoker.ev), called branch vs continuing range",
+      "equity_samples": 500,
+      "name": "ev_situation",
+      "range_samples": 400,
+      "response_model": {
+        "levels": "global > street > facing bet > facing all-in > raises this street (cap 3)",
+        "name": "situation_frequency_prior",
+        "smoothing_rows": 30.0,
+        "training_rows": 23603
+      },
+      "tie_break": "fewest additional chips, then CLASS_ORDER"
+    },
+    "probability": {
+      "bet_equity": 0.6,
+      "call_margin": 0.02,
+      "class": "ProbabilityAgent",
+      "equity_samples": 500,
+      "name": "probability",
+      "raise_equity": 0.7
+    }
+  },
+  "hero_labels": {
+    "ev_global": "Global Frequency EV",
+    "ev_ml": "ML EV",
+    "ev_situation": "Situation-Aware Frequency EV",
+    "probability": "ProbabilityAgent"
+  },
+  "heroes": [
+    "probability",
+    "ev_global",
+    "ev_situation",
+    "ev_ml"
+  ],
+  "manifest_sha256": "213f4070247d8b8ca51334123b0221c7cbf09b053713f2bf0687462604306e16",
+  "master_seed": 4000,
+  "model": {
+    "path": "models/phase3/random_forest_logloss_B.joblib",
+    "sha256": "5d4c8235e142a2fdd23a2b370def8183aabfad72b7998120cbe4fb711dda7b31"
+  },
+  "name": "phase4_final_evaluation",
+  "note": "Final runs require the git tag phase4-freeze on the checked-out commit, a clean working tree and matching file, model and package hashes (scripts/run_phase4_final.py --check).",
+  "opponents": [
+    {
+      "aggression": 0.0,
+      "bluff_rate": 0.0,
+      "equity_samples": 200,
+      "family": "calling_station",
+      "index": 0,
+      "looseness": 1.0,
+      "match_seed": 5490085016574155450,
+      "name": "calling_station",
+      "pool": "train",
+      "variant": 0
+    },
+    {
+      "aggression": 0.0,
+      "bluff_rate": 0.095,
+      "equity_samples": 200,
+      "family": "calling_station",
+      "index": 1,
+      "looseness": 0.965,
+      "match_seed": 1502443615876251136,
+      "name": "calling_station_v1",
+      "pool": "train",
+      "variant": 1
+    },
+    {
+      "aggression": 0.019,
+      "bluff_rate": 0.0,
+      "equity_samples": 200,
+      "family": "calling_station",
+      "index": 2,
+      "looseness": 1.0,
+      "match_seed": 3554224424427105108,
+      "name": "calling_station_v2",
+      "pool": "train",
+      "variant": 2
+    },
+    {
+      "aggression": 0.0,
+      "bluff_rate": 0.027,
+      "equity_samples": 200,
+      "family": "calling_station",
+      "index": 3,
+      "looseness": 1.0,
+      "match_seed": 7462659836567918157,
+      "name": "calling_station_v3",
+      "pool": "heldout",
+      "variant": 3
+    },
+    {
+      "aggression": 0.85,
+      "bluff_rate": 0.35,
+      "equity_samples": 200,
+      "family": "maniac",
+      "index": 4,
+      "looseness": 0.75,
+      "match_seed": 343792234535941627,
+      "name": "maniac",
+      "pool": "train",
+      "variant": 0
+    },
+    {
+      "aggression": 0.844,
+      "bluff_rate": 0.348,
+      "equity_samples": 200,
+      "family": "maniac",
+      "index": 5,
+      "looseness": 0.733,
+      "match_seed": 3879675472567916742,
+      "name": "maniac_v1",
+      "pool": "train",
+      "variant": 1
+    },
+    {
+      "aggression": 0.855,
+      "bluff_rate": 0.432,
+      "equity_samples": 200,
+      "family": "maniac",
+      "index": 6,
+      "looseness": 0.776,
+      "match_seed": 6485982059222694434,
+      "name": "maniac_v2",
+      "pool": "train",
+      "variant": 2
+    },
+    {
+      "aggression": 0.798,
+      "bluff_rate": 0.364,
+      "equity_samples": 200,
+      "family": "maniac",
+      "index": 7,
+      "looseness": 0.849,
+      "match_seed": 7603822695080686661,
+      "name": "maniac_v3",
+      "pool": "heldout",
+      "variant": 3
+    },
+    {
+      "aggression": 0.3,
+      "bluff_rate": 0.0,
+      "equity_samples": 200,
+      "family": "nit",
+      "index": 8,
+      "looseness": 0.1,
+      "match_seed": 3638949761078795764,
+      "name": "nit",
+      "pool": "train",
+      "variant": 0
+    },
+    {
+      "aggression": 0.208,
+      "bluff_rate": 0.087,
+      "equity_samples": 200,
+      "family": "nit",
+      "index": 9,
+      "looseness": 0.11,
+      "match_seed": 1592356618267641120,
+      "name": "nit_v1",
+      "pool": "heldout",
+      "variant": 1
+    },
+    {
+      "aggression": 0.285,
+      "bluff_rate": 0.0,
+      "equity_samples": 200,
+      "family": "nit",
+      "index": 10,
+      "looseness": 0.173,
+      "match_seed": 8106982717492289582,
+      "name": "nit_v2",
+      "pool": "train",
+      "variant": 2
+    },
+    {
+      "aggression": 0.386,
+      "bluff_rate": 0.02,
+      "equity_samples": 200,
+      "family": "nit",
+      "index": 11,
+      "looseness": 0.199,
+      "match_seed": 6995280557973493804,
+      "name": "nit_v3",
+      "pool": "train",
+      "variant": 3
+    },
+    {
+      "aggression": 0.6,
+      "bluff_rate": 0.08,
+      "equity_samples": 200,
+      "family": "solid",
+      "index": 12,
+      "looseness": 0.45,
+      "match_seed": 5917168433164505772,
+      "name": "solid",
+      "pool": "train",
+      "variant": 0
+    },
+    {
+      "aggression": 0.597,
+      "bluff_rate": 0.09,
+      "equity_samples": 200,
+      "family": "solid",
+      "index": 13,
+      "looseness": 0.501,
+      "match_seed": 8930140895400086254,
+      "name": "solid_v1",
+      "pool": "train",
+      "variant": 1
+    },
+    {
+      "aggression": 0.519,
+      "bluff_rate": 0.112,
+      "equity_samples": 200,
+      "family": "solid",
+      "index": 14,
+      "looseness": 0.496,
+      "match_seed": 4847992683825609747,
+      "name": "solid_v2",
+      "pool": "heldout",
+      "variant": 2
+    },
+    {
+      "aggression": 0.619,
+      "bluff_rate": 0.054,
+      "equity_samples": 200,
+      "family": "solid",
+      "index": 15,
+      "looseness": 0.396,
+      "match_seed": 8623615512591809506,
+      "name": "solid_v3",
+      "pool": "train",
+      "variant": 3
+    }
+  ],
+  "replays": {
+    "deals": 6,
+    "opponent_indices": [
+      0,
+      10
+    ]
+  },
+  "schema_version": 1,
+  "seat_swap": true,
+  "seed_formula": "derive_seed(4000, \"eval\", opponent_name, 0)"
+}

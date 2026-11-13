@@ -4,8 +4,9 @@ Status: **approved 2026-11-12, with refinements (section 8). Stages 4A
 and 4B are implemented on `phase-4-ev-agents`, including the
 continuing-range correction (section 11). Stage 4C added a situation-aware
 frequency control (section 12) and ran the development evaluation on master
-seed 5000 (section 13). Decisions on the primary endpoint, the all-in
-policy and the final sample size are needed before the freeze (section 13.4).**
+seed 5000 (section 13). The project owner approved the pre-freeze decisions
+on 2026-11-13 (section 14). The freeze candidate, manifest and analysis plan
+are ready; the freeze and the final runs wait for approval.**
 Competition presentation: **December 7–9, 2026**.
 
 ## 1. Research question
@@ -576,3 +577,43 @@ results compared with these 100-deal matches.
 
 No agent, rule, model or sample size has been frozen. Stage 4D has not
 started.
+
+## 14. Pre-freeze decisions and freeze candidate (2026-11-13)
+
+**Decisions approved by the project owner:**
+
+1. Keep the one-step EV decision policy for the competition. Excessive
+   all-in play and the lack of future-betting reasoning are documented as
+   major limitations.
+2. **Primary endpoint:** ML EV minus Situation-Aware Frequency EV.
+3. **Secondary comparisons:** ML EV minus ProbabilityAgent, and ML EV minus
+   Global Frequency EV.
+4. **500 paired deals per match**, subject to the runtime check below.
+5. Fresh final master seed **4000**, never used in development.
+6. Freeze code, model hash, opponent configurations, evaluation design and
+   analysis method before any final run.
+
+**Freeze candidate:**
+
+- `data/manifests/phase4_eval_manifest.json`, built by
+  `scripts/build_phase4_manifest.py`;
+- `docs/phase4_analysis_plan.md`;
+- `src/hybridpoker/phase4_final.py`;
+- `scripts/run_phase4_final.py` (`--check`, `--run`, `--report`; resumable).
+
+The development report is now produced by the shared module
+`hybridpoker/phase4_report.py`. Regenerating it reproduced the committed
+Stage 4C report byte for byte.
+
+**Verification before the freeze**
+
+| Check | Result |
+|---|---|
+| Branch and HEAD | `phase-4-ev-agents` at `99bb8f3`, clean, equal to origin |
+| CI for `99bb8f3` | Run 35 passed on Ubuntu and Windows |
+| Local tests at `99bb8f3` | 424 passed (Python 3.12.3) |
+| Model SHA-256 | Matches `5d4c8235…7b31` |
+| Shared deals and seat swaps | Every hero has deals 0–99 × both seatings with identical cards against each opponent (independent re-check of the development records). Existing tests cover seat-swapped card sharing. A new test checks that identical heroes on shared deals give a paired difference of exactly 0. |
+| Interval calculation | Independent recomputation reproduces the reported primary, +60.8 [−10.9, +132.6]. Stratified bootstrap: [−8.5, +135.2]. Batch-means SE 37.2 against i.i.d. 36.6. Mean lag-1 autocorrelation +0.03. The deal pair is a valid independent unit. |
+| Tracker cost with long matches | Opponent-history features take about 40 ms per deal, with no growth from 100 to 500 deals |
+| Workload | 64 matches of 500 deals. Projected from the development per-match times, scheduled longest-first: about **4.3 h on 4 cores** (16.9 CPU-hours; 2.1 h on 8 cores). Longest match about 23 min. Records about 7 MB compressed; 15 GB RAM and 30 GB disk available. |

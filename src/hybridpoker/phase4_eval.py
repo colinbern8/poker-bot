@@ -55,6 +55,15 @@ COMPARISONS = (("ev_ml", "ev_situation"), ("ev_ml", "ev_global"), ("ev_ml", "pro
                ("ev_situation", "ev_global"), ("ev_situation", "probability"), ("ev_global", "probability"))
 
 
+def final_match_seed(opponent_name: str, match_index: int = 0, master_seed: int = FINAL_MASTER_SEED) -> int:
+    """Final-evaluation match seed (plan section 6): ``derive_seed(4000, "eval", opponent, i)``.
+
+    There is one match per hero and opponent, so ``i = 0``. Every hero uses the
+    same seed against a given opponent (shared deals).
+    """
+    return derive_seed(master_seed, "eval", opponent_name, match_index)
+
+
 def dev_match_seed(opponent_index: int, master_seed: int = DEV_MASTER_SEED) -> int:
     """Match seed shared by every hero against opponent ``opponent_index``."""
     if master_seed == FINAL_MASTER_SEED:
@@ -130,8 +139,14 @@ def _cards_hash(result) -> str:
 
 def play_dev_match(hero_name: str, opponent: OpponentConfig, opponent_index: int, deals: int,
                    master_seed: int = DEV_MASTER_SEED) -> dict[str, Any]:
-    """Play one seat-swapped match and return per-hand and per-decision records (never raises)."""
-    seed = dev_match_seed(opponent_index, master_seed)
+    """Development match against opponent ``opponent_index`` (seed from master seed 5000)."""
+    return play_match_records(hero_name, opponent, dev_match_seed(opponent_index, master_seed), deals,
+                              opponent_index)
+
+
+def play_match_records(hero_name: str, opponent: OpponentConfig, seed: int, deals: int,
+                       opponent_index: int) -> dict[str, Any]:
+    """Play one seat-swapped match from ``seed`` and return per-hand and per-decision records (never raises)."""
     out: dict[str, Any] = {"hero": hero_name, "opponent": opponent.name, "family": opponent.family,
                            "pool": opponent.pool, "opponent_index": opponent_index, "seed": seed, "deals": deals,
                            "error": None, "hands": [], "decisions": []}

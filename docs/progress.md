@@ -1240,14 +1240,82 @@ recommendations: `docs/phase4_plan.md` section 13.
 - **These are development results.** Every interval except ML minus the
   ProbabilityAgent overall, and the solid-opponent gains, includes 0.
 
+### Stage 4C review outcome and freeze preparation (2026-11-13)
+
+**Decisions approved by the project owner** (`docs/phase4_plan.md`
+section 14):
+
+- keep the one-step EV policy, with excessive all-ins and no future-betting
+  reasoning documented as major limitations;
+- primary endpoint: ML EV − Situation-Aware Frequency EV;
+- secondary comparisons: ML EV − ProbabilityAgent and ML EV − Global;
+- 500 deal pairs per match, after a resource check;
+- master seed 4000;
+- freeze everything before any final run.
+
+**Verification** (`99bb8f3`):
+
+- CI run 35 passed on Ubuntu and Windows.
+- Local tests: 424 passed.
+- The model hash matches.
+- An independent re-check of the development records confirmed shared
+  cards, the seat swaps, the reported intervals and the absence of serial
+  correlation. The bootstrap and batch-means checks agree with the normal
+  interval.
+- Workload: about 4.3 h on 4 cores. Resources are sufficient.
+
+**Freeze candidate**
+
+- `data/manifests/phase4_eval_manifest.json` pins:
+  - every match seed, 500 deals, seat swaps;
+  - the exact hero configurations and the 16 opponents;
+  - the model hash and the hashes of 46 source and artifact files;
+  - the library versions;
+  - the analysis plan.
+- `docs/phase4_analysis_plan.md` states:
+  - the primary metric and its paired 95% interval;
+  - the decision rule;
+  - the secondary comparisons;
+  - the exploratory treatment of subgroups and individual opponents;
+  - a bootstrap sensitivity analysis;
+  - validity checks, error handling, and what will not be done.
+- `phase4_final.py` and `scripts/run_phase4_final.py`:
+  - pre-run verification: refuses to play unless the manifest, file hashes,
+    packages, model, hero configurations, the `phase4-freeze` tag and a
+    clean tree all check out;
+  - resumable per-match checkpoints;
+  - the pre-specified primary analysis, which refuses failed or incomplete
+    runs.
+- `phase4_report.py`: the development analysis moved into the package. The
+  Stage 4C report regenerates byte-identically.
+- **Tests:** 17 new in `test_phase4_final.py`, one of which is skipped
+  without the model file. They cover:
+  - seed formula and distinctness;
+  - no overlap with earlier match or deal seeds;
+  - manifest hashing and tamper detection (changed, missing or unlisted
+    files);
+  - line-ending independence;
+  - wrong master seed;
+  - missing tag;
+  - committed manifest consistency;
+  - an exact-zero paired difference for identical heroes;
+  - bootstrap against the normal interval;
+  - conclusion wording;
+  - the primary analysis against a hand computation;
+  - refusal of failed or incomplete runs;
+  - resume without replaying, with identical results.
+
+  No test plays a seed-4000 hand.
+
+Local, Python 3.12.3: **441 passed**.
+
+No final hand has been played. `scripts/run_phase4_final.py --check` passes
+every check except the expected one: there is no `phase4-freeze` tag yet.
+
 ### Next milestone
 
-Project-owner review of Stage 4C. Decisions are needed before the freeze
-(`docs/phase4_plan.md` section 13.4):
+Project-owner approval of the freeze checklist. Then Stage 4D:
 
-1. the primary endpoint (recommended: ML − Situation-Aware);
-2. the all-in policy (recommended: keep the rule and report it as a
-   limitation);
-3. the final sample size (recommended: 500 deal pairs).
-
-Stage 4D (freeze, master seed 4000) has not started.
+1. tag `phase4-freeze`;
+2. confirm `--check` reports every check OK;
+3. run the final evaluation (about 4.3 h).
