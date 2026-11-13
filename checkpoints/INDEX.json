@@ -468,6 +468,15 @@
       "result_hash": "bb26732f1f882c3308bb242db1cc295667e8dfbe90652cf3871a3f176c30dc43",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/probability__nit_v2.json.gz": {
+      "sha256": "ff380b2fb52dbb4c15ef8be97a82b5181eccb0b43ab6d47f4db15475583681b0",
+      "hero": "probability",
+      "opponent": "nit_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "e92d8541c6eae04d2c642f2642969301325525910aa181f8081ff19b8f9f48c7",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/probability__solid.json.gz": {
       "sha256": "a4bd482358402f00b1d849c7c8bc8a6f76166734c03cd33ce59f9999d7ba4515",
       "hero": "probability",
@@ -508,9 +517,9 @@
   "freeze_commit": "d50af2b04e00a58a2fe5104ae59da8f2f2ea7669",
   "freeze_tag": "phase4-freeze",
   "manifest_sha256": "213f4070247d8b8ca51334123b0221c7cbf09b053713f2bf0687462604306e16",
-  "updated": "2026-11-13T23:09:22+00:00",
+  "updated": "2026-11-13T23:24:24+00:00",
   "complete": {
-    "matches": 56,
+    "matches": 57,
     "of": 64,
     "replays": 0,
     "replays_of": 8
