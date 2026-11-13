@@ -504,6 +504,15 @@
       "result_hash": "e92d8541c6eae04d2c642f2642969301325525910aa181f8081ff19b8f9f48c7",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/probability__nit_v3.json.gz": {
+      "sha256": "e63a794259d8a43f15473979df79301495d4aa938700379cb8b67ce07a4015b9",
+      "hero": "probability",
+      "opponent": "nit_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "7caa337adad1d8ddabee8d505217de04e9826221e5875cc3f9e2d8c4a761f4e1",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/probability__solid.json.gz": {
       "sha256": "a4bd482358402f00b1d849c7c8bc8a6f76166734c03cd33ce59f9999d7ba4515",
       "hero": "probability",
@@ -539,16 +548,88 @@
       "hands": 1000,
       "result_hash": "9a07bb69d075dfccdfcaa2b762d08de825903950928c512ed069d0ec5f17a93a",
       "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/ev_global__calling_station.json.gz": {
+      "sha256": "fddffd2a21fb6dbdbbf140b52eb4e9f99f6a5d82e4a63fb741b55abb973af982",
+      "hero": "ev_global",
+      "opponent": "calling_station",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "6042d0cdaf57ae40bed11c16ef790c65ad9817129abb3b12967ffe2bbf870709",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/ev_global__nit_v2.json.gz": {
+      "sha256": "e70140c9d5e957e093241a394b530087cb7f073544875278026a382048c00454",
+      "hero": "ev_global",
+      "opponent": "nit_v2",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "3023b9974e07ff9d580b10cf7d807a9fde9c5a95877c794de2a94a0c79296685",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/ev_ml__calling_station.json.gz": {
+      "sha256": "9eea686b23f3da05889539bf3501a82361b08ccb82422df9755201bf0600fcd7",
+      "hero": "ev_ml",
+      "opponent": "calling_station",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "6042d0cdaf57ae40bed11c16ef790c65ad9817129abb3b12967ffe2bbf870709",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/ev_ml__nit_v2.json.gz": {
+      "sha256": "2c8c62067855c7f06232a6f835eccbf20bba0d5d887dfcdcffef4081078b4807",
+      "hero": "ev_ml",
+      "opponent": "nit_v2",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "4655e07d5ecc9190b398e4389133217252066b73ca9fd4f3da4ec7a2e4e2e6fe",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/ev_situation__calling_station.json.gz": {
+      "sha256": "dca48035d6e0792d3a7ea7194a33f7a8fd5e992b80b3398f1dd848b8a38018d9",
+      "hero": "ev_situation",
+      "opponent": "calling_station",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "6042d0cdaf57ae40bed11c16ef790c65ad9817129abb3b12967ffe2bbf870709",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/ev_situation__nit_v2.json.gz": {
+      "sha256": "8f61fca7e34814559222a9ff6f3fe94678a7b31075cb7afb3f98d42173ee1481",
+      "hero": "ev_situation",
+      "opponent": "nit_v2",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "e69dd386dac60c852261389e73f9434550991275b1cf08db09b0909b169978c4",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/probability__calling_station.json.gz": {
+      "sha256": "9559fe72a77f6f7ce6ed322dc76a5a8b3081b7da27e1d45456e3a0a15525d19c",
+      "hero": "probability",
+      "opponent": "calling_station",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "c341be7de07f149301998571e10f762864fd99c326786571888a40dc57160482",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/probability__nit_v2.json.gz": {
+      "sha256": "a40ed78a4b3c24395bc68c6938b8dd765625e6b0612ab46e8753824cdab0ace0",
+      "hero": "probability",
+      "opponent": "nit_v2",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "267a926d28e7007f62cf5dd59c0d2957999af91188b27dd7371c12a4cca16f21",
+      "run_id": "2026-11-13T14:37:49+00:00"
     }
   },
   "freeze_commit": "d50af2b04e00a58a2fe5104ae59da8f2f2ea7669",
   "freeze_tag": "phase4-freeze",
   "manifest_sha256": "213f4070247d8b8ca51334123b0221c7cbf09b053713f2bf0687462604306e16",
-  "updated": "2026-11-13T23:39:26+00:00",
+  "updated": "2026-11-13T23:54:27+00:00",
   "complete": {
-    "matches": 60,
+    "matches": 61,
     "of": 64,
-    "replays": 0,
+    "replays": 8,
     "replays_of": 8
   }
 }
