@@ -1088,7 +1088,166 @@ bet size whenever the hero is ahead of the calling range (the approved
 "no future betting" assumption). All-in responses are also poorly covered
 in the training data. A decision is needed before Stage 4C.
 
+### Stage 4B review outcome (2026-11-12)
+
+The project owner reviewed Stage 4B and decided:
+
+- **No restriction on all-ins** and no change to the betting rules or the
+  shared EV equations. Stage 4C measures the all-in tendency instead.
+- **Add a stronger control:** a situation-aware frequency baseline.
+- **Proceed to Stage 4C development** on master seed 5000.
+
+### Stage 4C: situation-aware baseline and development evaluation (2026-11-12)
+
+**Repository verification (start of session)**
+
+- Branch `phase-4-ev-agents`, HEAD `4446e64`, clean working tree.
+- GitHub Actions run 34 for `4446e64`: completed successfully on Ubuntu
+  and Windows.
+- Local, Python 3.12.3, pinned `requirements.txt`: 398 passed, 1 skipped
+  (the frozen-model test, before the model file was restored).
+- The model file is git-ignored and was not in the fresh environment. It
+  was rebuilt from scratch:
+  1. `scripts/generate_dataset.py` regenerated the Phase 3 dataset from the
+     committed manifest (48 matches, 17 min on 3 workers).
+  2. `scripts/build_phase4_artifacts.py --check`: the committed
+     `frequency_prior.json` and `state_coverage.json` came out
+     byte-identical.
+  3. `scripts/select_probability_model.py` refitted RF-B #22. Its SHA-256 is
+     `5d4c8235…7b31`, **identical to the approved artifact**. The selection
+     results were identical too (only the provenance commit and run time
+     differ, so the committed JSON was left unchanged).
+
+**Situation-aware frequency baseline** (`situation_frequency.py`)
+
+- Opponent model of a fourth hero, the **Situation-Aware Frequency EV
+  Agent**. Same `EVAgent`, equity, EV equations, continuing-range
+  correction and tie-break as the other EV agents. Only the opponent model
+  differs.
+- **Conditions on:**
+  - street;
+  - whether the opponent faces a bet (`to_call > 0`);
+  - whether it faces an all-in (a bet, and the bettor has no chips
+    behind);
+  - raises this street, capped at 3 ("3 or more").
+- **Training split only:** 23,603 rows, counted into 27 situations in
+  `results/phase3/situation_frequency_prior.json`. Column totals equal the
+  global prior exactly (tested).
+- **Sparse situations: hierarchical shrinkage.** Each situation's shares
+  are pulled toward its parent situation:
+  `p = (counts + K × p_parent) / (rows + K)`, with `K = 30` pseudo-rows and
+  the order global → street → facing a bet → facing an all-in → raises.
+  An unseen situation inherits its parent's shares. K equals the
+  low-coverage threshold already fixed in Stage 4B. The order and K were
+  fixed before any development match and were not tuned on any test,
+  held-out or Phase 4 result.
+- Legal-masked per hypothetical state, like the other models.
+- **Examples** (training data, smoothed shares before legal masking):
+
+  | Situation | Rows | Fold | Call | Raise (any) |
+  |---|---|---|---|---|
+  | Global prior (any situation) | 23,603 | 0.043 | 0.707 | 0.249 |
+  | Flop, facing the first bet | 1,381 | 0.188 | 0.654 | 0.159 |
+  | River, facing an all-in (1 raise) | 147 | 0.188 | 0.809 | 0.003, masked to 0 |
+  | Preflop, facing an all-in (3+ raises) | 11 | 0.046 | 0.869 | 0.085 (borrowed from the parent), masked to 0 |
+
+- **What it does not control for.** It is stronger than the global
+  baseline but ignores the opponent's identity and history, bet and pot
+  sizes beyond "a bet exists", position, board texture and earlier
+  streets. The ML model sees many of these. A gain of ML over this baseline
+  therefore still mixes the value of opponent-specific history with the
+  value of the current-hand features the frequency table lacks.
+- The **global-frequency agent is kept unchanged** as an additional
+  reference.
+
+**Evaluation tooling**
+
+- `phase4_eval.py`, `scripts/run_phase4_dev.py`: four heroes,
+  16 opponents, seat-swapped matches with shared deals
+  (`derive_seed(5000, "dev", i)` for opponent `i`; seed 4000 is refused).
+  Records every hand and hero decision. Reports bb/100, paired
+  differences, all-in statistics, low-coverage reliance, latency, errors,
+  reproducibility and sample-size estimates.
+- **Tests:** 25 new. 17 in `test_situation_frequency.py`: keys, hand-
+  computed shrinkage, fallback, masking, public-only inputs, artifact
+  totals, deterministic play. 8 in `test_phase4_eval.py`: seeds, statistics
+  against the Phase 2 `win_rate`, sample-size formulas, shared cards,
+  diagnostics alignment, replays, error capture.
+- Local, Python 3.12.3: **424 passed** (including the real frozen-model
+  test).
+
+**Model restoration for future environments**
+
+- `scripts/restore_phase4_model.py` restores the model in one of three
+  ways. Each accepts the file only if its SHA-256 matches:
+  - `--from <copy>`: copies a saved file, in seconds;
+  - no option: verifies the file already in place;
+  - `--rebuild`: regenerates the deterministic dataset and refits only
+    RF-B #22, about 20 min on 4 cores.
+- Steps are in the README ("Restoring the frozen Phase 4 opponent model").
+- The `--from` and verify paths were tested, including the refusal of a
+  wrong file. `--rebuild` chains the exact commands run by hand in this
+  session.
+
+**Development evaluation (master seed 5000)**
+
+Full report: `results/phase4/stage4c_dev_report.md`. Analysis and
+recommendations: `docs/phase4_plan.md` section 13.
+
+- **Setup:**
+  - 4 heroes × 16 opponents.
+  - 100-deal seat-swapped matches with shared deals: 12,800 hands.
+  - Commit `43d819d`, model hash verified.
+  - 52.9 min on 4 processes.
+- **bb/100, equal weight over the 16 opponents:**
+  - ProbabilityAgent +383 [+316, +450];
+  - Global Frequency EV +782 [+671, +894];
+  - Situation-Aware Frequency EV +770 [+659, +880];
+  - ML EV +831 [+726, +935].
+- **Paired differences:**
+  - ML − Situation-Aware +61 [−11, +133];
+  - ML − Global +48 [−24, +121];
+  - ML − ProbabilityAgent +448 [+335, +560];
+  - Situation-Aware − Global −13 [−57, +32].
+  - Against solid opponents: ML − Situation-Aware +292 [+109, +474].
+- **All-in:**
+  - The EV agents choose all-in in 22–31% of decisions (preflop 30–41%).
+  - Hands with a shove produce all of their profit.
+  - Against solid opponents the frequency EV agents lose about 420 bb/100
+    to the ProbabilityAgent.
+  - The ML agent shoves much less against nits (12.8% against about 29%)
+    and solid opponents (18.6% against about 30%). This is where its gain
+    comes from.
+- **Low coverage:** 15.1% of the ML agent's decisions, and 67% of its
+  all-ins, lead to opponent states with fewer than 30 training rows.
+- **Latency:**
+  - EV agents: median 348–434 ms, 95th percentile 579–595 ms;
+  - ProbabilityAgent: 215 / 286 ms.
+- **Errors:** 0 errors or illegal actions. Deals are identical across
+  heroes, and replays are exact.
+- **Sample size:** about 0.85 h per 100 deal pairs (all heroes, 16
+  opponents, 4 cores). Recommended: 500 pairs, ±32 bb/100 for the primary
+  comparison, ≈ 4.3 h.
+
+**Known problems**
+
+- **The one-step EV rule is shove-heavy.** Selective opponents (solid,
+  nit) exploit it. It is a consequence of the approved "no future betting"
+  assumption, and it is shared by all EV agents.
+- **The situation-aware control behaves almost like the global one** in
+  play.
+- **The ML agent's key all-in decisions depend on poorly covered states.**
+- **These are development results.** Every interval except ML minus the
+  ProbabilityAgent overall, and the solid-opponent gains, includes 0.
+
 ### Next milestone
 
-Stage 4B review and a decision on the remaining all-in tendency, before
-Stage 4C.
+Project-owner review of Stage 4C. Decisions are needed before the freeze
+(`docs/phase4_plan.md` section 13.4):
+
+1. the primary endpoint (recommended: ML − Situation-Aware);
+2. the all-in policy (recommended: keep the rule and report it as a
+   limitation);
+3. the final sample size (recommended: 500 deal pairs).
+
+Stage 4D (freeze, master seed 4000) has not started.

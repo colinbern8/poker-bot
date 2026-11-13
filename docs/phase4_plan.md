@@ -2,8 +2,10 @@
 
 Status: **approved 2026-11-12, with refinements (section 8). Stages 4A
 and 4B are implemented on `phase-4-ev-agents`, including the
-continuing-range correction (section 11). A structural issue remains: the
-one-step rule prefers all-in. A decision on it is needed before Stage 4C.**
+continuing-range correction (section 11). Stage 4C added a situation-aware
+frequency control (section 12) and ran the development evaluation on master
+seed 5000 (section 13). Decisions on the primary endpoint, the all-in
+policy and the final sample size are needed before the freeze (section 13.4).**
 Competition presentation: **December 7–9, 2026**.
 
 ## 1. Research question
@@ -27,12 +29,13 @@ win more chips against the same opponents.
 
 The model file is frozen by SHA-256 hash in the evaluation manifest.
 
-## 3. Agents compared (three heroes)
+## 3. Agents compared (four heroes since Stage 4C)
 
 | Agent | Decision rule | Opponent model |
 |---|---|---|
 | **ProbabilityAgent** (existing baseline, unchanged) | Equity vs pot-odds thresholds (Phase 2) | none |
 | **Frequency EV Agent** (control) | The new expected-value rule (section 4) | Training action frequencies, legal-masked (the Dummy) |
+| **Situation-Aware Frequency EV Agent** (stronger control, added in Stage 4C; section 12) | The same expected-value rule | Training action frequencies per betting situation (street, facing a bet, facing an all-in, raises this street), smoothed, legal-masked |
 | **ML EV Agent** (treatment) | The same expected-value rule | Frozen Random Forest B |
 
 **Primary comparison: ML EV Agent minus Frequency EV Agent.** It isolates
@@ -53,7 +56,9 @@ betting situation (street, bet size, raises so far) or on the opponent.
 It is a deliberately simple control, and it may be weaker than a
 context-aware frequency baseline. A gain of ML over this control
 therefore includes the value of situation-awareness as well as of
-opponent-specific history.
+opponent-specific history. Stage 4C therefore added the
+Situation-Aware Frequency EV Agent (section 12) as a stronger control; the
+global agent is kept as a reference.
 
 ## 4. Hybrid decision rule (explainable, one step ahead)
 
@@ -382,3 +387,192 @@ Against the very loose bots (calling stations and maniacs call shoves
 about 85% of the time in training), shoving strong hands may genuinely be
 profitable, so the high all-in rate is not proven to be a mistake. Stage
 4C's development matches on master seed 5000 can measure it per opponent.
+
+## 12. Situation-aware frequency control (Stage 4C, approved 2026-11-12)
+
+**Model.** Training-split action frequencies conditioned on the public
+betting situation the opponent faces:
+
+- the street;
+- whether it faces a bet;
+- whether that bet is all-in;
+- raises this street, capped at 3.
+
+Code: `situation_frequency.py`. Artifact:
+`results/phase3/situation_frequency_prior.json` (27 situations, 23,603
+train rows). The agent is the same `EVAgent` with the same equity, EV
+equations, continuing-range correction and tie-break; only the opponent
+model differs. It has no opponent history.
+
+**Sparse situations.** Hierarchical shrinkage toward the parent situation,
+`p = (counts + 30 × p_parent) / (rows + 30)`, ordered global → street →
+facing a bet → facing an all-in → raises. An unseen situation inherits its
+parent. The order and `K = 30` (the existing low-coverage threshold) were
+fixed before any development match. No test, held-out or Phase 4 result
+was used.
+
+**What it does not control for.** It is stronger than the global baseline
+but does not control for every current-hand feature the ML model uses:
+
+- bet and pot sizes beyond "a bet exists";
+- position;
+- the board;
+- earlier streets;
+- the opponent's history and identity.
+
+ML minus this control therefore still combines the value of opponent
+history with the value of those current-hand features.
+
+## 13. Stage 4C development evaluation (master seed 5000, 2026-11-13)
+
+Full report: `results/phase4/stage4c_dev_report.md` (with
+`stage4c_dev_summary.json`).
+
+**Setup**
+
+- 4 heroes × 16 opponents.
+- One seat-swapped match of 100 deals (200 hands) per pair: 12,800 hands
+  in total.
+- Shared deals per opponent (`derive_seed(5000, "dev", i)`).
+- Code commit `43d819d` (clean tree); model hash verified.
+- 52.9 min on 4 processes.
+- 95% intervals use the deal pair as the unit. Groups weight opponents
+  equally.
+
+These are development results. They guide decisions and sample size and
+are not the experiment's findings.
+
+### 13.1 Results
+
+**Win rate, bb/100 (equal-weight over 16 opponents):**
+
+| Hero | All 16 | Calling station | Maniac | Nit | Solid |
+|---|---|---|---|---|---|
+| ProbabilityAgent | +383 [+316, +450] | +286 | +1003 | −14 | +257 |
+| Global Frequency EV | +782 [+671, +894] | +1928 | +1420 | −51 | −168 |
+| Situation-Aware Frequency EV | +770 [+659, +880] | +1953 | +1355 | −67 | −162 |
+| ML EV | +831 [+726, +935] | +1891 | +1299 | +3 | +129 |
+
+**Paired differences, bb/100 (same deals):**
+
+| Comparison | All 16 | Held-out 4 | Nit | Solid |
+|---|---|---|---|---|
+| ML − Situation-Aware | +61 [−11, +133] | +109 [−27, +246] | +70 [−27, +166] | **+292 [+109, +474]** |
+| ML − Global | +48 [−24, +121] | +82 [−58, +221] | +54 [−47, +154] | **+297 [+99, +495]** |
+| ML − ProbabilityAgent | **+448 [+335, +560]** | **+564 [+334, +794]** | +17 [−88, +121] | −128 [−362, +106] |
+| Situation-Aware − Global | −13 [−57, +32] | −27 [−115, +61] | −16 [−59, +27] | +6 [−72, +83] |
+
+Against calling stations and maniacs, ML minus either frequency control is
+slightly negative and not significant (−62 and −56 against Situation-Aware).
+
+### 13.2 Decision-policy findings
+
+1. **All-in dominates the EV agents' play.**
+   - All-in is chosen in 30.8% (Global), 28.5% (Situation-Aware) and
+     22.4% (ML) of hero decisions; preflop it is 41%, 41% and 30%.
+   - Hands with a shove carry all of the EV agents' profit: +826 to +914
+     bb/100. All other hands lose 48–83 bb/100.
+   - The ProbabilityAgent never shoves. 2.6% of its decisions are all-in
+     calls.
+2. **The shove-heavy policy is exploited by selective opponents.**
+   - *Against solid opponents* both frequency EV agents lose to the
+     ProbabilityAgent by about 420 bb/100 (interval excludes 0). They lose
+     about 1,100–1,300 bb in shove hands that reach showdown.
+   - *Against nits* a shove wins only the blinds when the nit folds (about
+     1 bb, 97.5% of the time). It loses about 67 bb when called. The net is
+     slightly negative for every EV agent.
+   - Against calling stations and maniacs, shoving value hands is very
+     profitable (+1,460 to +1,975 bb/100 from shove hands) because they
+     call wide.
+3. **The ML agent adapts to the opponent; the frequency controls cannot.**
+   - ML shoves in 12.8% of decisions against nits, against 28–31% for the
+     controls (preflop: 14.5% against 42%).
+   - Against solid opponents ML shoves in 18.6% of decisions, and its shove
+     hands win +2,414 bb, against −667 (Situation-Aware).
+   - Against calling stations ML keeps shoving (31.8%).
+   - This adaptation explains the significant gains against solid
+     opponents. It is consistent with the research hypothesis, but it is
+     one style group out of four in a development run.
+4. **The situation-aware control plays almost like the global one**
+   (−13 [−57, +32] bb/100), although its predictions differ (for example a
+   0.19 fold rate facing a flop bet, against about 0.04). Most of its
+   pivotal decisions are all-ins, whose responses are fold or call in
+   sparse situations, so both controls predict similar call rates.
+5. **Low-coverage reliance.**
+   - The ML agent's chosen action led to a poorly covered opponent state
+     (fewer than 30 training rows) in 15.1% of its decisions: 45% of its
+     bets and **67% of its all-ins**. The controls are at 20–21% of their
+     decisions.
+   - The ML agent's most important decisions therefore depend on model
+     extrapolation in rare states. Its predictions there come mostly from
+     the opponent-history features. This must be stated as a validity
+     limitation.
+6. **Engineering checks:**
+   - 0 errors or illegal actions in 64 matches;
+   - identical cards for every hero against each opponent;
+   - fresh-process replays reproduce the matches exactly.
+
+### 13.3 Latency and sample size
+
+**Latency (warm caches):**
+
+| Hero | Median | 95th percentile | Median split |
+|---|---|---|---|
+| ProbabilityAgent | 215 ms | 286 ms | |
+| Global Frequency EV | 414 ms | 591 ms | equity 210, model 2, range 251 ms |
+| Situation-Aware Frequency EV | 434 ms | 579 ms | equity 210, model 2, range 257 ms |
+| ML EV | 348 ms | 595 ms | equity 206, model 33, range 197 ms |
+
+All are fast enough for an interactive demo.
+
+**Sample size.**
+
+- **Variance.** The per-pair standard deviation of ML minus either
+  frequency control is about 1,470 bb/100. For ML minus the
+  ProbabilityAgent it is about 2,300.
+- **Runtime.** All four heroes against 16 opponents take about 0.85 h per
+  100 deal pairs on 4 processes.
+
+| Deal pairs per match | Hands | Runtime (4 cores) | ±95% for ML − Situation-Aware | Smallest detectable effect (80% power) |
+|---|---|---|---|---|
+| 200 (original plan) | 25,600 | ≈ 1.7 h | ±51 | ≈ 73 |
+| 400 | 51,200 | ≈ 3.4 h | ±36 | ≈ 51 |
+| **500** | 64,000 | ≈ 4.3 h | ±32 | ≈ 46 |
+| 600 | 76,800 | ≈ 5.1 h | ±29 | ≈ 42 |
+
+These figures assume the development standard deviations hold. Longer
+matches also give the ML agent more opponent history, which may change its
+results compared with these 100-deal matches.
+
+### 13.4 Recommendations (for review before the freeze)
+
+1. **Primary endpoint:** make **ML minus Situation-Aware Frequency EV**
+   the primary comparison, because it is the stronger control. Keep ML
+   minus Global and ML minus ProbabilityAgent as pre-specified secondary
+   comparisons. This must be decided before the freeze. It is not chosen
+   from the development results: both controls gave similar estimates.
+2. **All-in policy:** the shove-heavy play is a real weakness. It is a
+   consequence of the approved one-step rule (no future betting), not a
+   code error, and the same rule applies to all three EV agents, so the
+   comparison stays fair. Options:
+   - **A (recommended for the deadline): freeze the rule unchanged.**
+     Report the all-in rates, the per-style results and the loss against
+     selective opponents as a primary limitation. Present the ML agent's
+     reduced shoving against nits and solid opponents as the mechanism of
+     its gains.
+   - B: before the freeze, add an approximate future-betting value for
+     checks and calls to the shared equations. This changes the method. It
+     needs about a day of work and tests plus a new development run, and
+     its own parameters would have to be fixed without tuning.
+   - Restricting all-ins directly (for example an equity floor) is
+     **not** recommended: it is ad hoc, and it was explicitly excluded.
+3. **Sample size:** 500 deal pairs per match (≈ 4.3 h on 4 cores,
+   ±32 bb/100 for the primary comparison). Use 400 if runtime is tight.
+   200 pairs (±51) is likely too few to detect an effect of the size seen
+   here.
+4. **Low coverage:** keep the low-coverage diagnostics in the final
+   report. Add the "ML − control, decisions with and without
+   low-coverage choices" breakdown as a pre-specified secondary analysis.
+
+No agent, rule, model or sample size has been frozen. Stage 4D has not
+started.
