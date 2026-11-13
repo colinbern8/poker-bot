@@ -9,6 +9,15 @@
       "result_hash": "896aefedcafbefef52b4a4fcb58ae5c8fdb6df9d75d0f56b05a9c88e75c93704",
       "run_id": "2026-11-13T01:08:27+00:00"
     },
+    "jobs/ev_global__solid_v1.json.gz": {
+      "sha256": "b9222270a2a034914e17f1c4203885903f49d83a1276b7e26878c6389098eb64",
+      "hero": "ev_global",
+      "opponent": "solid_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "c688561d9185b0aa49d6526b1d402fc06e43dbae6dafa7b21b8abc0558d8976d",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/ev_ml__solid.json.gz": {
       "sha256": "15259dbc271f467a952060543e3a40b9d20046ac07a6d155775bf8ff2d6a3fae",
       "hero": "ev_ml",
@@ -27,6 +36,15 @@
       "result_hash": "2e4c8b5a4d2d1c29c1c03dd0454c837c10288c1433fdf47fcd02324a98aebf70",
       "run_id": "2026-11-13T01:08:27+00:00"
     },
+    "jobs/ev_situation__solid_v1.json.gz": {
+      "sha256": "74c0c213604f187b491fa026b957fe7dad9d11c99f070285e601fc236cb84bc8",
+      "hero": "ev_situation",
+      "opponent": "solid_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "3e6b089e75abc645132f7c33745b2505b9addef91cd340058048c926250d50c3",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/probability__solid.json.gz": {
       "sha256": "a4bd482358402f00b1d849c7c8bc8a6f76166734c03cd33ce59f9999d7ba4515",
       "hero": "probability",
@@ -35,14 +53,23 @@
       "hands": 1000,
       "result_hash": "9a98ed0ea9eaa43168145ece5dd1bcbe0a7b4d0372f56692586613deefc8c9af",
       "run_id": "2026-11-13T01:08:27+00:00"
+    },
+    "jobs/probability__solid_v1.json.gz": {
+      "sha256": "b82fbe802b08770718f8aa7f035c5fc032e6b7433c957a9881f3730d47686b8c",
+      "hero": "probability",
+      "opponent": "solid_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "961c020737fd0905f3bd9bbb21b7feae6216b62a89ebcefe5dc70a61a5579ab6",
+      "run_id": "2026-11-13T14:37:49+00:00"
     }
   },
   "freeze_commit": "d50af2b04e00a58a2fe5104ae59da8f2f2ea7669",
   "freeze_tag": "phase4-freeze",
   "manifest_sha256": "213f4070247d8b8ca51334123b0221c7cbf09b053713f2bf0687462604306e16",
-  "updated": "2026-11-13T01:41:05+00:00",
+  "updated": "2026-11-13T15:23:44+00:00",
   "complete": {
-    "matches": 4,
+    "matches": 7,
     "of": 64,
     "replays": 0,
     "replays_of": 8
