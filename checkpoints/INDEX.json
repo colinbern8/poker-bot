@@ -72,6 +72,24 @@
       "result_hash": "da87ea1a61c35230e9aef742cb6e52bab0b39b087e90dd7cafc4edb1d7e1b8c1",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/ev_ml__solid_v3.json.gz": {
+      "sha256": "d4d826518ed98c12de7d82207a02ab164c21aff693b4aa23966059f31b6e3144",
+      "hero": "ev_ml",
+      "opponent": "solid_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "d6fde0ddf02b403e8fa8a80806852fdfc1b2059ffd54e9a7dacf4412071a43f7",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__maniac.json.gz": {
+      "sha256": "8bdd80f3844ea337033f5dbb58f73829a07718bea4cb9b02c4064244f4e6363c",
+      "hero": "ev_situation",
+      "opponent": "maniac",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "4469d05637a0c92d15fff0db92b7dcc0cd3b1b03632837f1757610825ee29c31",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/ev_situation__solid.json.gz": {
       "sha256": "0440cfb2ead08248fb857fa43291731f864be733f9d708b128a40f40806c1489",
       "hero": "ev_situation",
@@ -106,6 +124,15 @@
       "deals": 500,
       "hands": 1000,
       "result_hash": "797de27e3b299a054cf3cdecc9337715042cc55c6a7f5e05d8fec757b6d3c7be",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__maniac.json.gz": {
+      "sha256": "0727a1c4cd26a7abb8082ad36b3386bd97248d8fff591429fc5b9b2b1a92c084",
+      "hero": "probability",
+      "opponent": "maniac",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "9df4b0d6361c7c549768efee5f86ef3072117c9dce4455ba3b02952b19ab3357",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
     "jobs/probability__solid.json.gz": {
@@ -148,9 +175,9 @@
   "freeze_commit": "d50af2b04e00a58a2fe5104ae59da8f2f2ea7669",
   "freeze_tag": "phase4-freeze",
   "manifest_sha256": "213f4070247d8b8ca51334123b0221c7cbf09b053713f2bf0687462604306e16",
-  "updated": "2026-11-13T17:08:51+00:00",
+  "updated": "2026-11-13T17:23:52+00:00",
   "complete": {
-    "matches": 16,
+    "matches": 19,
     "of": 64,
     "replays": 0,
     "replays_of": 8
