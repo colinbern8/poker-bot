@@ -1,5 +1,14 @@
 {
   "files": {
+    "jobs/ev_global__calling_station.json.gz": {
+      "sha256": "de2cf72fab9e2b23fb8d3563ad1375e16bcc4b82a03081b6ad6e223b35a06c4d",
+      "hero": "ev_global",
+      "opponent": "calling_station",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "3a6947a114b9fb66bfeb08ae1109c2266100fd4a51b083acbc0a409817608a1c",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/ev_global__maniac.json.gz": {
       "sha256": "dc3d2b855d76d2e21e4acbef33cf434843e6d0992a5e57c7408cd71ae82d76c2",
       "hero": "ev_global",
@@ -207,6 +216,15 @@
       "result_hash": "797de27e3b299a054cf3cdecc9337715042cc55c6a7f5e05d8fec757b6d3c7be",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/probability__calling_station.json.gz": {
+      "sha256": "de313de2f0c04c06a762be554114f2ecbcd1543354e2be94ef3d154bd6020d0d",
+      "hero": "probability",
+      "opponent": "calling_station",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "9d24cdcdb6691b7f384cb0271dcc71ab6a23994f67d0e081e17eb3be7b7fc78c",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/probability__maniac.json.gz": {
       "sha256": "0727a1c4cd26a7abb8082ad36b3386bd97248d8fff591429fc5b9b2b1a92c084",
       "hero": "probability",
@@ -283,9 +301,9 @@
   "freeze_commit": "d50af2b04e00a58a2fe5104ae59da8f2f2ea7669",
   "freeze_tag": "phase4-freeze",
   "manifest_sha256": "213f4070247d8b8ca51334123b0221c7cbf09b053713f2bf0687462604306e16",
-  "updated": "2026-11-13T19:24:01+00:00",
+  "updated": "2026-11-13T19:54:03+00:00",
   "complete": {
-    "matches": 31,
+    "matches": 33,
     "of": 64,
     "replays": 0,
     "replays_of": 8
