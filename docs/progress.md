@@ -875,7 +875,447 @@ completed successfully on Ubuntu and Windows.
 
 **Tests:** local, Python 3.12.3: 312 passed (6 new calibration tests).
 
+### Next milestone (Phase 3)
+
+The project owner approved Random Forest B #22 and the Phase 4 plan, with
+refinements, on 2026-11-12. Phase 4 continues below.
+
+## Phase 4: EV agents and profitability experiment (in progress)
+
+Plan: [`docs/phase4_plan.md`](phase4_plan.md).
+
+- **Primary comparison:** ML EV Agent minus Frequency EV Agent.
+- **Key secondary comparison:** ML EV Agent minus ProbabilityAgent.
+
+Work is in stages 4A to 4D, each reviewed before the next.
+
+### Stage 4A: decision equations, opponent tracking, simulator integration (2026-11-12)
+
+**Completed work**
+
+- `tests/test_phase2_regression.py`: SHA-256 hashes of `decisions.csv` and
+  `hands.csv` for three fixed matches, recorded and committed (`466dbb0`)
+  **before** any Phase 2 code changed.
+- `hand_log.observation_columns(obs)`: the `obs_` columns extracted into
+  one shared function, used by the logger and by the agents.
+- Public end-of-hand notification:
+  - `PublicHandSummary` carries the full betting history, the board,
+    the player's position and the deal/seating indices. It carries no
+    hole cards, payoffs or showdown cards.
+  - `Agent.observe_hand_end` does nothing by default.
+  - `run_match` calls it for both players after every hand.
+- `ev.py`: the EV equations for fold, check, call (including a short
+  call) and bet/raise (fold/call/re-raise branches, uncalled chips
+  returned), with the assumptions in the module text. Each action's
+  value comes with a plain-language explanation.
+- `opponent_tracker.py`:
+  - records the opponent's public actions;
+  - recovers the amount faced from the history;
+  - infers the current deal so the mirror hand is excluded;
+  - computes Feature Set B with the **same** `history_features` function
+    and frozen priors used in training.
+- `counterfactual.py`: the opponent's hypothetical observation after a
+  candidate hero action. It is rebuilt from public history and board
+  with fake hole cards, checked against the hero's real observation, and
+  stripped of hole cards.
+- `opponent_predictor.py`:
+  - loads a Feature Set B bundle (optional SHA-256 check);
+  - builds features via `observation_columns` → `feature_set_a` plus the
+    tracker's history;
+  - returns legal-masked probabilities, keeping raw ones for diagnostics.
+
+**Verification**
+
+- The reference hashes still match after both Phase 2 changes.
+  Regenerating pilot match 3 also produced byte-identical `decisions.csv`
+  and `hands.csv` compared with the logs written before the change.
+- Live history features equal the offline training features exactly,
+  checked for both players in two matches.
+- In three matches, every hypothetical opponent observation built from
+  the hero's view equals the opponent's real next observation exactly
+  (more than 50 action pairs).
+- After a hero all-in, the opponent's legal actions are fold and call
+  only, and the predictor gives raises probability 0.
+- The frozen model, SHA-256
+  `5d4c8235e142a2fdd23a2b370def8183aabfad72b7998120cbe4fb711dda7b31`,
+  loads through the predictor.
+
+**Distribution-shift finding (limitation)**
+
+- Only 441 of 23,603 training rows (1.9%) show a player facing an
+  all-in. Of these, 11 are preflop: 10 maniac and 1 solid, all calls.
+- For a hypothetical preflop shove the model predicts a 0.84 call rate,
+  essentially the training-wide facing-all-in call rate (0.846), for any
+  opponent.
+- This is recorded in the Phase 4 plan as an experimental limitation.
+  Stage 4B will log how often decisions rely on such poorly covered
+  states.
+
+**Tests:** local, Python 3.12.3: 357 passed. The 45 new tests are:
+
+| File | Tests |
+|---|---|
+| Phase 2 regression | 3 |
+| end-of-hand summary | 7 |
+| EV equations | 17 |
+| opponent tracker | 9 |
+| counterfactual and predictor | 9 |
+
+### Next milestone (Stage 4A)
+
+The project owner approved Stage 4A and the Stage 4B plan on 2026-11-12.
+Phase 3 was merged into `main` through colinbern8/poker-bot#5 (merge commit
+`04e3e8c`, CI run 32 passed). Stage 4A continues on `phase-4-ev-agents`.
+
+### Stage 4B: the two EV agents (2026-11-12)
+
+**Completed work**
+
+- `agents/ev_agent.py`: one `EVAgent` class.
+  - The Frequency EV Agent uses the global training-split prior, which is
+    legal-masked and **not** conditioned on the betting situation.
+  - The ML EV Agent uses the frozen RF-B #22, verified by SHA-256, with
+    live opponent history.
+  - Both use the same equity (`hand_strength`, 500 samples), the same
+    EV equations and the same tie-break (fewest additional chips).
+- **Per-decision diagnostics:** equity, all action EVs, raw and masked
+  opponent probabilities, the hypothetical opponent observation, training
+  coverage (diagnostic only), the opponent's history length, and timing
+  (equity vs model inference).
+- `state_coverage.py` with `scripts/build_phase4_artifacts.py`, which
+  writes `results/phase3/frequency_prior.json` and
+  `results/phase3/state_coverage.json` (train split only, with a
+  `--check` mode). The prior equals the trained Dummy's class prior
+  exactly.
+- `scripts/ev_decision_examples.py` writes
+  `results/phase4/stage4b_examples.md`: illustrative spots only, not a
+  tournament.
+
+**Tests:** local, Python 3.12.3: 378 passed (21 new in
+`tests/test_ev_agent.py`). They use controlled spots with injected
+equity and stub opponents:
+
+- **Checks and folds:** a free check beats bets that get re-raised; zero
+  equity still checks rather than folds.
+- **Calls:** call or fold flips exactly at break-even equity, with the tie
+  going to fold. Facing a raise, only the new chips are valued.
+- **Bet sizes:** an always-folding opponent gets the smallest bet; with a
+  certain win, check ties with the bets and wins the tie; an
+  always-calling opponent gives hand-computed EVs for every size.
+- **Re-raises:** an always-re-raising opponent is never bet into with the
+  half-pot or pot sizes.
+- **All-in:** after a hero all-in, re-raise probability is masked to 0.
+  Facing an all-in, only fold or call is offered and no model call is
+  made. Uncalled chips are returned.
+- **Same rule for both agents:** given identical probabilities, they make
+  identical decisions and payoffs over a whole match.
+- **Equity:** identical to the ProbabilityAgent's for the same seed.
+- **Hypothetical states:** they equal the opponent's actual next
+  observation.
+- **History:** live opponent history equals the offline training
+  features.
+- **Diagnostics:** complete for every decision.
+- **Determinism:** EV-agent match logs are byte-identical across runs.
+- **Artifacts:** checked.
+- **Frozen model:** a real-model test runs locally and is skipped in CI,
+  because the model file is outside the repository.
+
+**Example decisions** (illustrative; see the examples file):
+
+- **The ML agent adapts to its opponent.** Facing a half-pot flop bet
+  after watching 8 deals of a nit, it predicts a 0.42 fold rate to a
+  pot-size raise; after a maniac, 0.02 folds and about 0.5 re-raises.
+  The Frequency agent's predictions are the same in every spot.
+- **Coverage flags work.** A preflop all-in opening leads to a state
+  with 0 training rows.
+
+**Finding (needs a decision before Stage 4C).** The approved EV rule
+overvalues large bets, especially all-in. In the "opponent calls" branch,
+equity is still against a random hand, so a shove looks very profitable
+whenever equity is above about 50%.
+
+- Both agents went all-in on 6 of 12 decisions in the smoke matches.
+- With queens on a K-7-2 flop (77% equity), all-in is valued at +102
+  (Frequency) and +74 (ML), against +3 for checking.
+
+Options are in `docs/phase4_plan.md` section 10. The recommendation is
+to value the called branch against the opponent's predicted continuing
+range. No equation was changed.
+
+**Timing note.** In the smoke runs, equity took about 230 ms per
+decision on a cold preflop cache and close to 0 ms once warm; the model
+call took 2 ms (Frequency) and about 52 ms (ML, including feature
+building). Stage 4C will measure median and 95th-percentile latency with
+the cache warmed.
+
+### Stage 4B continued: continuing-range correction (2026-11-12)
+
+The project owner approved Option A. Its implementation and review are in
+`docs/phase4_plan.md` section 11.
+
+**Change.** A bet's "called" branch now uses the hero's equity against the
+opponent's estimated continuing range: the strongest
+`P(call) + P(re-raise)` fraction of its unblocked hands, using public
+information only. The same calculation is used for both agents.
+
+**Estimator defect found and fixed.** Independent 200-sample estimates
+were noisier than the correction itself, so they were replaced by a
+common-random-numbers difference: one shared run of 400 samples.
+
+**Audit** (300 fixed validation-split spots):
+
+- The ML agent's all-in rate fell from 47.3% to 32.7%.
+- Its all-ins with equity below 0.70 fell from 29.7% to 15.7%.
+- The Frequency agent changed only slightly: all-in 46.0% to 43.0%.
+
+**Runtime:** median 435 ms (ML) and 523 ms (Frequency) per decision; 95th
+percentile 523 ms and 625 ms. About 2× the old rule.
+
+**Tests:** local, Python 3.12.3: 399 passed. New tests:
+
+- `test_range_equity.py` (12): blockers, rankings, exactness on the river,
+  monotonicity, seeding, and the low-noise estimator.
+- `test_ev_agent.py` (+9): always-calling, always-folding and
+  frequently-re-raising opponents; strong vs weak hands; small vs large
+  bets; preflop and postflop; all-ins and short stacks; QQ no longer
+  shoving against a selective opponent; and public-only inputs.
+
+The Phase 2 regression hashes still match.
+
+**Remaining issue.** All-in is still the chosen action in 33–43% of
+audited spots, because the one-step rule's called-branch value grows with
+bet size whenever the hero is ahead of the calling range (the approved
+"no future betting" assumption). All-in responses are also poorly covered
+in the training data. A decision is needed before Stage 4C.
+
+### Stage 4B review outcome (2026-11-12)
+
+The project owner reviewed Stage 4B and decided:
+
+- **No restriction on all-ins** and no change to the betting rules or the
+  shared EV equations. Stage 4C measures the all-in tendency instead.
+- **Add a stronger control:** a situation-aware frequency baseline.
+- **Proceed to Stage 4C development** on master seed 5000.
+
+### Stage 4C: situation-aware baseline and development evaluation (2026-11-12)
+
+**Repository verification (start of session)**
+
+- Branch `phase-4-ev-agents`, HEAD `4446e64`, clean working tree.
+- GitHub Actions run 34 for `4446e64`: completed successfully on Ubuntu
+  and Windows.
+- Local, Python 3.12.3, pinned `requirements.txt`: 398 passed, 1 skipped
+  (the frozen-model test, before the model file was restored).
+- The model file is git-ignored and was not in the fresh environment. It
+  was rebuilt from scratch:
+  1. `scripts/generate_dataset.py` regenerated the Phase 3 dataset from the
+     committed manifest (48 matches, 17 min on 3 workers).
+  2. `scripts/build_phase4_artifacts.py --check`: the committed
+     `frequency_prior.json` and `state_coverage.json` came out
+     byte-identical.
+  3. `scripts/select_probability_model.py` refitted RF-B #22. Its SHA-256 is
+     `5d4c8235…7b31`, **identical to the approved artifact**. The selection
+     results were identical too (only the provenance commit and run time
+     differ, so the committed JSON was left unchanged).
+
+**Situation-aware frequency baseline** (`situation_frequency.py`)
+
+- Opponent model of a fourth hero, the **Situation-Aware Frequency EV
+  Agent**. Same `EVAgent`, equity, EV equations, continuing-range
+  correction and tie-break as the other EV agents. Only the opponent model
+  differs.
+- **Conditions on:**
+  - street;
+  - whether the opponent faces a bet (`to_call > 0`);
+  - whether it faces an all-in (a bet, and the bettor has no chips
+    behind);
+  - raises this street, capped at 3 ("3 or more").
+- **Training split only:** 23,603 rows, counted into 27 situations in
+  `results/phase3/situation_frequency_prior.json`. Column totals equal the
+  global prior exactly (tested).
+- **Sparse situations: hierarchical shrinkage.** Each situation's shares
+  are pulled toward its parent situation:
+  `p = (counts + K × p_parent) / (rows + K)`, with `K = 30` pseudo-rows and
+  the order global → street → facing a bet → facing an all-in → raises.
+  An unseen situation inherits its parent's shares. K equals the
+  low-coverage threshold already fixed in Stage 4B. The order and K were
+  fixed before any development match and were not tuned on any test,
+  held-out or Phase 4 result.
+- Legal-masked per hypothetical state, like the other models.
+- **Examples** (training data, smoothed shares before legal masking):
+
+  | Situation | Rows | Fold | Call | Raise (any) |
+  |---|---|---|---|---|
+  | Global prior (any situation) | 23,603 | 0.043 | 0.707 | 0.249 |
+  | Flop, facing the first bet | 1,381 | 0.188 | 0.654 | 0.159 |
+  | River, facing an all-in (1 raise) | 147 | 0.188 | 0.809 | 0.003, masked to 0 |
+  | Preflop, facing an all-in (3+ raises) | 11 | 0.046 | 0.869 | 0.085 (borrowed from the parent), masked to 0 |
+
+- **What it does not control for.** It is stronger than the global
+  baseline but ignores the opponent's identity and history, bet and pot
+  sizes beyond "a bet exists", position, board texture and earlier
+  streets. The ML model sees many of these. A gain of ML over this baseline
+  therefore still mixes the value of opponent-specific history with the
+  value of the current-hand features the frequency table lacks.
+- The **global-frequency agent is kept unchanged** as an additional
+  reference.
+
+**Evaluation tooling**
+
+- `phase4_eval.py`, `scripts/run_phase4_dev.py`: four heroes,
+  16 opponents, seat-swapped matches with shared deals
+  (`derive_seed(5000, "dev", i)` for opponent `i`; seed 4000 is refused).
+  Records every hand and hero decision. Reports bb/100, paired
+  differences, all-in statistics, low-coverage reliance, latency, errors,
+  reproducibility and sample-size estimates.
+- **Tests:** 25 new. 17 in `test_situation_frequency.py`: keys, hand-
+  computed shrinkage, fallback, masking, public-only inputs, artifact
+  totals, deterministic play. 8 in `test_phase4_eval.py`: seeds, statistics
+  against the Phase 2 `win_rate`, sample-size formulas, shared cards,
+  diagnostics alignment, replays, error capture.
+- Local, Python 3.12.3: **424 passed** (including the real frozen-model
+  test).
+
+**Model restoration for future environments**
+
+- `scripts/restore_phase4_model.py` restores the model in one of three
+  ways. Each accepts the file only if its SHA-256 matches:
+  - `--from <copy>`: copies a saved file, in seconds;
+  - no option: verifies the file already in place;
+  - `--rebuild`: regenerates the deterministic dataset and refits only
+    RF-B #22, about 20 min on 4 cores.
+- Steps are in the README ("Restoring the frozen Phase 4 opponent model").
+- The `--from` and verify paths were tested, including the refusal of a
+  wrong file. `--rebuild` chains the exact commands run by hand in this
+  session.
+
+**Development evaluation (master seed 5000)**
+
+Full report: `results/phase4/stage4c_dev_report.md`. Analysis and
+recommendations: `docs/phase4_plan.md` section 13.
+
+- **Setup:**
+  - 4 heroes × 16 opponents.
+  - 100-deal seat-swapped matches with shared deals: 12,800 hands.
+  - Commit `43d819d`, model hash verified.
+  - 52.9 min on 4 processes.
+- **bb/100, equal weight over the 16 opponents:**
+  - ProbabilityAgent +383 [+316, +450];
+  - Global Frequency EV +782 [+671, +894];
+  - Situation-Aware Frequency EV +770 [+659, +880];
+  - ML EV +831 [+726, +935].
+- **Paired differences:**
+  - ML − Situation-Aware +61 [−11, +133];
+  - ML − Global +48 [−24, +121];
+  - ML − ProbabilityAgent +448 [+335, +560];
+  - Situation-Aware − Global −13 [−57, +32].
+  - Against solid opponents: ML − Situation-Aware +292 [+109, +474].
+- **All-in:**
+  - The EV agents choose all-in in 22–31% of decisions (preflop 30–41%).
+  - Hands with a shove produce all of their profit.
+  - Against solid opponents the frequency EV agents lose about 420 bb/100
+    to the ProbabilityAgent.
+  - The ML agent shoves much less against nits (12.8% against about 29%)
+    and solid opponents (18.6% against about 30%). This is where its gain
+    comes from.
+- **Low coverage:** 15.1% of the ML agent's decisions, and 67% of its
+  all-ins, lead to opponent states with fewer than 30 training rows.
+- **Latency:**
+  - EV agents: median 348–434 ms, 95th percentile 579–595 ms;
+  - ProbabilityAgent: 215 / 286 ms.
+- **Errors:** 0 errors or illegal actions. Deals are identical across
+  heroes, and replays are exact.
+- **Sample size:** about 0.85 h per 100 deal pairs (all heroes, 16
+  opponents, 4 cores). Recommended: 500 pairs, ±32 bb/100 for the primary
+  comparison, ≈ 4.3 h.
+
+**Known problems**
+
+- **The one-step EV rule is shove-heavy.** Selective opponents (solid,
+  nit) exploit it. It is a consequence of the approved "no future betting"
+  assumption, and it is shared by all EV agents.
+- **The situation-aware control behaves almost like the global one** in
+  play.
+- **The ML agent's key all-in decisions depend on poorly covered states.**
+- **These are development results.** Every interval except ML minus the
+  ProbabilityAgent overall, and the solid-opponent gains, includes 0.
+
+### Stage 4C review outcome and freeze preparation (2026-11-13)
+
+**Decisions approved by the project owner** (`docs/phase4_plan.md`
+section 14):
+
+- keep the one-step EV policy, with excessive all-ins and no future-betting
+  reasoning documented as major limitations;
+- primary endpoint: ML EV − Situation-Aware Frequency EV;
+- secondary comparisons: ML EV − ProbabilityAgent and ML EV − Global;
+- 500 deal pairs per match, after a resource check;
+- master seed 4000;
+- freeze everything before any final run.
+
+**Verification** (`99bb8f3`):
+
+- CI run 35 passed on Ubuntu and Windows.
+- Local tests: 424 passed.
+- The model hash matches.
+- An independent re-check of the development records confirmed shared
+  cards, the seat swaps, the reported intervals and the absence of serial
+  correlation. The bootstrap and batch-means checks agree with the normal
+  interval.
+- Workload: about 4.3 h on 4 cores. Resources are sufficient.
+
+**Freeze candidate**
+
+- `data/manifests/phase4_eval_manifest.json` pins:
+  - every match seed, 500 deals, seat swaps;
+  - the exact hero configurations and the 16 opponents;
+  - the model hash and the hashes of 46 source and artifact files;
+  - the library versions;
+  - the analysis plan.
+- `docs/phase4_analysis_plan.md` states:
+  - the primary metric and its paired 95% interval;
+  - the decision rule;
+  - the secondary comparisons;
+  - the exploratory treatment of subgroups and individual opponents;
+  - a bootstrap sensitivity analysis;
+  - validity checks, error handling, and what will not be done.
+- `phase4_final.py` and `scripts/run_phase4_final.py`:
+  - pre-run verification: refuses to play unless the manifest, file hashes,
+    packages, model, hero configurations, the `phase4-freeze` tag and a
+    clean tree all check out;
+  - resumable per-match checkpoints;
+  - the pre-specified primary analysis, which refuses failed or incomplete
+    runs.
+- `phase4_report.py`: the development analysis moved into the package. The
+  Stage 4C report regenerates byte-identically.
+- **Tests:** 17 new in `test_phase4_final.py`, one of which is skipped
+  without the model file. They cover:
+  - seed formula and distinctness;
+  - no overlap with earlier match or deal seeds;
+  - manifest hashing and tamper detection (changed, missing or unlisted
+    files);
+  - line-ending independence;
+  - wrong master seed;
+  - missing tag;
+  - committed manifest consistency;
+  - an exact-zero paired difference for identical heroes;
+  - bootstrap against the normal interval;
+  - conclusion wording;
+  - the primary analysis against a hand computation;
+  - refusal of failed or incomplete runs;
+  - resume without replaying, with identical results.
+
+  No test plays a seed-4000 hand.
+
+Local, Python 3.12.3: **441 passed**.
+
+No final hand has been played. `scripts/run_phase4_final.py --check` passes
+every check except the expected one: there is no `phase4-freeze` tag yet.
+
 ### Next milestone
 
-Approval of the probability model and of the Phase 4 plan
-(`docs/phase4_plan.md`), before any Phase 4 implementation.
+Project-owner approval of the freeze checklist. Then Stage 4D:
+
+1. tag `phase4-freeze`;
+2. confirm `--check` reports every check OK;
+3. run the final evaluation (about 4.3 h).

@@ -118,6 +118,43 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 - the `hybridpoker` package itself in **editable** mode (`-e .`), so changes
   you make in `src/hybridpoker/` take effect without reinstalling.
 
+### Restoring the frozen Phase 4 opponent model
+
+The ML EV Agent needs `models/phase3/random_forest_logloss_B.joblib`
+(Random Forest B #22). Model files are kept out of git, so a fresh
+Codespace does not have one. The agent loads it only if its SHA-256 equals
+the approved hash, `5d4c8235…7b31`.
+
+**Fastest (seconds):** keep a copy of the verified file somewhere outside
+git, for example a private cloud drive or a GitHub release asset you
+download by hand. Then copy it in with a hash check:
+
+```bash
+python scripts/restore_phase4_model.py --from /path/to/random_forest_logloss_B.joblib
+```
+
+The script refuses a file whose hash differs.
+
+**Check the file already in place:**
+
+```bash
+python scripts/restore_phase4_model.py
+```
+
+**No copy available (about 20 minutes on 4 cores):** rebuild it. The Phase 3
+dataset is deterministic, and the refit reproduces the same file byte for
+byte with Python 3.12 and the pinned `requirements.txt` (verified on
+2026-11-12).
+
+```bash
+python scripts/restore_phase4_model.py --rebuild
+```
+
+The rebuild regenerates `data/raw/simulations/phase3_s3000` (git-ignored),
+checks that the committed training artifacts reproduce exactly, refits only
+the selected model, and verifies the hash. It does not rerun any other
+Phase 3 experiment.
+
 ## Running tests
 
 With the virtual environment active:
@@ -126,8 +163,9 @@ With the virtual environment active:
 python -m pytest
 ```
 
-Expected result: all tests pass (`183 passed` as of Phase 2). The full
-suite takes about a minute.
+Expected result: all tests pass (`441 passed` as of the Phase 4 freeze candidate; the
+one test that needs the frozen model file is skipped if it is missing). The
+full suite takes about 3–5 minutes.
 
 If you see `No module named pytest`, the virtual environment is not active.
 Activate it (see [Setup](#setup)) and try again.
