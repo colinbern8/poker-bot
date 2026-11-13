@@ -9,6 +9,15 @@
       "result_hash": "3a6947a114b9fb66bfeb08ae1109c2266100fd4a51b083acbc0a409817608a1c",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/ev_global__calling_station_v1.json.gz": {
+      "sha256": "97a0dc67c9c19163f51fc44985c02f1fb6113f1d4007df92ad0ca2ddfdf68b7a",
+      "hero": "ev_global",
+      "opponent": "calling_station_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "c1bfe86c2ac7d5d857299bdb7c568848112d7abfece6f981697a5d36b97d6cef",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/ev_global__maniac.json.gz": {
       "sha256": "dc3d2b855d76d2e21e4acbef33cf434843e6d0992a5e57c7408cd71ae82d76c2",
       "hero": "ev_global",
@@ -171,6 +180,15 @@
       "result_hash": "63b1ba24b3bb107f4775dcb13798d24f4faf5a8942b3b96ba51e4c9a244d473a",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/ev_situation__calling_station_v1.json.gz": {
+      "sha256": "f9bd0463b34b10b22dfaca224603c3a561e7783e2c12a75074a3816f31a3406e",
+      "hero": "ev_situation",
+      "opponent": "calling_station_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "cedd9f9f67aa79f34a7ba3cfef90eb3cb07c494b7d64e52c59c3e48dba35427b",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/ev_situation__maniac.json.gz": {
       "sha256": "8bdd80f3844ea337033f5dbb58f73829a07718bea4cb9b02c4064244f4e6363c",
       "hero": "ev_situation",
@@ -252,6 +270,15 @@
       "result_hash": "9d24cdcdb6691b7f384cb0271dcc71ab6a23994f67d0e081e17eb3be7b7fc78c",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/probability__calling_station_v1.json.gz": {
+      "sha256": "8464d74f86fc1ae0f22e72ba0511f5b9a17e4689168604788a0e439037c1d370",
+      "hero": "probability",
+      "opponent": "calling_station_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "a81ac77ea8f59e561f32feac8fd7a88e091161ad8197fc9d12b22450f9648436",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/probability__maniac.json.gz": {
       "sha256": "0727a1c4cd26a7abb8082ad36b3386bd97248d8fff591429fc5b9b2b1a92c084",
       "hero": "probability",
@@ -328,9 +355,9 @@
   "freeze_commit": "d50af2b04e00a58a2fe5104ae59da8f2f2ea7669",
   "freeze_tag": "phase4-freeze",
   "manifest_sha256": "213f4070247d8b8ca51334123b0221c7cbf09b053713f2bf0687462604306e16",
-  "updated": "2026-11-13T20:24:06+00:00",
+  "updated": "2026-11-13T20:39:08+00:00",
   "complete": {
-    "matches": 36,
+    "matches": 39,
     "of": 64,
     "replays": 0,
     "replays_of": 8
