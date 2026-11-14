@@ -99,6 +99,15 @@
       "result_hash": "379c65d0dc0c0c8b2e90460db0875fcbc3764d008ff8db6f9d41ee71aa182c79",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/ev_global__nit_v3.json.gz": {
+      "sha256": "c2b7fbdb12071116a7da3bc0236670374587655895d8a244ab55935019fa80ab",
+      "hero": "ev_global",
+      "opponent": "nit_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "cfa189b763e3ba71aecda1504ed550b73c976326ca12eb7fdc242111a32ca014",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/ev_global__solid.json.gz": {
       "sha256": "5e63f2c3a1ce31ce101b6f811be902febab435b6d4f9426a7ef52c4ea178d8eb",
       "hero": "ev_global",
@@ -234,6 +243,15 @@
       "result_hash": "4f2d67efbe458ce1c5836280d9b1afc1c2ab7945b81d67657b161d3ddf5e7588",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
+    "jobs/ev_ml__nit_v3.json.gz": {
+      "sha256": "3a2877578e7703a26df0b34e026c8eba9ed7f3c32e8cd0a7dabf8035e37e0ec8",
+      "hero": "ev_ml",
+      "opponent": "nit_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "49ed2f4d338adf07b09e1ad948de690a7514c5b97d2e05a63985d753eccba338",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
     "jobs/ev_ml__solid.json.gz": {
       "sha256": "15259dbc271f467a952060543e3a40b9d20046ac07a6d155775bf8ff2d6a3fae",
       "hero": "ev_ml",
@@ -367,6 +385,15 @@
       "deals": 500,
       "hands": 1000,
       "result_hash": "e5be486afc292981740b49e9376588a48f344ad1ee5115a4446eab6ca51db90d",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__nit_v3.json.gz": {
+      "sha256": "61798cf8f831d4028ef0eec7f60d184f2c3aeb2e11def46dca02335676b4db7e",
+      "hero": "ev_situation",
+      "opponent": "nit_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "c305a008e281912d9a7584615beda742aa8deb58675e342a0c01e7d0a43d3dc6",
       "run_id": "2026-11-13T14:37:49+00:00"
     },
     "jobs/ev_situation__solid.json.gz": {
@@ -625,9 +652,9 @@
   "freeze_commit": "d50af2b04e00a58a2fe5104ae59da8f2f2ea7669",
   "freeze_tag": "phase4-freeze",
   "manifest_sha256": "213f4070247d8b8ca51334123b0221c7cbf09b053713f2bf0687462604306e16",
-  "updated": "2026-11-13T23:54:27+00:00",
+  "updated": "2026-11-14T00:09:29+00:00",
   "complete": {
-    "matches": 61,
+    "matches": 64,
     "of": 64,
     "replays": 8,
     "replays_of": 8
