@@ -19,4 +19,4 @@ Modes of `backup_checkpoints.py` (run from this worktree, for example `/workspac
 | `python backup_checkpoints.py --repo /workspaces/poker-bot` | One backup now (validated new matches, commit, push) |
 | `python backup_checkpoints.py --repo /workspaces/poker-bot --every 15` | Backs up every 15 minutes; stops by itself once all 64 matches, 8 replays and the final report are saved |
 
-The full step-by-step guide is `docs/phase4_codespaces_guide.md` on branch `claude/dazzling-knuth-r4bzf1`.
+The full step-by-step guide is `docs/phase4_codespaces_guide.md` on branch `phase-4-evaluation-support`.
