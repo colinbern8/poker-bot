@@ -1,0 +1,15 @@
+{
+  "sessions": [
+    {
+      "started": "2026-11-13T14:37:49+00:00",
+      "wall_seconds": 33892.097669022,
+      "matches": 68,
+      "workers": 4,
+      "git_commit": "d50af2b04e00a58a2fe5104ae59da8f2f2ea7669",
+      "machine": {
+        "platform": "Linux-6.8.0-1070-azure-x86_64-with-glibc2.36",
+        "cpu_count": 4
+      }
+    }
+  ]
+}

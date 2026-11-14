@@ -163,7 +163,7 @@ With the virtual environment active:
 python -m pytest
 ```
 
-Expected result: all tests pass (`441 passed` as of the Phase 4 freeze candidate; the
+Expected result: all tests pass (`446 passed` as of Phase 4D; the
 one test that needs the frozen model file is skipped if it is missing). The
 full suite takes about 3–5 minutes.
 

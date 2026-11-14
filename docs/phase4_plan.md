@@ -5,8 +5,9 @@ and 4B are implemented on `phase-4-ev-agents`, including the
 continuing-range correction (section 11). Stage 4C added a situation-aware
 frequency control (section 12) and ran the development evaluation on master
 seed 5000 (section 13). The project owner approved the pre-freeze decisions
-on 2026-11-13 (section 14). The freeze candidate, manifest and analysis plan
-are ready; the freeze and the final runs wait for approval.**
+on 2026-11-13 (section 14). Frozen at tag `phase4-freeze` (`d50af2b`); the
+final evaluation ran on 2026-11-13 and met the primary success criterion
+(section 15). Phase 4 is complete pending review of the pull requests.**
 Competition presentation: **December 7–9, 2026**.
 
 ## 1. Research question
@@ -617,3 +618,32 @@ Stage 4C report byte for byte.
 | Interval calculation | Independent recomputation reproduces the reported primary, +60.8 [−10.9, +132.6]. Stratified bootstrap: [−8.5, +135.2]. Batch-means SE 37.2 against i.i.d. 36.6. Mean lag-1 autocorrelation +0.03. The deal pair is a valid independent unit. |
 | Tracker cost with long matches | Opponent-history features take about 40 ms per deal, with no growth from 100 to 500 deals |
 | Workload | 64 matches of 500 deals. Projected from the development per-match times, scheduled longest-first: about **4.3 h on 4 cores** (16.9 CPU-hours; 2.1 h on 8 cores). Longest match about 23 min. Records about 7 MB compressed; 15 GB RAM and 30 GB disk available. |
+
+## 15. Final evaluation results (Stage 4D, 2026-11-13)
+
+Full report: `results/phase4/stage4d_final_report.md`. Verification:
+`results/phase4/stage4d_verification.md`. Dependence sensitivity:
+`results/phase4/stage4d_dependence_sensitivity.md`. Detailed summary and
+limitations: `docs/progress.md` (Stage 4D).
+
+| Endpoint | bb/100, 95% CI |
+|---|---|
+| **Primary: ML EV − Situation-Aware Frequency EV** | **+84.8 [+51.6, +117.9]: criterion met** |
+| ML EV − Global Frequency EV | +102.1 [+69.6, +134.6] |
+| ML EV − ProbabilityAgent | +469.4 [+419.0, +519.9] |
+
+- **Answer to the research question.** Within this experiment, yes.
+  Supervised opponent modeling improved the decisions of the shared
+  one-step EV agent against a frequency control that knows the betting
+  situation:
+  - by 84.8 bb/100 averaged over 16 rule-based opponents;
+  - by 96.6 bb/100 on the 4 held-out ones (exploratory).
+- **Robustness.** The result holds under:
+  - the pre-registered bootstrap;
+  - three methods allowing for dependence between deals within a match;
+  - removal of any single opponent or style (post hoc).
+- **Scope.** It does not show that the EV rule is a good poker strategy in
+  general:
+  - the rule shoves very often;
+  - it ignores future betting;
+  - it was tested only against bots.

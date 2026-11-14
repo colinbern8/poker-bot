@@ -1,9 +1,15 @@
 # Phase 4 Final Evaluation: Analysis Plan (Stage 4D)
 
-Status: **freeze candidate, written before any final hand is played.**
+Status: **executed.**
 
-- It is approved for content (project owner, 2026-11-13). The freeze itself
-  is still pending approval.
+- Frozen at tag `phase4-freeze` (`d50af2b`) and approved by the project
+  owner on 2026-11-13. The final evaluation followed this plan unchanged.
+- **Results:** `results/phase4/stage4d_final_report.md`.
+- **A supporting check was added after the freeze:** dependence between
+  deal pairs within a match. It was written before any final hand and
+  identified by SHA-256 `65f4a409…`. Output:
+  `results/phase4/stage4d_dependence_sensitivity.md`.
+- The text below is the plan as frozen.
 - The machine-readable version is in
   `data/manifests/phase4_eval_manifest.json` (field `analysis`).
 - The code that carries it out is `src/hybridpoker/phase4_final.py` and
