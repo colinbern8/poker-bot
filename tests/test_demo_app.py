@@ -16,6 +16,7 @@ opt-in acceptance test in ``tests/acceptance/``.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -53,7 +54,14 @@ class FailOnceEV(EVAgent):
 
 @pytest.fixture
 def app(monkeypatch, tiny_bundle):
-    """Factory for AppTests that use the small test model (see the module docstring)."""
+    """Factory for AppTests that use the small test model (see the module docstring).
+
+    AppTest replaces ``sys.modules["__main__"]`` with the app script and does
+    not restore it. Later tests that start worker processes with "spawn" (the
+    Windows default) would then re-run the app in each worker, so the
+    original ``__main__`` is put back afterwards.
+    """
+    monkeypatch.setitem(sys.modules, "__main__", sys.modules["__main__"])
     model = MLResponseModel(OpponentPredictor(tiny_bundle))
     agents: list[EVAgent] = []
 
@@ -333,6 +341,21 @@ def test_unexpected_error_is_reported_and_the_game_recovers(app) -> None:
             assert "Something went wrong" not in page(at)
             break
     assert failed
+
+
+def test_spawned_worker_processes_do_not_run_the_page(app) -> None:
+    """Regression (Windows CI): with "spawn", workers re-run the parent's __main__ file.
+
+    Right after an AppTest, ``__main__`` is the app script. A spawned worker must
+    still start: the page code runs only when ``__name__ == "__main__"``.
+    """
+    import multiprocessing
+    from concurrent.futures import ProcessPoolExecutor
+
+    app()
+    assert sys.modules["__main__"].__file__.endswith("streamlit_app.py")
+    with ProcessPoolExecutor(1, mp_context=multiprocessing.get_context("spawn")) as pool:
+        assert pool.submit(abs, -7).result(timeout=120) == 7
 
 
 @pytest.mark.parametrize("error, message", [

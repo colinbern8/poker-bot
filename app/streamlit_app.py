@@ -45,9 +45,6 @@ from hybridpoker_demo.seeds import check_seed
 AI_NAME = "Hybrid ML Agent"
 MODEL_NAME = "Random Forest B #22"
 
-st.set_page_config(page_title="HybridPoker", page_icon="♠", layout="wide")
-
-
 # --- Shared, read-only resources ---------------------------------------------------------------------
 
 
@@ -86,10 +83,7 @@ def load_model_or_stop():
 
 # --- Per-session state and queued actions -----------------------------------------------------------
 
-state = st.session_state
-state.setdefault("game", None)
-state.setdefault("pending", None)
-state.setdefault("notice", None)
+state = st.session_state  # this browser session's state (read only inside a Streamlit run)
 
 
 def queue(operation: tuple) -> None:
@@ -294,16 +288,23 @@ def welcome() -> None:
 
 # --- Page ------------------------------------------------------------------------------------------------
 
-model, timings = load_model_or_stop()
-sidebar(timings)
-status_area = st.container()
-run_pending(model, status_area)
-show_notice()
 
-game: HeadsUpController | None = state.game
-if game is None:
-    welcome()
-else:
+def main() -> None:
+    st.set_page_config(page_title="HybridPoker", page_icon="♠", layout="wide")
+    state.setdefault("game", None)
+    state.setdefault("pending", None)
+    state.setdefault("notice", None)
+
+    model, timings = load_model_or_stop()
+    sidebar(timings)
+    status_area = st.container()
+    run_pending(model, status_area)
+    show_notice()
+
+    game: HeadsUpController | None = state.game
+    if game is None:
+        welcome()
+        return
     st.header(f"You vs the {AI_NAME}")
     scoreboard(game)
     view = game.view
@@ -317,3 +318,10 @@ else:
         action_log(view.history, view.human_position, expanded=True)
         explanation(game, view)
         profile(game)
+
+
+# Streamlit runs this file as "__main__". Anything else that runs it - for example a
+# multiprocessing worker re-running the parent's main file on Windows ("__mp_main__") -
+# must not draw a page.
+if __name__ == "__main__":
+    main()

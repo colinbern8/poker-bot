@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 import statistics
+import sys
 import time
 from pathlib import Path
 
@@ -31,7 +32,9 @@ SEED = 2026
 HANDS = 4
 
 
-def test_unmodified_app_plays_with_the_real_frozen_model() -> None:
+def test_unmodified_app_plays_with_the_real_frozen_model(monkeypatch) -> None:
+    # AppTest replaces sys.modules["__main__"]; restore it afterwards (see tests/test_demo_app.py).
+    monkeypatch.setitem(sys.modules, "__main__", sys.modules["__main__"])
     st.cache_resource.clear()
     started = time.perf_counter()
     at = AppTest.from_file(str(APP), default_timeout=600).run()

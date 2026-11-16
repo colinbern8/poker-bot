@@ -1621,9 +1621,26 @@ Local, Python 3.12.3, pinned requirements, no model file:
   not confirm the typed seed was cleared. The form callback now clears it
   explicitly.
 
+**Bug found by Windows CI and fixed**
+
+- **What failed:** the first CI run of the pull request failed on Windows
+  only. The Phase 4 test `test_runs_resume_without_replaying_and_reproduce_exactly`
+  reported `BrokenProcessPool`.
+- **Cause:** AppTest replaces `sys.modules["__main__"]` with the app script.
+  On Windows, worker processes start by re-running the parent's main file
+  (`spawn`), so the later pool workers ran the Streamlit page and crashed.
+  Linux (`fork`) was unaffected.
+- **Fix, in two parts:**
+  - the AppTest fixtures restore the original `__main__`;
+  - the page now runs only when `__name__ == "__main__"`.
+- **Verification:** reproduced on Linux by forcing `spawn`. The fix passes,
+  and removing it reproduces the CI failure. A regression test
+  (`test_spawned_worker_processes_do_not_run_the_page`) was added. No Phase 4
+  file was changed.
+
 **Tests (local, Python 3.12.3, no model file)**
 
-- **517 passed, 6 skipped** (33 new).
+- **518 passed, 6 skipped** (34 new).
 - Skipped: the 2 model-file tests and the 4 opt-in acceptance tests.
 - Also checked in Chromium, with the small model:
   - the missing-model page;
