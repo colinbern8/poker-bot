@@ -5,7 +5,9 @@ An explainable Texas Hold'em poker AI for a university AI course project.
 **Research question:** Can supervised machine learning-based opponent modeling
 improve decisions made by a probability-based poker agent?
 
-**Current status:** Phase 2, the heads-up simulator, baseline agents, and hand logs.
+**Current status:** Phase 4 (EV agents and the final evaluation) is complete and
+frozen. Phase 5A adds the tested game engine for playing against the Hybrid ML
+Agent; the Streamlit screen comes next ([`docs/phase5_plan.md`](docs/phase5_plan.md)).
 See [`docs/progress.md`](docs/progress.md) for progress,
 [`docs/probability_engine.md`](docs/probability_engine.md) for the equity math, and
 [`docs/simulator.md`](docs/simulator.md) for the simulator, agents, and statistics.
@@ -21,8 +23,9 @@ See [`docs/progress.md`](docs/progress.md) for progress,
 
 ```
 poker-bot/
-├── src/hybridpoker/      # project source code (the `hybridpoker` package)
-├── tests/                # automated tests (pytest)
+├── src/hybridpoker/      # project source code (the `hybridpoker` package; frozen in Phase 4)
+├── src/hybridpoker_demo/ # Phase 5: human-vs-AI game controller (outside the frozen package)
+├── tests/                # automated tests (pytest); tests/acceptance/ is opt-in
 ├── scripts/              # helper scripts (benchmarks, matches)
 ├── docs/                 # progress log and explanations of the math
 ├── pyproject.toml        # project settings and dependency ranges
@@ -163,9 +166,18 @@ With the virtual environment active:
 python -m pytest
 ```
 
-Expected result: all tests pass (`446 passed` as of Phase 4D; the
-one test that needs the frozen model file is skipped if it is missing). The
-full suite takes about 3–5 minutes.
+Expected result without the frozen model file (as in GitHub Actions):
+`484 passed, 5 skipped` as of Phase 5A. The skipped tests are the two that need
+the frozen model file (`tests/test_ev_agent.py` and `tests/test_phase4_final.py`)
+and the three opt-in acceptance tests in `tests/acceptance/`. With the model in
+place, the two model tests run as well. The full suite takes about 3–5 minutes.
+
+The acceptance tests use the real frozen model and run only when asked (they
+fail, rather than skip, if the model is missing or differs):
+
+```bash
+HYBRIDPOKER_REAL_MODEL=1 python -m pytest tests/acceptance -v -s
+```
 
 If you see `No module named pytest`, the virtual environment is not active.
 Activate it (see [Setup](#setup)) and try again.
@@ -224,6 +236,30 @@ hands. Results are printed as bb/100 with a 95% confidence interval. Logs go to
 `data/raw/simulations/<run>/` (`decisions.csv`, `hands.csv`,
 `metadata.json`), which git ignores. Agents: `probability`, `random`,
 `calling_station`, `maniac`, `nit`, `solid`.
+
+## Playing against the Hybrid ML Agent (Phase 5A, no screen yet)
+
+`hybridpoker_demo.HeadsUpController` runs a human-versus-AI match one action
+at a time: 200-chip stacks every hand, blinds 1/2, the button alternating,
+and the five abstract actions. It needs the frozen model (see
+[Restoring the frozen Phase 4 opponent model](#restoring-the-frozen-phase-4-opponent-model)).
+
+```python
+from hybridpoker_demo.controller import HeadsUpController, HumanTurn
+from hybridpoker_demo.resources import build_ml_agent, load_frozen_ml_model, warm_caches
+
+warm_caches()                                     # once, about 15-40 s
+model = load_frozen_ml_model()                    # SHA-256 checked
+game = HeadsUpController(build_ml_agent(model))   # random seed; match_seed=... to rehearse
+while isinstance(game.view, HumanTurn):
+    turn = game.view
+    print(turn.observation.hole_cards, turn.observation.board_cards, turn.legal_categories)
+    game.submit(turn.ticket, turn.legal_categories[0])   # the human's choice
+print(game.view.human_net, game.scoreboard)        # the AI's reasoning: game.view.ai_decisions
+```
+
+How it works and why it reproduces the frozen agent exactly:
+[`docs/phase5_plan.md`](docs/phase5_plan.md).
 
 ## Updating dependencies
 
