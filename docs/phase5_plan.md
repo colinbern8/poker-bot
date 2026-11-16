@@ -6,9 +6,8 @@ Phase 4 model, decision logic or evaluation results.
 
 | Stage | Content | Status |
 |---|---|---|
-| **5A** | Game engine: interrupt-and-replay adapter, heads-up controller, tests | this PR |
-| 5B | Streamlit screen (table, actions, post-hand explanation) | next |
-| 5C | Presentation polish and rehearsal checklist | later |
+| 5A | Game engine: interrupt-and-replay adapter, heads-up controller, tests | merged (PR #9) |
+| **5B** | Streamlit screen, explanations, AppTest tests, presentation checklist | this PR |
 
 ## Decisions (approved by the project owner)
 
@@ -101,6 +100,66 @@ because the frozen manifest reports any new module inside the frozen package.
 | `tests/test_phase4_freeze_guard.py` | The frozen `check_manifest` passes (46 files, manifest hash, model hash); `results/phase4/` is unchanged |
 | `tests/acceptance/test_real_model_demo.py` | **Opt-in**, with the real frozen model: environment and configuration, replay equivalence and latency |
 
+## Stage 5B: the Streamlit screen
+
+Run with `streamlit run app/streamlit_app.py` and open http://localhost:8501.
+Presentation steps: [`phase5_demo_checklist.md`](phase5_demo_checklist.md).
+
+| Part | File | Role |
+|---|---|---|
+| Screen | `app/streamlit_app.py` | Table, action buttons, result, explanation, opponent profile, sidebar (new match, rehearsal seed, model status) |
+| Display logic | `src/hybridpoker_demo/presentation.py` | Plain functions: card text, action labels with chip amounts, action log, results, explanations built only from recorded diagnostics, observed-vs-model profile |
+| Controller additions | `controller.py` | Read-only `opponent_profile()`; each `AIDecisionReport` carries the AI's `to_call` and legal actions, so explanation labels use the engine's exact amounts |
+| Settings | `.streamlit/config.toml` | Localhost only, no first-run prompt, no usage statistics (offline) |
+
+**Shared versus per-session state.**
+- Only the read-only model and the warmed equity tables are cached for the
+  whole server (`st.cache_resource`).
+- Each browser session has its own controller in `st.session_state`.
+- Each match gets a new agent, and with it a new opponent tracker.
+
+**One action per click.**
+- Buttons only queue an action together with its ticket.
+- The script applies the queued action once, under the "AI is thinking"
+  spinner. It takes the action out of the queue before acting, so a rerun
+  cannot repeat it.
+- A repeated or late click carries an old ticket and is ignored with a short
+  notice.
+- Failures leave the game unchanged (5A guarantees) and show a recovery
+  message.
+
+**Hidden information on screen.**
+- During a hand the screen draws only the human's view: face-down AI cards,
+  no reasoning, no seed.
+- The typed rehearsal seed is cleared from its box when the match starts.
+- After the hand:
+  - the explanation appears;
+  - the AI's cards appear only at a showdown.
+
+**Explanations from recorded values only.** Each AI decision shows:
+- its action and equity against a random hand;
+- the expected value of every legal action;
+- the model's predicted fold / call / raise response to each bet size, with
+  the AI's equity if the human continues;
+- training-coverage warnings;
+- a summary sentence assembled from those same numbers.
+
+The opponent profile keeps three columns apart:
+- the human's **observed** actions;
+- the **model's inputs** (rates smoothed toward the population);
+- the **population** averages.
+
+**Not shown on the main screen:** bb/100, which is unreliable over a few
+hands.
+
+### Tests added in 5B
+
+| File | What it shows |
+|---|---|
+| `tests/test_demo_presentation.py` | Labels and amounts; explanation values equal the recorded diagnostics for every AI decision; the opponent profile is read-only, and its model inputs equal the smoothing formula applied to the observed counts |
+| `tests/test_demo_app.py` | AppTest, with the small model substituted by a test-only fixture. Covers: startup, complete hands, legal buttons with engine amounts, score and transitions, rehearsal-seed reproducibility, new match, ignored duplicate, stale and illegal clicks, no hidden cards, seeds or diagnostics during a hand, explanation values on screen, error recovery, per-session isolation with one shared model, and missing or wrong model with no fallback |
+| `tests/acceptance/test_real_model_app.py` | **Opt-in**: the unmodified app with the real model, played through button clicks |
+
 ## Known limitations and risks
 
 - **The real-model acceptance test has not been run in this environment.** The
@@ -123,5 +182,10 @@ because the frozen manifest reports any new module inside the frozen package.
   Results of demo games say nothing about the research question.
 - **The agent shoves often** (23% of decisions in the evaluation). Audiences
   should expect many all-ins.
-- **Refreshing the browser** will start a new match in the Streamlit stage
-  (state lives in the session); this is acceptable for a demo.
+- **Refreshing the browser** starts a new match: state lives in the browser
+  session. This is acceptable for a demo.
+- **AppTest does not run a real browser.** In the development container the
+  screen was also checked in Chromium (screenshots), using the small model;
+  not with the real one.
+- **The real-model acceptance tests have not been run**, so the presentation
+  machine must run them (checklist step 3).

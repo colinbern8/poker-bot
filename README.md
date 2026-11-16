@@ -6,8 +6,10 @@ An explainable Texas Hold'em poker AI for a university AI course project.
 improve decisions made by a probability-based poker agent?
 
 **Current status:** Phase 4 (EV agents and the final evaluation) is complete and
-frozen. Phase 5A adds the tested game engine for playing against the Hybrid ML
-Agent; the Streamlit screen comes next ([`docs/phase5_plan.md`](docs/phase5_plan.md)).
+frozen. Phase 5 adds a playable, explainable heads-up demonstration against the
+Hybrid ML Agent: [run it](#running-the-demonstration-phase-5b), and see
+[`docs/phase5_plan.md`](docs/phase5_plan.md) and the
+[presentation checklist](docs/phase5_demo_checklist.md).
 See [`docs/progress.md`](docs/progress.md) for progress,
 [`docs/probability_engine.md`](docs/probability_engine.md) for the equity math, and
 [`docs/simulator.md`](docs/simulator.md) for the simulator, agents, and statistics.
@@ -25,6 +27,7 @@ See [`docs/progress.md`](docs/progress.md) for progress,
 poker-bot/
 ├── src/hybridpoker/      # project source code (the `hybridpoker` package; frozen in Phase 4)
 ├── src/hybridpoker_demo/ # Phase 5: human-vs-AI game controller (outside the frozen package)
+├── app/                  # Phase 5: the Streamlit demonstration screen
 ├── tests/                # automated tests (pytest); tests/acceptance/ is opt-in
 ├── scripts/              # helper scripts (benchmarks, matches)
 ├── docs/                 # progress log and explanations of the math
@@ -167,10 +170,10 @@ python -m pytest
 ```
 
 Expected result without the frozen model file (as in GitHub Actions):
-`484 passed, 5 skipped` as of Phase 5A. The skipped tests are the two that need
+`517 passed, 6 skipped` as of Phase 5B. The skipped tests are the two that need
 the frozen model file (`tests/test_ev_agent.py` and `tests/test_phase4_final.py`)
-and the three opt-in acceptance tests in `tests/acceptance/`. With the model in
-place, the two model tests run as well. The full suite takes about 3–5 minutes.
+and the four opt-in acceptance tests in `tests/acceptance/`. With the model in
+place, the two model tests run as well. The full suite takes about 4–6 minutes.
 
 The acceptance tests use the real frozen model and run only when asked (they
 fail, rather than skip, if the model is missing or differs):
@@ -260,6 +263,30 @@ print(game.view.human_net, game.scoreboard)        # the AI's reasoning: game.vi
 
 How it works and why it reproduces the frozen agent exactly:
 [`docs/phase5_plan.md`](docs/phase5_plan.md).
+
+## Running the demonstration (Phase 5B)
+
+With the virtual environment active and the frozen model restored (see
+[Restoring the frozen Phase 4 opponent model](#restoring-the-frozen-phase-4-opponent-model)):
+
+```bash
+streamlit run app/streamlit_app.py
+```
+
+Then open **http://localhost:8501**. The first start loads the model (SHA-256
+checked) and warms up for up to a minute. Click **Start match**, choose
+actions with the buttons, and read **Why did the AI play that way?** after
+each hand. The sidebar starts a new match with a random deal or a fixed
+rehearsal seed.
+
+- The AI's cards stay face-down until a showdown; its reasoning appears only
+  after the hand; seeds are never shown during play.
+- Without the model file, the page explains how to restore it. It never
+  switches to another agent.
+- The demo listens only on this computer and works offline
+  (`.streamlit/config.toml`).
+
+Before presenting, work through [`docs/phase5_demo_checklist.md`](docs/phase5_demo_checklist.md).
 
 ## Updating dependencies
 
