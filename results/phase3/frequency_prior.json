@@ -1,0 +1,28 @@
+{
+  "description": "Global training-split action frequencies (the Dummy prior). Opponent model of the Frequency EV Agent, legal-masked at use. Not conditioned on the betting situation.",
+  "class_order": [
+    "fold",
+    "check_call",
+    "raise_half_pot",
+    "raise_pot",
+    "all_in"
+  ],
+  "counts": {
+    "fold": 1024,
+    "check_call": 16696,
+    "raise_half_pot": 3002,
+    "raise_pot": 2668,
+    "all_in": 213
+  },
+  "shares": [
+    0.04338431555310766,
+    0.7073677074948099,
+    0.12718722196330975,
+    0.11303647841376097,
+    0.00902427657501165
+  ],
+  "rows": 23603,
+  "split": "train",
+  "manifest_hash": "bde45493a95a8cb66576b006005dfed72593965879262533594687136dabe233",
+  "source_commit": "a79526f5d40e7c757f7cce1721f8b48ade2cd9d0"
+}

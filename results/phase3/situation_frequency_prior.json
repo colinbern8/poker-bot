@@ -1,0 +1,207 @@
+{
+  "description": "Training-split action counts per betting situation: street | facing a bet | facing an all-in | raises this street (capped at max_raises). Opponent model of the Situation-Aware Frequency EV Agent: shares are shrunk toward the parent situation with smoothing_rows pseudo-rows (global > street > bet > all_in > raises), then legal-masked at use.",
+  "class_order": [
+    "fold",
+    "check_call",
+    "raise_half_pot",
+    "raise_pot",
+    "all_in"
+  ],
+  "max_raises": 3,
+  "smoothing_rows": 30,
+  "rows": 23603,
+  "split": "train",
+  "manifest_hash": "bde45493a95a8cb66576b006005dfed72593965879262533594687136dabe233",
+  "source_commit": "a79526f5d40e7c757f7cce1721f8b48ade2cd9d0",
+  "counts": {
+    "flop|bet=0|all_in=0|raises=0": {
+      "fold": 0,
+      "check_call": 3192,
+      "raise_half_pot": 624,
+      "raise_pot": 762,
+      "all_in": 50
+    },
+    "flop|bet=1|all_in=0|raises=1": {
+      "fold": 260,
+      "check_call": 904,
+      "raise_half_pot": 133,
+      "raise_pot": 79,
+      "all_in": 5
+    },
+    "flop|bet=1|all_in=0|raises=2": {
+      "fold": 2,
+      "check_call": 112,
+      "raise_half_pot": 54,
+      "raise_pot": 40,
+      "all_in": 1
+    },
+    "flop|bet=1|all_in=0|raises=3": {
+      "fold": 2,
+      "check_call": 60,
+      "raise_half_pot": 24,
+      "raise_pot": 32,
+      "all_in": 0
+    },
+    "flop|bet=1|all_in=1|raises=1": {
+      "fold": 18,
+      "check_call": 37,
+      "raise_half_pot": 0,
+      "raise_pot": 0,
+      "all_in": 0
+    },
+    "flop|bet=1|all_in=1|raises=2": {
+      "fold": 1,
+      "check_call": 7,
+      "raise_half_pot": 0,
+      "raise_pot": 0,
+      "all_in": 0
+    },
+    "flop|bet=1|all_in=1|raises=3": {
+      "fold": 0,
+      "check_call": 33,
+      "raise_half_pot": 0,
+      "raise_pot": 0,
+      "all_in": 0
+    },
+    "preflop|bet=0|all_in=0|raises=0": {
+      "fold": 0,
+      "check_call": 1594,
+      "raise_half_pot": 296,
+      "raise_pot": 487,
+      "all_in": 0
+    },
+    "preflop|bet=1|all_in=0|raises=0": {
+      "fold": 224,
+      "check_call": 2377,
+      "raise_half_pot": 390,
+      "raise_pot": 129,
+      "all_in": 0
+    },
+    "preflop|bet=1|all_in=0|raises=1": {
+      "fold": 171,
+      "check_call": 1001,
+      "raise_half_pot": 112,
+      "raise_pot": 18,
+      "all_in": 0
+    },
+    "preflop|bet=1|all_in=0|raises=2": {
+      "fold": 1,
+      "check_call": 85,
+      "raise_half_pot": 26,
+      "raise_pot": 18,
+      "all_in": 0
+    },
+    "preflop|bet=1|all_in=0|raises=3": {
+      "fold": 0,
+      "check_call": 33,
+      "raise_half_pot": 28,
+      "raise_pot": 18,
+      "all_in": 0
+    },
+    "preflop|bet=1|all_in=1|raises=3": {
+      "fold": 0,
+      "check_call": 11,
+      "raise_half_pot": 0,
+      "raise_pot": 0,
+      "all_in": 0
+    },
+    "river|bet=0|all_in=0|raises=0": {
+      "fold": 0,
+      "check_call": 2596,
+      "raise_half_pot": 494,
+      "raise_pot": 375,
+      "all_in": 93
+    },
+    "river|bet=1|all_in=0|raises=1": {
+      "fold": 115,
+      "check_call": 594,
+      "raise_half_pot": 60,
+      "raise_pot": 31,
+      "all_in": 15
+    },
+    "river|bet=1|all_in=0|raises=2": {
+      "fold": 5,
+      "check_call": 32,
+      "raise_half_pot": 15,
+      "raise_pot": 15,
+      "all_in": 1
+    },
+    "river|bet=1|all_in=0|raises=3": {
+      "fold": 2,
+      "check_call": 15,
+      "raise_half_pot": 3,
+      "raise_pot": 0,
+      "all_in": 0
+    },
+    "river|bet=1|all_in=1|raises=1": {
+      "fold": 28,
+      "check_call": 119,
+      "raise_half_pot": 0,
+      "raise_pot": 0,
+      "all_in": 0
+    },
+    "river|bet=1|all_in=1|raises=2": {
+      "fold": 6,
+      "check_call": 32,
+      "raise_half_pot": 0,
+      "raise_pot": 0,
+      "all_in": 0
+    },
+    "river|bet=1|all_in=1|raises=3": {
+      "fold": 2,
+      "check_call": 12,
+      "raise_half_pot": 0,
+      "raise_pot": 0,
+      "all_in": 0
+    },
+    "turn|bet=0|all_in=0|raises=0": {
+      "fold": 0,
+      "check_call": 2854,
+      "raise_half_pot": 580,
+      "raise_pot": 568,
+      "all_in": 35
+    },
+    "turn|bet=1|all_in=0|raises=1": {
+      "fold": 163,
+      "check_call": 765,
+      "raise_half_pot": 125,
+      "raise_pot": 54,
+      "all_in": 13
+    },
+    "turn|bet=1|all_in=0|raises=2": {
+      "fold": 10,
+      "check_call": 84,
+      "raise_half_pot": 29,
+      "raise_pot": 31,
+      "all_in": 0
+    },
+    "turn|bet=1|all_in=0|raises=3": {
+      "fold": 1,
+      "check_call": 25,
+      "raise_half_pot": 9,
+      "raise_pot": 11,
+      "all_in": 0
+    },
+    "turn|bet=1|all_in=1|raises=1": {
+      "fold": 10,
+      "check_call": 53,
+      "raise_half_pot": 0,
+      "raise_pot": 0,
+      "all_in": 0
+    },
+    "turn|bet=1|all_in=1|raises=2": {
+      "fold": 1,
+      "check_call": 37,
+      "raise_half_pot": 0,
+      "raise_pot": 0,
+      "all_in": 0
+    },
+    "turn|bet=1|all_in=1|raises=3": {
+      "fold": 2,
+      "check_call": 32,
+      "raise_half_pot": 0,
+      "raise_pot": 0,
+      "all_in": 0
+    }
+  }
+}

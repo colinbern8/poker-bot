@@ -22,7 +22,7 @@ from hybridpoker.agents.base import Agent
 from hybridpoker.game import BIG_BLIND, BIG_BLIND_SEAT, BUTTON_SEAT
 from hybridpoker.metrics import WinRate, win_rate
 from hybridpoker.seeding import derive_seed
-from hybridpoker.simulator import HandResult, play_hand
+from hybridpoker.simulator import HandResult, play_hand, public_hand_summary
 
 
 @dataclass(frozen=True)
@@ -122,6 +122,10 @@ def run_match(
             )
             result = play_hand(agents, deal_seed, agent_seeds)
             hands.append(PlayedHand(len(hands), deal_index, swap, hero_seat, result))
+            # Public end-of-hand notification (no hole cards, payoffs or showdown
+            # cards). The base Agent ignores it, so earlier agents are unaffected.
+            for seat, agent in enumerate(agents):
+                agent.observe_hand_end(public_hand_summary(result, seat, deal_index, swap, len(swaps)))
         if progress is not None:
             progress(deal_index + 1, deal_count)
 
