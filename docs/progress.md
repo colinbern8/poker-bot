@@ -1312,10 +1312,177 @@ Local, Python 3.12.3: **441 passed**.
 No final hand has been played. `scripts/run_phase4_final.py --check` passes
 every check except the expected one: there is no `phase4-freeze` tag yet.
 
+### Stage 4D: final evaluation (2026-11-13)
+
+**Freeze and execution**
+
+- **Freeze.** Tag `phase4-freeze` → `d50af2b`.
+  - It was created by the project owner as a GitHub release, because tag
+    pushes are blocked in the cloud environment.
+  - Manifest `213f4070…`, model `5d4c8235…`.
+  - CI run 36 passed on Ubuntu and Windows. Local tests: 441 passed.
+- **The runner's preflight passed every check** before any final hand:
+  - manifest and file hashes;
+  - library versions;
+  - model;
+  - agent configurations;
+  - tag and clean tree.
+- **Execution in two parts:**
+  1. **Cloud environment, 2026-11-13 01:08 UTC.** Four matches finished,
+     all four agents against `solid`. The machine was then restarted by the
+     environment between sessions, which killed the run. The finished
+     matches were on disk and were backed up to the branch
+     `phase4-final-checkpoints`.
+  2. **The owner's GitHub Codespace**, 4 cores, Python 3.12.11, from
+     2026-11-13 14:37 UTC. It played the remaining 60 matches and the 8
+     replays in one uninterrupted session of 9.41 h.
+
+  No code, seed, agent or analysis setting changed between the two parts.
+- **The pre-registered dependence check**
+  (`scripts/phase4_dependence_sensitivity.py`) was requested after the
+  freeze. It was written before any final hand and identified by its
+  SHA-256 `65f4a409…`. It was run unchanged.
+
+**Verification** (`results/phase4/stage4d_verification.md`)
+
+- All 64 matches and 8 replays were present, complete and error-free. Every
+  checkpoint was validated against the manifest and against the SHA-256
+  index of the backup (`results/phase4/stage4d_checkpoint_index.json`).
+- The report was regenerated from the frozen code on a second machine. It
+  is byte-identical to the run's report except for the reporting machine's
+  Python version line. The recomputed endpoints equal the run's summary
+  exactly.
+- **Cross-machine reproducibility.** The first 6 deals of 8
+  Codespace-played matches were re-played in the cloud environment (Python
+  3.12.3). They were identical in cards, agent actions and chips.
+- The run's own checks also passed:
+  - 0 errors or illegal actions in 64 matches;
+  - every agent received identical cards against each opponent;
+  - all 8 replays were identical.
+
+**Confirmed results (pre-registered, `results/phase4/stage4d_final_report.md`)**
+
+| Endpoint | bb/100, 95% CI | Decision rule |
+|---|---|---|
+| **Primary: ML EV − Situation-Aware Frequency EV** | **+84.8 [+51.6, +117.9]** | **Met:** the interval lies above 0 |
+| Secondary: ML EV − Global Frequency EV | +102.1 [+69.6, +134.6] | Above 0 |
+| Secondary: ML EV − ProbabilityAgent | +469.4 [+419.0, +519.9] | Above 0 |
+
+- **The primary success criterion was met.** With the decision rule held
+  fixed, the agent using the supervised opponent model won more than the
+  same agent using situation-conditioned training frequencies: 8,000 deal
+  pairs per comparison, 16 opponents with equal weight.
+- **Win rates,** equal weight over 16 opponents:
+  - ML EV +843.2;
+  - Situation-Aware Frequency EV +758.5;
+  - Global Frequency EV +741.1;
+  - ProbabilityAgent +373.8 bb/100.
+
+**Sensitivity analyses (supporting; they do not replace the registered result)**
+
+- **Pre-registered stratified bootstrap** of the primary: [+52.1, +118.1].
+- **Dependence between deal pairs in a match**
+  (`results/phase4/stage4d_dependence_sensitivity.md`):
+  - batch means [+51.6, +118.0];
+  - Newey–West [+52.0, +117.5];
+  - block bootstrap [+52.0, +117.5].
+
+  The ratios to the registered standard error are 0.99–1.00, and the
+  autocorrelations at lags 1–5 lie between −0.014 and +0.018. Both
+  secondary comparisons also stay above 0 under every method.
+- **Post hoc, descriptive.** Leaving out any one opponent gives +72.8 to
+  +97.6 bb/100, with every interval above 0. Leaving out a whole style
+  gives +51.0 to +131.9, also all above 0. 13 of 16 opponents have a
+  positive point estimate.
+
+**Exploratory results (not confirmatory)**
+
+- **Held-out opponents:** ML − Situation-Aware +96.6 [+30.8, +162.4] on the
+  4 opponents never seen in training, against +80.8 on the training pool.
+- **By style,** ML − Situation-Aware:
+
+  | Style | bb/100, 95% CI |
+  |---|---|
+  | Solid | +186.2 [+104.5, +267.8] |
+  | Maniac | +126.1 [+61.4, +190.8] |
+  | Nit | +83.5 [+37.3, +129.8] |
+  | Calling station | −56.8 [−124.4, +10.9] |
+
+- **Mechanism.** The ML agent adapts how often it goes all-in:
+  - against nits it shoves in 14.3% of decisions, against 28–31% for the
+    frequency agents;
+  - against solid opponents 18.9%, against 29–32%;
+  - against calling stations it keeps shoving (34.3%).
+
+  Hands containing an ML shove produce +933 bb/100, against +818 for the
+  Situation-Aware control. Against solid opponents they produce +350,
+  against +73.
+- **ML EV against the ProbabilityAgent by style:**
+  - calling stations +1,477 and maniacs +432;
+  - nits −43.5 [−95.8, +8.8] and solid opponents +12.4 [−91.2, +116.0].
+
+  The gains of the EV rule therefore come from loose opponents. The ML agent
+  removes the frequency agents' losses against selective opponents but does
+  not beat the simple agent there.
+- **Decision latency** in the Codespace (median / 95th percentile):
+  - ML EV 647 / 1,435 ms;
+  - frequency EV agents 561–582 / about 1,395 ms;
+  - ProbabilityAgent 522 / 590 ms.
+
+  The first 4 matches ran on faster hardware, so latency comes from two
+  machine types.
+
+**Limitations (major)**
+
+1. **Excessive all-ins and no future-betting reasoning.**
+   - The one-step EV rule chose all-in in 23.3% (ML) and 29–32% (frequency)
+     of decisions; preflop 31–42%.
+   - Every EV agent's profit comes from hands containing a shove; other
+     hands lose 52–90 bb/100.
+   - This is a property of the shared decision rule, accepted for the
+     competition. It would be exploitable by an adaptive opponent.
+2. **Poorly covered states.** 67.4% of the ML agent's all-ins lead to
+   opponent states with fewer than 30 training rows. Its key decisions
+   therefore depend on model extrapolation, mostly through the
+   opponent-history features.
+3. **The control is incomplete.** The Situation-Aware control conditions on
+   the betting situation only. ML − Situation-Aware still mixes the value of
+   opponent history with the value of current-hand features (bet sizes,
+   position, board, earlier streets).
+4. **The continuing range is approximate.** It ranks opponent hands by
+   current strength and ignores the earlier action in the hand.
+5. **Narrow scope.**
+   - All opponents are rule-based bots; the held-out bots are close variants
+     of the training styles.
+   - Heads-up only, 100 big blinds reset every hand.
+   - Results may not carry over to humans or to 6-max play.
+
+**Unexpected findings**
+
+- **The effect was larger than in development:** +84.8 against +61 (100
+  deals per match), with a much narrower interval than the ±32 planned
+  (±33.2 achieved).
+- **The situation-aware control barely improved on the global one:**
+  +17.3 [−2.3, +37.0]. Most pivotal decisions are all-ins into sparse
+  situations, where both controls predict similar call rates.
+- **The ML agent was not better than the controls against calling
+  stations** (−56.8, interval includes 0). It shoves slightly more there.
+- **Runtime:** 9.41 h in the Codespace against the 4.3 h estimate. The
+  Codespace CPU is about 2.2× slower per decision.
+- **Environment:** the first cloud environment restarts its machine between
+  sessions, which kills detached processes, and it blocks tag pushes. The
+  backup branch and the Codespace guide
+  (`docs/phase4_codespaces_guide.md`) were the remedy.
+
+**Tests:** local, Python 3.12.3: **446 passed** (441 plus 5 for the
+dependence check).
+
 ### Next milestone
 
-Project-owner approval of the freeze checklist. Then Stage 4D:
+Review and merge the Phase 4 pull requests, in this order:
 
-1. tag `phase4-freeze`;
-2. confirm `--check` reports every check OK;
-3. run the final evaluation (about 4.3 h).
+1. PR A, `phase-4-ev-agents`;
+2. PR B, `phase-4-evaluation-support`;
+3. PR C, `phase-4d-final-results`.
+
+Then the Phase 5 plan: a Streamlit demonstration.

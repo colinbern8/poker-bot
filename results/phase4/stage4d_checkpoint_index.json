@@ -1,0 +1,662 @@
+{
+  "files": {
+    "jobs/ev_global__calling_station.json.gz": {
+      "sha256": "de2cf72fab9e2b23fb8d3563ad1375e16bcc4b82a03081b6ad6e223b35a06c4d",
+      "hero": "ev_global",
+      "opponent": "calling_station",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "3a6947a114b9fb66bfeb08ae1109c2266100fd4a51b083acbc0a409817608a1c",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_global__calling_station_v1.json.gz": {
+      "sha256": "97a0dc67c9c19163f51fc44985c02f1fb6113f1d4007df92ad0ca2ddfdf68b7a",
+      "hero": "ev_global",
+      "opponent": "calling_station_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "c1bfe86c2ac7d5d857299bdb7c568848112d7abfece6f981697a5d36b97d6cef",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_global__calling_station_v2.json.gz": {
+      "sha256": "515e111b6a34ad8f8c1ec216dea139856a33e2e2750da6ce4e27c4010cc068d0",
+      "hero": "ev_global",
+      "opponent": "calling_station_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "d960a159e06bd90fa18b96d1dcff23f1de9d93b814f524483336418d8b824e80",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_global__calling_station_v3.json.gz": {
+      "sha256": "9922807194765b4b3c290531cc3b8a2873f79863c6f04596d98f8ea311aedbba",
+      "hero": "ev_global",
+      "opponent": "calling_station_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "fc0b828d4713e0b69ea777dbcea0bd479f501a3e52dab8c5c615db70e0209497",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_global__maniac.json.gz": {
+      "sha256": "dc3d2b855d76d2e21e4acbef33cf434843e6d0992a5e57c7408cd71ae82d76c2",
+      "hero": "ev_global",
+      "opponent": "maniac",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "be3d1616e8e151da2961e036293c8725414ee935a594d20a4d0315a693665381",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_global__maniac_v1.json.gz": {
+      "sha256": "46d5f845cf2ab12c7fb76b32ce0b937351400dff76bc06274ca2dd3ef54b2672",
+      "hero": "ev_global",
+      "opponent": "maniac_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "e1eb5d5bee9ddb950af1a69833b87a9acd52408f3f8b8d4789f474f380f826f2",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_global__maniac_v2.json.gz": {
+      "sha256": "39f0e216fe1a286be70736544105e420623cbdeff6d4fc6ec486364bcf6bb08d",
+      "hero": "ev_global",
+      "opponent": "maniac_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "fd85826d2cba2533ffdf881224c95ec0b697d301a327fdd2b2d3194fb1a1aa6a",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_global__maniac_v3.json.gz": {
+      "sha256": "175df524e789ad43fbd4fe68aebd6ba4fa14199b3673666d89b6d16864ade4af",
+      "hero": "ev_global",
+      "opponent": "maniac_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "8f43e8334a79177765f3eacad1d48319985554677722f158721745cf8ece823c",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_global__nit.json.gz": {
+      "sha256": "382ff81b4b4c5788c16a6a2f7e15cd44aad32ec20280a3163a2d8f5839f8e4e1",
+      "hero": "ev_global",
+      "opponent": "nit",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "c6165de6120fc8428584540ec19bd2d178980b8bdebfb4fa300d5f9a595dde28",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_global__nit_v1.json.gz": {
+      "sha256": "c241b17c1e029ce6c7dcc5684296660fcda615844f6f3068133d94b943e7db9f",
+      "hero": "ev_global",
+      "opponent": "nit_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "42ed31003e789554a210149159cbf76f982fd2abf2a3d3f46a0c20f4c01807f9",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_global__nit_v2.json.gz": {
+      "sha256": "3777dae58128776ef6121aa5d5c52413be278cb1e16a32e1e54aa85974fc75f2",
+      "hero": "ev_global",
+      "opponent": "nit_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "379c65d0dc0c0c8b2e90460db0875fcbc3764d008ff8db6f9d41ee71aa182c79",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_global__nit_v3.json.gz": {
+      "sha256": "c2b7fbdb12071116a7da3bc0236670374587655895d8a244ab55935019fa80ab",
+      "hero": "ev_global",
+      "opponent": "nit_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "cfa189b763e3ba71aecda1504ed550b73c976326ca12eb7fdc242111a32ca014",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_global__solid.json.gz": {
+      "sha256": "5e63f2c3a1ce31ce101b6f811be902febab435b6d4f9426a7ef52c4ea178d8eb",
+      "hero": "ev_global",
+      "opponent": "solid",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "896aefedcafbefef52b4a4fcb58ae5c8fdb6df9d75d0f56b05a9c88e75c93704",
+      "run_id": "2026-11-13T01:08:27+00:00"
+    },
+    "jobs/ev_global__solid_v1.json.gz": {
+      "sha256": "b9222270a2a034914e17f1c4203885903f49d83a1276b7e26878c6389098eb64",
+      "hero": "ev_global",
+      "opponent": "solid_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "c688561d9185b0aa49d6526b1d402fc06e43dbae6dafa7b21b8abc0558d8976d",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_global__solid_v2.json.gz": {
+      "sha256": "ffbe3e13966f593b449684e9ba5ca6af6ae72151b8958c5a9196a5db6bdb04fa",
+      "hero": "ev_global",
+      "opponent": "solid_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "00e1fba88dac86a147233dd37e4a5ddb30b759d79518aa3112e99c4f33ffcb35",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_global__solid_v3.json.gz": {
+      "sha256": "f3ae8860f9dac6e622103a6e1b62423884b291e011d719245a19ff509545c839",
+      "hero": "ev_global",
+      "opponent": "solid_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "0444c858f56b54c772eaac01ab48bdec82288c3f7bf4a35e36683bd549d2d30a",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__calling_station.json.gz": {
+      "sha256": "f001f998db89303b8420914cab53f81d29171dc13695d56fdea300804070161a",
+      "hero": "ev_ml",
+      "opponent": "calling_station",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "ff6938c841f74d32082497e453cc120c7ad4892db70fe6988af3cd7c6b7774c3",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__calling_station_v1.json.gz": {
+      "sha256": "b072035970ed7ce6dcc24b373c42ef772c5067a8e2a77a4df61961ccdec79e26",
+      "hero": "ev_ml",
+      "opponent": "calling_station_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "b3dee75e6117211f7b9a221d8b064b7cae85ea8b9f3e43ab84aa50b45fe7e909",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__calling_station_v2.json.gz": {
+      "sha256": "0f87a92ac80b6c21c6f4c354d789c1df7f1c7543ce7349a6ce2e58b63c4ef15b",
+      "hero": "ev_ml",
+      "opponent": "calling_station_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "f95613d815da06e01264ed0dc227e9f78941154e681402dabdcf99cbb659bbef",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__calling_station_v3.json.gz": {
+      "sha256": "d72dc456249fc65a4119eda6ebc8725abf8aacfa8da1bb20b102d719c4359b1f",
+      "hero": "ev_ml",
+      "opponent": "calling_station_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "431920cdb78f0aadf1b962a1fc688e1d0424ac0c8f1564fbed2f49f2ca268f73",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__maniac.json.gz": {
+      "sha256": "65ebbab67ffbe6944a337981c93dc7588ef8e938b93753e4fbe8325318101e30",
+      "hero": "ev_ml",
+      "opponent": "maniac",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "794497621ebe6204bc2713d91627eea4d234ee91cb800fcec6409e83967cfbe6",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__maniac_v1.json.gz": {
+      "sha256": "eeb10d7cef3f8291f60d89e5e3fa85fb42630c9e4c5eb2d499876a300c4fe8ef",
+      "hero": "ev_ml",
+      "opponent": "maniac_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "8dff498ac1796a21391b6830029eac170cd66236c9994fe15b451ee3b39cbfd3",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__maniac_v2.json.gz": {
+      "sha256": "cb51c3b2ff86742827817aebb8e07581c3265076ae1ddc2dbdd1598aaa5e3e7a",
+      "hero": "ev_ml",
+      "opponent": "maniac_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "9eedeabff1a4e2b3c72e950fac2b3293ffe53a10f0dff5100738b439e22436c4",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__maniac_v3.json.gz": {
+      "sha256": "283ab8f82e2d582135a254c65afc6998efeabfee084c4c27ef5738491313ee1b",
+      "hero": "ev_ml",
+      "opponent": "maniac_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "2be64179459b295a58a40d875c370966ea664a7b60137b0deafefaed8ae97c08",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__nit.json.gz": {
+      "sha256": "96df96f26ace9b512d2f0fe926d3750f2d7d474f8cefb3f0a70a76b37676b76e",
+      "hero": "ev_ml",
+      "opponent": "nit",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "bc570093528b8282a79d709f608e5048416a495bf75b7c1241eb08d8864818a7",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__nit_v1.json.gz": {
+      "sha256": "b2c87c93eca5b3fec853ca98a1be0cbcd095bca84cf4fa011ad38b703c55b845",
+      "hero": "ev_ml",
+      "opponent": "nit_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "49fe8bc5b1b5b3f83d01b4f8847a8ee3a32abe33d10f79d6b8e9fe59a0aa3ae7",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__nit_v2.json.gz": {
+      "sha256": "f24829513386f49a4abb2c2c47e120ad4119ac1834945f92e2fd26f9af59b31e",
+      "hero": "ev_ml",
+      "opponent": "nit_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "4f2d67efbe458ce1c5836280d9b1afc1c2ab7945b81d67657b161d3ddf5e7588",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__nit_v3.json.gz": {
+      "sha256": "3a2877578e7703a26df0b34e026c8eba9ed7f3c32e8cd0a7dabf8035e37e0ec8",
+      "hero": "ev_ml",
+      "opponent": "nit_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "49ed2f4d338adf07b09e1ad948de690a7514c5b97d2e05a63985d753eccba338",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__solid.json.gz": {
+      "sha256": "15259dbc271f467a952060543e3a40b9d20046ac07a6d155775bf8ff2d6a3fae",
+      "hero": "ev_ml",
+      "opponent": "solid",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "601f436311aec2ab5fdb996449c86decb249fa800f96e215b845dfc1bc750234",
+      "run_id": "2026-11-13T01:08:27+00:00"
+    },
+    "jobs/ev_ml__solid_v1.json.gz": {
+      "sha256": "186658f9fa7112cb8e01b661d0d222590341d5bcabf015d78f9a13ac8354ac30",
+      "hero": "ev_ml",
+      "opponent": "solid_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "b266a4a551dfa44f6c080035d6755922d4bd69cd109602f0f71a4940965396d4",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__solid_v2.json.gz": {
+      "sha256": "93589b08520b8e5c333f5981fb34530a7d5ad2d197e1fa799911bcb30806f153",
+      "hero": "ev_ml",
+      "opponent": "solid_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "da87ea1a61c35230e9aef742cb6e52bab0b39b087e90dd7cafc4edb1d7e1b8c1",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_ml__solid_v3.json.gz": {
+      "sha256": "d4d826518ed98c12de7d82207a02ab164c21aff693b4aa23966059f31b6e3144",
+      "hero": "ev_ml",
+      "opponent": "solid_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "d6fde0ddf02b403e8fa8a80806852fdfc1b2059ffd54e9a7dacf4412071a43f7",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__calling_station.json.gz": {
+      "sha256": "38478fcf18bfc604c41c1225feb1e75da4ccc57a69becfee8a67dc0d60032fda",
+      "hero": "ev_situation",
+      "opponent": "calling_station",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "63b1ba24b3bb107f4775dcb13798d24f4faf5a8942b3b96ba51e4c9a244d473a",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__calling_station_v1.json.gz": {
+      "sha256": "f9bd0463b34b10b22dfaca224603c3a561e7783e2c12a75074a3816f31a3406e",
+      "hero": "ev_situation",
+      "opponent": "calling_station_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "cedd9f9f67aa79f34a7ba3cfef90eb3cb07c494b7d64e52c59c3e48dba35427b",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__calling_station_v2.json.gz": {
+      "sha256": "6f3da9b8b862cd4ba5ef05fbacddbb27bf2a1d358446aebccc652ea5ddda0288",
+      "hero": "ev_situation",
+      "opponent": "calling_station_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "241bc86fb16f8fd24866dcb7975f8f89f163ea62cd9ed27b1b0417d1c4731d8d",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__calling_station_v3.json.gz": {
+      "sha256": "3dca73ab6cdc2197f17eba6b6f1cc7bb6e7d70aea3cc6d16a2893b59d6f99fd6",
+      "hero": "ev_situation",
+      "opponent": "calling_station_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "91d519bc1b47945d1916a6672e420247299b84c9f41abfa55559eaf1eb792465",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__maniac.json.gz": {
+      "sha256": "8bdd80f3844ea337033f5dbb58f73829a07718bea4cb9b02c4064244f4e6363c",
+      "hero": "ev_situation",
+      "opponent": "maniac",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "4469d05637a0c92d15fff0db92b7dcc0cd3b1b03632837f1757610825ee29c31",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__maniac_v1.json.gz": {
+      "sha256": "af72be06217190ab09eb4c73ceed662d8fb597e045b80f05eb032b7f8a178368",
+      "hero": "ev_situation",
+      "opponent": "maniac_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "397ec8a0fa90a5abe784f357835ab527ff6cd50d664bc878951d44eaadf67dc8",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__maniac_v2.json.gz": {
+      "sha256": "1db3e6d68a15e381c7c0545f55bda7e04e5ac2e3fc234ec36b7d7bedf02f521f",
+      "hero": "ev_situation",
+      "opponent": "maniac_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "62fff937d3b9fa1da9695b1d25377afc8b3b887878935613ced4cba467b0cfa4",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__maniac_v3.json.gz": {
+      "sha256": "d37fc44cb189e1ac6fe2eb31883a50fd2925fbe13c279779fe3cec95e28617eb",
+      "hero": "ev_situation",
+      "opponent": "maniac_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "324956593a96d882e2a194161103c90186f8c2d1f8e09a3477ccfb3534d3f666",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__nit.json.gz": {
+      "sha256": "6219488d970d65a9b358cda87827a8bae9b81748f5b0527331bb0e1920201a1b",
+      "hero": "ev_situation",
+      "opponent": "nit",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "d8f54c568a51fd81f3057a4273f0b7f20a4980778957f833875f6d1c913bdab9",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__nit_v1.json.gz": {
+      "sha256": "35f002dedbb89891ad31986f6ca58f12785a8d3553ad87c6d23e91d17fc72727",
+      "hero": "ev_situation",
+      "opponent": "nit_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "547daf4dd31b7de51df4bdf4a38209fb6d9f3f7adb04e609de00887e801c19e3",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__nit_v2.json.gz": {
+      "sha256": "997da667eff25d2e0720bb00418435fec799e3add6f3c2251d943b403f7377f9",
+      "hero": "ev_situation",
+      "opponent": "nit_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "e5be486afc292981740b49e9376588a48f344ad1ee5115a4446eab6ca51db90d",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__nit_v3.json.gz": {
+      "sha256": "61798cf8f831d4028ef0eec7f60d184f2c3aeb2e11def46dca02335676b4db7e",
+      "hero": "ev_situation",
+      "opponent": "nit_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "c305a008e281912d9a7584615beda742aa8deb58675e342a0c01e7d0a43d3dc6",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__solid.json.gz": {
+      "sha256": "0440cfb2ead08248fb857fa43291731f864be733f9d708b128a40f40806c1489",
+      "hero": "ev_situation",
+      "opponent": "solid",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "2e4c8b5a4d2d1c29c1c03dd0454c837c10288c1433fdf47fcd02324a98aebf70",
+      "run_id": "2026-11-13T01:08:27+00:00"
+    },
+    "jobs/ev_situation__solid_v1.json.gz": {
+      "sha256": "74c0c213604f187b491fa026b957fe7dad9d11c99f070285e601fc236cb84bc8",
+      "hero": "ev_situation",
+      "opponent": "solid_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "3e6b089e75abc645132f7c33745b2505b9addef91cd340058048c926250d50c3",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__solid_v2.json.gz": {
+      "sha256": "736b1dc7c898e39e3711a74f4208d0500c44ced0a5d758a012316e81c49db32a",
+      "hero": "ev_situation",
+      "opponent": "solid_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "5e31ca5c17a293a4745fc50baa93f5d9530b6861d7723b50cca5eca717b367aa",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/ev_situation__solid_v3.json.gz": {
+      "sha256": "6b14fac42c5529d4101d26f5d68a01a1213c4a8d003a0434cd9b74f737397d25",
+      "hero": "ev_situation",
+      "opponent": "solid_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "797de27e3b299a054cf3cdecc9337715042cc55c6a7f5e05d8fec757b6d3c7be",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__calling_station.json.gz": {
+      "sha256": "de313de2f0c04c06a762be554114f2ecbcd1543354e2be94ef3d154bd6020d0d",
+      "hero": "probability",
+      "opponent": "calling_station",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "9d24cdcdb6691b7f384cb0271dcc71ab6a23994f67d0e081e17eb3be7b7fc78c",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__calling_station_v1.json.gz": {
+      "sha256": "8464d74f86fc1ae0f22e72ba0511f5b9a17e4689168604788a0e439037c1d370",
+      "hero": "probability",
+      "opponent": "calling_station_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "a81ac77ea8f59e561f32feac8fd7a88e091161ad8197fc9d12b22450f9648436",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__calling_station_v2.json.gz": {
+      "sha256": "604633fe336dd10d5de8cb2700d1c9d2df4fd6dc1ba0a001a4d2812b6f3d082f",
+      "hero": "probability",
+      "opponent": "calling_station_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "4cc7199011f483db1f2a13ac1a230fd34b45fc1436acf06bbb62448593573714",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__calling_station_v3.json.gz": {
+      "sha256": "d98e8a3444329ef1b4fc92f85b182d35fe43a3dac1c706ca3f438664330c54db",
+      "hero": "probability",
+      "opponent": "calling_station_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "7c44e588d5fe59aad5259b1204eeca54ea0d10d52374488686e7bf8d67c91164",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__maniac.json.gz": {
+      "sha256": "0727a1c4cd26a7abb8082ad36b3386bd97248d8fff591429fc5b9b2b1a92c084",
+      "hero": "probability",
+      "opponent": "maniac",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "9df4b0d6361c7c549768efee5f86ef3072117c9dce4455ba3b02952b19ab3357",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__maniac_v1.json.gz": {
+      "sha256": "81b0eac6fb024ab344bf363f22d5c1cc6858293053a17cd0081dae8bfad86c51",
+      "hero": "probability",
+      "opponent": "maniac_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "ace4f1f7fa02838ffce20cebef17380b77679970c710c98c5b2f5054e2a2c4a4",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__maniac_v2.json.gz": {
+      "sha256": "3b599137b83d6d8f0cf22e7fbc0f1cf05bd502846ef8dc3251b70a0a72751e32",
+      "hero": "probability",
+      "opponent": "maniac_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "0454845f7a5399a459c91972c1b5081a513f7c2325dcb4580bfa49764f7f63b2",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__maniac_v3.json.gz": {
+      "sha256": "2df6ea266e624c87950452bc032f34777a1e2250c0f6cc6ce5b223a91da4de05",
+      "hero": "probability",
+      "opponent": "maniac_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "a4c1432e94d5b987b9951b1b39bfe5e2ff6b4dd893341a02d5557ab2ae911536",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__nit.json.gz": {
+      "sha256": "409f1dfac7e87c29910f48a6ed05033154a082c6ad49c747430b85a51cafb3d7",
+      "hero": "probability",
+      "opponent": "nit",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "d3af89ba573c4c231fdabb53e3194b7a7a79dbaea282113d6a2fc5d0f7b6c9d4",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__nit_v1.json.gz": {
+      "sha256": "f4a89a789a5e594122e22aed22632b06767a5e68df405c97698954d3207fe8f6",
+      "hero": "probability",
+      "opponent": "nit_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "bb26732f1f882c3308bb242db1cc295667e8dfbe90652cf3871a3f176c30dc43",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__nit_v2.json.gz": {
+      "sha256": "ff380b2fb52dbb4c15ef8be97a82b5181eccb0b43ab6d47f4db15475583681b0",
+      "hero": "probability",
+      "opponent": "nit_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "e92d8541c6eae04d2c642f2642969301325525910aa181f8081ff19b8f9f48c7",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__nit_v3.json.gz": {
+      "sha256": "e63a794259d8a43f15473979df79301495d4aa938700379cb8b67ce07a4015b9",
+      "hero": "probability",
+      "opponent": "nit_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "7caa337adad1d8ddabee8d505217de04e9826221e5875cc3f9e2d8c4a761f4e1",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__solid.json.gz": {
+      "sha256": "a4bd482358402f00b1d849c7c8bc8a6f76166734c03cd33ce59f9999d7ba4515",
+      "hero": "probability",
+      "opponent": "solid",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "9a98ed0ea9eaa43168145ece5dd1bcbe0a7b4d0372f56692586613deefc8c9af",
+      "run_id": "2026-11-13T01:08:27+00:00"
+    },
+    "jobs/probability__solid_v1.json.gz": {
+      "sha256": "b82fbe802b08770718f8aa7f035c5fc032e6b7433c957a9881f3730d47686b8c",
+      "hero": "probability",
+      "opponent": "solid_v1",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "961c020737fd0905f3bd9bbb21b7feae6216b62a89ebcefe5dc70a61a5579ab6",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__solid_v2.json.gz": {
+      "sha256": "6e6c9bea2308fc83b8a9059f791d41fda22a521a52cfd060939d9d96a8252ea2",
+      "hero": "probability",
+      "opponent": "solid_v2",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "f3ff2f3ae6c7baadd5728d7a25f87e529a01e245242f80834f8bcbc892abb11b",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "jobs/probability__solid_v3.json.gz": {
+      "sha256": "cddf8618d66ee6b208faf0e82a8cc06ef8c9afabd4190dd0e8d752dd4e56f4f2",
+      "hero": "probability",
+      "opponent": "solid_v3",
+      "deals": 500,
+      "hands": 1000,
+      "result_hash": "9a07bb69d075dfccdfcaa2b762d08de825903950928c512ed069d0ec5f17a93a",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/ev_global__calling_station.json.gz": {
+      "sha256": "fddffd2a21fb6dbdbbf140b52eb4e9f99f6a5d82e4a63fb741b55abb973af982",
+      "hero": "ev_global",
+      "opponent": "calling_station",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "6042d0cdaf57ae40bed11c16ef790c65ad9817129abb3b12967ffe2bbf870709",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/ev_global__nit_v2.json.gz": {
+      "sha256": "e70140c9d5e957e093241a394b530087cb7f073544875278026a382048c00454",
+      "hero": "ev_global",
+      "opponent": "nit_v2",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "3023b9974e07ff9d580b10cf7d807a9fde9c5a95877c794de2a94a0c79296685",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/ev_ml__calling_station.json.gz": {
+      "sha256": "9eea686b23f3da05889539bf3501a82361b08ccb82422df9755201bf0600fcd7",
+      "hero": "ev_ml",
+      "opponent": "calling_station",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "6042d0cdaf57ae40bed11c16ef790c65ad9817129abb3b12967ffe2bbf870709",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/ev_ml__nit_v2.json.gz": {
+      "sha256": "2c8c62067855c7f06232a6f835eccbf20bba0d5d887dfcdcffef4081078b4807",
+      "hero": "ev_ml",
+      "opponent": "nit_v2",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "4655e07d5ecc9190b398e4389133217252066b73ca9fd4f3da4ec7a2e4e2e6fe",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/ev_situation__calling_station.json.gz": {
+      "sha256": "dca48035d6e0792d3a7ea7194a33f7a8fd5e992b80b3398f1dd848b8a38018d9",
+      "hero": "ev_situation",
+      "opponent": "calling_station",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "6042d0cdaf57ae40bed11c16ef790c65ad9817129abb3b12967ffe2bbf870709",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/ev_situation__nit_v2.json.gz": {
+      "sha256": "8f61fca7e34814559222a9ff6f3fe94678a7b31075cb7afb3f98d42173ee1481",
+      "hero": "ev_situation",
+      "opponent": "nit_v2",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "e69dd386dac60c852261389e73f9434550991275b1cf08db09b0909b169978c4",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/probability__calling_station.json.gz": {
+      "sha256": "9559fe72a77f6f7ce6ed322dc76a5a8b3081b7da27e1d45456e3a0a15525d19c",
+      "hero": "probability",
+      "opponent": "calling_station",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "c341be7de07f149301998571e10f762864fd99c326786571888a40dc57160482",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    },
+    "replays/probability__nit_v2.json.gz": {
+      "sha256": "a40ed78a4b3c24395bc68c6938b8dd765625e6b0612ab46e8753824cdab0ace0",
+      "hero": "probability",
+      "opponent": "nit_v2",
+      "deals": 6,
+      "hands": 12,
+      "result_hash": "267a926d28e7007f62cf5dd59c0d2957999af91188b27dd7371c12a4cca16f21",
+      "run_id": "2026-11-13T14:37:49+00:00"
+    }
+  },
+  "freeze_commit": "d50af2b04e00a58a2fe5104ae59da8f2f2ea7669",
+  "freeze_tag": "phase4-freeze",
+  "manifest_sha256": "213f4070247d8b8ca51334123b0221c7cbf09b053713f2bf0687462604306e16",
+  "updated": "2026-11-14T00:09:29+00:00",
+  "complete": {
+    "matches": 64,
+    "of": 64,
+    "replays": 8,
+    "replays_of": 8
+  }
+}
