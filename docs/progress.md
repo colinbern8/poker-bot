@@ -1486,3 +1486,95 @@ Review and merge the Phase 4 pull requests, in this order:
 3. PR C, `phase-4d-final-results`.
 
 Then the Phase 5 plan: a Streamlit demonstration.
+
+---
+
+## Phase 5: playable heads-up demonstration (in progress)
+
+Plan and architecture: [`docs/phase5_plan.md`](phase5_plan.md).
+
+### Phase 4 integration (2026-11-16)
+
+The three Phase 4 pull requests were merged into `main` with merge commits,
+in the planned order:
+
+| PR | Branch | Merge commit |
+|---|---|---|
+| #6 | `phase-4-ev-agents` (`d50af2b`, tag `phase4-freeze`) | `f031f45` |
+| #7 | `phase-4-evaluation-support` (`fbc546f`) | `a0b9e84` |
+| #8 | `phase-4d-final-results` (`e3f6a93`) | `064f4dd` |
+
+After each merge:
+
+- `main`'s tree equalled the branch head;
+- all 46 frozen files matched the manifest;
+- CI passed on Ubuntu and Windows (444 passed, 2 skipped).
+
+The 72 checkpoint hashes in `stage4d_checkpoint_index.json` match the raw
+files on `phase4-final-checkpoints`, which stays unmerged.
+
+### Stage 5A: game engine (2026-11-16)
+
+**Completed**
+
+- `src/hybridpoker_demo/`, a new package outside the frozen one, with:
+  - a scripted human agent;
+  - a recording AI wrapper (interrupt and replay);
+  - match seeds;
+  - frozen-model loading with SHA-256 check;
+  - `HeadsUpController`.
+- Rules as approved: human versus the Hybrid ML Agent, five abstract
+  actions (legal only), 200-chip stacks every hand, blinds 1/2, alternating
+  button, running score kept separately, AI explanations only after the hand.
+
+**Engineering decisions**
+
+- **Interrupt and replay** instead of a step-by-step copy of the simulator.
+  The unchanged `play_hand` is reused, so the game cannot drift from the
+  evaluated rules.
+- **Exact replay.** The AI's random generator is restored with `setstate`
+  after every recorded decision. A negative control shows the tests detect a
+  replay that skips this.
+- **All-or-nothing updates.** The AI's diagnostics and opponent tracker are
+  rolled back on any failure; the controller commits only at the end.
+  - **Bug found by the tests and fixed:** the rollback point was first
+    taken after the replay instead of at the start of the operation, so a
+    failed tracker update left that operation's diagnostics behind.
+- **Mucked cards stay hidden.** The AI's cards appear only if the hand reached
+  a showdown; its explanations appear after every hand.
+- **Artifact checks reuse the frozen `check_manifest`.** New hashes were
+  added only for `results/phase4/`, which nothing covered before.
+
+**Tests**
+
+Local, Python 3.12.3, pinned requirements, no model file:
+
+- Baseline before Stage 5A: **444 passed, 2 skipped**.
+- After: **484 passed, 5 skipped**:
+  - 40 new tests;
+  - skipped: the 2 existing model-file tests and 3 opt-in acceptance tests.
+- The replay gate covered, for the ML agent alone, 18 hands, 58 human stops
+  and 47 AI decisions (26 postflop, 38 computed after a replay), all identical
+  to uninterrupted play.
+
+**Performance (development container, small test model)**
+
+- Controller overhead per human action (replay and bookkeeping, AI thinking
+  excluded): median 0.8 ms, p95 2.3 ms, max 2.7 ms over 40 hands.
+- Preflop cache warm-up: 39.1 s.
+
+**Known problems**
+
+- The real-model acceptance test (`tests/acceptance/`) has **not** been run:
+  the frozen model file is not available here and was not rebuilt (no
+  retraining). It must pass on the presentation machine before Stage 5B is
+  relied on.
+- Demo games are not research evidence: one hand per deal and a human
+  opponent, unlike the evaluation.
+
+### Next milestone
+
+1. Review and merge the Stage 5A pull request.
+2. Run the acceptance test with the verified model on the presentation
+   machine.
+3. Stage 5B: the Streamlit screen.
