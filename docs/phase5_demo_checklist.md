@@ -54,7 +54,14 @@ python scripts/restore_phase4_model.py --from /path/to/random_forest_logloss_B.j
 - [ ] All acceptance tests **pass**. Write down the printed numbers:
   - model load + SHA-256 check: ______ s
   - cache warm-up: ______ s
-  - AI decision time: median ______ ms, max ______ ms
+  - AI decision time: median ______ ms, p95 ______ ms, max ______ ms
+- [ ] For a reliable 95th percentile, also measure about 50 or more AI decisions:
+  ```bash
+  HYBRIDPOKER_REAL_MODEL=1 HYBRIDPOKER_ACCEPTANCE_HANDS=20 python -m pytest tests/acceptance/test_real_model_app.py -v -s
+  ```
+  Each line says whether the targets were met: p95 decision time under 2 s,
+  startup under 90 s. These are **targets, not test failures**. If they are
+  missed, write down the numbers and follow the speed advice in step 4.
 
 ## 4. Launch and check startup and speed
 
@@ -115,7 +122,7 @@ AI makes the same decisions (the agent and the deal are fully seeded).
 | Problem | What to do |
 |---|---|
 | Page shows "model file is missing" or "does not match" | Restore the model from the USB copy (step 2) and reload the page |
-| "Something went wrong" message during a hand | The game is unchanged: click the action again, or **Start new match** |
+| "Something went wrong" message during a hand | The game is unchanged: click the action again, or **Start new match**. Afterwards, find the message's reference code in the terminal window: the full error is logged there |
 | Page frozen or browser closed | Reload the page (this starts a new match), or stop the app with `Ctrl+C` and start it again |
 | The laptop fails | Use the second machine prepared with this checklist |
 | No working machine | Show the screen recording and screenshots of the rehearsed hands (record them during rehearsal), then present the Phase 4 results |
