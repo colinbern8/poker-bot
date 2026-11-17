@@ -6,6 +6,7 @@ views, so it can be unit-tested and cannot reach hidden information:
 * cards as text with suit symbols (hearts and diamonds red);
 * action labels with the exact chip amounts of the legal action;
 * the public action log, the hand result and showdown hand names;
+* the announcement of the AI's latest action (from the recorded history);
 * the **after-hand explanation**, built only from the AI's recorded
   ``DecisionDiagnostics`` (nothing is estimated or invented here);
 * the opponent profile, keeping three things apart: what the human was
@@ -70,14 +71,17 @@ def hand_name(hole: Sequence[Card], board: Sequence[Card]) -> str:
 
 def action_text(category: ActionCategory, bet_to: int, chips_added: int, to_call: int, street: str,
                 is_all_in: bool = False) -> str:
-    """A player-facing label with chip amounts, e.g. "Call 4", "Bet 6 (½ pot)", "Raise to 24 (pot)"."""
+    """A player-facing label with chip amounts, e.g. "Call 4", "Bet 6 (½ pot)", "Raise to 24 (pot)".
+
+    A call that puts the player all-in reads "Call all-in (198)" (the chips it adds).
+    """
     category = ActionCategory(category)
     if category is ActionCategory.FOLD:
         return "Fold"
     if category is ActionCategory.CHECK_CALL:
         if to_call == 0:
             return "Check"
-        return f"Call {chips_added}" + (" (all-in)" if is_all_in else "")
+        return f"Call all-in ({chips_added})" if is_all_in else f"Call {chips_added}"
     if category is ActionCategory.ALL_IN:
         return f"All-in ({bet_to})"
     verb = "Bet" if to_call == 0 and street != "preflop" else "Raise to"
@@ -87,6 +91,49 @@ def action_text(category: ActionCategory, bet_to: int, chips_added: int, to_call
 
 def legal_action_label(action: LegalAction, to_call: int, street: str) -> str:
     return action_text(action.category, action.bet_to, action.chips_added, to_call, street, action.is_all_in)
+
+
+def chips(amount: int) -> str:
+    return f"{amount} chip" + ("" if amount == 1 else "s")
+
+
+def signed(amount: int | float) -> str:
+    """A signed amount with a typographic minus, e.g. "+4", "−400", "+0"."""
+    text = f"{amount:+d}" if isinstance(amount, int) else f"{amount:+g}"
+    return text.replace("-", "−")
+
+
+def ai_action_announcement(action: PublicAction, to_call: int) -> str:
+    """One recorded AI action in plain words, e.g. "AI raises to 12 chips".
+
+    Amounts follow the engine: a call names the chips added; a bet, raise or
+    all-in names the AI's total bet on the street after the action.
+    """
+    category = ActionCategory(action.category)
+    if category is ActionCategory.FOLD:
+        return "AI folds"
+    if category is ActionCategory.CHECK_CALL:
+        if to_call == 0:
+            return "AI checks"
+        return f"AI calls all-in for {chips(action.chips_added)}" if action.is_all_in else \
+            f"AI calls {chips(action.chips_added)}"
+    if action.is_all_in:
+        return f"AI goes all-in for {chips(action.bet_to)}"
+    if to_call == 0 and action.street != "preflop":
+        return f"AI bets {chips(action.bet_to)}"
+    return f"AI raises to {chips(action.bet_to)}"
+
+
+def latest_ai_action(history: Sequence[PublicAction], ai_position: str) -> tuple[str, str] | None:
+    """The street name and announcement of the AI's most recent action in the hand, if any.
+
+    Built from the public history only, so it always agrees with the action history.
+    """
+    latest = None
+    for action, decision in zip(history, decisions_from_history(tuple(history))):
+        if action.position == ai_position:
+            latest = (STREET_NAMES[action.street], ai_action_announcement(action, decision.to_call))
+    return latest
 
 
 def history_lines(history: Sequence[PublicAction], human_position: str) -> list[str]:

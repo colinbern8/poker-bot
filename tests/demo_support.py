@@ -15,6 +15,7 @@ import statistics
 
 import numpy as np
 
+from hybridpoker.actions import ActionCategory
 from hybridpoker.agents import make_agent
 from hybridpoker.agents.base import Agent, Decision
 from hybridpoker.agents.ev_agent import EVAgent, MLResponseModel, SituationFrequencyResponseModel
@@ -27,6 +28,20 @@ from hybridpoker_demo.seeds import HandSetup, hand_setup
 
 SAMPLES = 40  # equity and range samples for test AIs (the real agent uses 500 and 400)
 TIMING_FIELDS = ("equity_seconds", "model_seconds", "range_seconds", "total_seconds")
+
+
+class ShoveEV(EVAgent):
+    """The ML EV agent with its choice forced to all-in whenever all-in is legal.
+
+    A test stand-in that reproduces an AI shove on demand (the real agent
+    shoves only when its EV calculation says so). Everything else, including
+    the diagnostics, is the unchanged agent.
+    """
+
+    @staticmethod
+    def choose(values, chips):
+        shove = next((v for v in values if v.category is ActionCategory.ALL_IN), None)
+        return shove or EVAgent.choose(values, chips)
 
 
 def ml_agent(bundle: dict, cls: type[EVAgent] = EVAgent) -> EVAgent:

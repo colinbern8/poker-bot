@@ -12,7 +12,9 @@ checks, with the real agent at its real sample counts:
 2. interrupted controller matches equal uninterrupted reference matches
    (cards, actions, payoffs, the AI's generator states, diagnostics apart
    from timings, and the opponent tracker after every hand);
-3. startup time and AI decision latency: median, 95th percentile and max,
+3. a pinned preflop shove (seed 1, first hand) is the frozen agent's own
+   EV choice and leaves the human exactly Fold or "Call all-in (198)";
+4. startup time and AI decision latency: median, 95th percentile and max,
    compared with the targets (p95 < 2 s, startup < 90 s). Printed with
    ``-s``; targets are reported, never asserted.
 """
@@ -27,6 +29,7 @@ import pytest
 from demo_support import (
     assert_same_diagnostics,
     assert_same_hand,
+    reference_hand,
     human_categories,
     latency_report,
     play_controller_hand,
@@ -34,9 +37,14 @@ from demo_support import (
     startup_report,
     tracker_state,
 )
+from hybridpoker.actions import ActionCategory as C
+from hybridpoker.agents.ev_agent import EVAgent
 from hybridpoker.phase4_final import MANIFEST_PATH, check_environment, load_manifest
-from hybridpoker_demo.controller import HeadsUpController
+from hybridpoker_demo import presentation as ui
+from hybridpoker_demo.controller import CompletedHand, HeadsUpController, HumanTurn
+from hybridpoker_demo.human import ScriptedHumanAgent
 from hybridpoker_demo.resources import build_ml_agent, load_frozen_ml_model, warm_caches
+from hybridpoker_demo.seeds import hand_setup
 
 pytestmark = pytest.mark.skipif(os.environ.get("HYBRIDPOKER_REAL_MODEL") != "1",
                                 reason="opt-in: set HYBRIDPOKER_REAL_MODEL=1 with the frozen model in place")
@@ -78,3 +86,38 @@ def test_real_agent_controller_matches_uninterrupted_reference(model, seed) -> N
     assert_same_diagnostics(ai.diagnostics, reference_ai.diagnostics)
 
     print("\n" + latency_report([d.total_seconds for d in ai.diagnostics], f"seed {seed}"))
+
+
+SHOVE_SEED = 1  # first hand: the human is on the button, calls 1, and the frozen AI shoves from the big blind
+
+
+def test_pinned_preflop_shove_is_the_frozen_ev_choice_and_leaves_fold_or_call_all_in(model) -> None:
+    """Regression for the manual Phase 5D report "the AI went all-in preflop as the big blind and
+    I was offered only Fold and All-in". The shove is legal, is the highest-EV action of the
+    unchanged agent (identical to an uninterrupted ``play_hand`` reference), and the human may
+    then only fold or call all-in."""
+    ai = build_ml_agent(model)
+    controller = HeadsUpController(ai, match_seed=SHOVE_SEED)
+    turn = controller.view
+    assert turn.observation.position == "button"
+    turn = controller.submit(turn.ticket, C.CHECK_CALL)
+
+    obs = turn.observation
+    assert isinstance(turn, HumanTurn) and obs.opponent_stack == 0 and obs.opponent_bet == 200
+    assert turn.legal_categories == (C.FOLD, C.CHECK_CALL)
+    assert [ui.legal_action_label(a, obs.to_call, obs.street) for a in obs.legal_actions] == [
+        "Fold", "Call all-in (198)"]
+
+    done = controller.submit(turn.ticket, C.CHECK_CALL)
+    assert isinstance(done, CompletedHand) and done.went_to_showdown
+    shove = done.ai_decisions[0]
+    assert (shove.street, shove.position, shove.category, shove.bet_to) == ("preflop", "big_blind", C.ALL_IN, 200)
+    assert any(a.category is C.ALL_IN and a.bet_to == 200 for a in shove.legal_actions)  # legal for the AI
+    diag = shove.diagnostics
+    assert diag.chosen == "all_in" and max(diag.action_evs, key=diag.action_evs.get) == "all_in"
+    assert diag.coverage["all_in"]["low"]  # flagged on screen: no training rows for this opponent state
+
+    reference_ai = build_ml_agent(model)
+    reference_hand(reference_ai, ScriptedHumanAgent([C.CHECK_CALL, C.CHECK_CALL]), hand_setup(SHOVE_SEED, 0))
+    assert_same_diagnostics(ai.diagnostics, reference_ai.diagnostics)  # same equity, EVs and choice
+    print(f"\nshove: equity {diag.equity:.3f}; EVs " + ", ".join(f"{k} {v:+.2f}" for k, v in diag.action_evs.items()))

@@ -25,7 +25,7 @@ import pytest
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
-from demo_support import SAMPLES
+from demo_support import SAMPLES, ShoveEV
 from hybridpoker.actions import ActionCategory
 from hybridpoker.agents.ev_agent import EVAgent, MLResponseModel
 from hybridpoker.opponent_predictor import ModelHashMismatch, OpponentPredictor
@@ -101,6 +101,7 @@ def texts(at: AppTest) -> list[str]:
         out += [str(e.value) for e in getattr(at, kind)]
     out += [f"{m.label} {m.value}" for m in at.metric]
     out += [b.label for b in at.button] + [e.label for e in at.expander]
+    out += [e.proto.body for e in at.get("html")]  # the poker table (Phase 5D) is one HTML block
     for table in at.table:
         out += [str(v) for v in table.value.astype(str).to_numpy().ravel().tolist()] + list(table.value.columns)
     return out
@@ -108,6 +109,13 @@ def texts(at: AppTest) -> list[str]:
 
 def page(at: AppTest) -> str:
     return "\n".join(texts(at))
+
+
+def table_html(at: AppTest) -> str:
+    """The rendered poker table (the HTML block containing the table)."""
+    tables = [e.proto.body for e in at.get("html") if 'class="hp-table"' in e.proto.body]
+    assert len(tables) == 1, len(tables)
+    return tables[0]
 
 
 def action_buttons(at: AppTest) -> dict[str, str]:
@@ -179,10 +187,12 @@ def test_play_complete_hands_with_score_updates_and_hand_transitions(app) -> Non
         total += hand.human_net
         result = ui.hand_result(hand)
         assert any(result.headline in t for t in texts(at))
-        metrics = {m.label: m.value for m in at.metric}
-        assert metrics["Your total"] == f"{total:+d} chips"
-        assert metrics["In big blinds"] == f"{total / 2:+g} bb"
-        assert "Hand" in metrics and not any("bb/100" in t for t in texts(at))  # no bb/100 on the screen
+        text = page(at)
+        assert (f"Hand {h + 1} (finished) · Session profit: **{ui.signed(total)} chips** "
+                f"({ui.signed(total / 2)} bb)") in text
+        assert f"This hand: <b>{ui.signed(hand.human_net)}</b> chips" in table_html(at)
+        assert "Your total" not in text
+        assert "bb/100" not in text  # no bb/100 on the screen
         assert hand.human_position == ("button" if h % 2 == 0 else "big_blind")  # button alternates
         at.button(key="next-hand").click().run()
     assert game(at).scoreboard.hands_completed == 4
@@ -202,14 +212,78 @@ def test_action_buttons_are_exactly_the_legal_actions_with_engine_amounts(app) -
             assert buttons == expected
             if obs.to_call:
                 seen_call = True
-                assert any(label.startswith(f"Call {obs.to_call}") for label in buttons.values())
+                call = obs.legal(ActionCategory.CHECK_CALL)
+                assert (f"Call all-in ({obs.to_call})" if call.is_all_in else f"Call {obs.to_call}") in buttons.values()
             text = page(at)
-            assert f"Stack **{obs.own_stack}**" in text and f"Stack **{obs.opponent_stack}**" in text
-            assert f"Bet **{obs.own_bet}**" in text and f"Bet **{obs.opponent_bet}**" in text
-            assert str(obs.pot_size) in [h.value for h in at.subheader]  # the pot
+            table = table_html(at)
+            assert f"Stack <b>{obs.own_stack}</b> · Bet <b>{obs.own_bet}</b>" in table
+            assert f"Stack <b>{obs.opponent_stack}</b> · Bet <b>{obs.opponent_bet}</b>" in table
+            assert f"Pot <b>{obs.pot_size}</b>" in table
+            assert table.count('class="hp-card hp-back"') == 2  # the AI's two face-down cards
+            assert table.count('hp-slot') + len(obs.board_cards) == 5  # five community-card positions
             click_action(at, choose(turn, h + 1))
         at.button(key="next-hand").click().run()
     assert seen_call
+
+
+def test_facing_an_ai_preflop_shove_shows_fold_and_call_all_in(app) -> None:
+    """Regression (manual Phase 5D test): after the AI shoves preflop from the big blind, the
+    screen offers exactly two buttons, "Fold" and "Call all-in (198)", and the table shows
+    the AI all-in with its cards face-down until the showdown."""
+    app.monkeypatch.setattr(resources, "build_ml_agent", lambda model, root=None: app.build(model, cls=ShoveEV))
+    at = app()
+    start(at)
+    turn = game(at).view
+    assert turn.observation.position == "button" and turn.observation.street == "preflop"
+    click_action(at, ActionCategory.CHECK_CALL)  # the human completes the small blind (Call 1)
+
+    turn = game(at).view
+    assert isinstance(turn, HumanTurn) and turn.observation.opponent_stack == 0
+    prefix = f"act-{turn.hand_index}-{turn.ticket.decision_index}-"
+    assert action_buttons(at) == {f"{prefix}fold": "Fold", f"{prefix}check_call": "Call all-in (198)"}
+    table = table_html(at)
+    assert "Stack <b>0</b> · Bet <b>200</b>" in table      # the AI, all-in
+    assert ">AI goes all-in for 200 chips</div>" in table   # announced at the table
+    assert "Stack <b>198</b> · Bet <b>2</b>" in table      # the human
+    assert table.count('class="hp-card hp-back"') == 2      # the AI's cards stay hidden
+
+    click_action(at, ActionCategory.CHECK_CALL)
+    hand = game(at).view
+    assert isinstance(hand, CompletedHand) and hand.went_to_showdown and len(hand.board_cards) == 5
+    assert table_html(at).count('class="hp-card hp-back"') == 0  # both hands shown at the showdown
+    text = page(at)
+    assert "Preflop · AI (Big blind): All-in (200)" in text
+    assert "Preflop · You (Button): Call all-in (198)" in text
+
+
+def test_every_ai_action_is_announced_at_the_table_from_the_recorded_history(app) -> None:
+    """The announcement on screen is always the AI's latest action in the recorded history, with the
+    seat names "You" and "Hybrid AI" and the positions as small tags."""
+    at = app()
+    start(at, REHEARSAL_SEED)
+    seen = set()
+    for h in range(4):
+        while True:
+            view = game(at).view
+            history = view.observation.history if isinstance(view, HumanTurn) else view.history
+            mine = view.observation.position if isinstance(view, HumanTurn) else view.human_position
+            ai_position = "big_blind" if mine == "button" else "button"
+            table = table_html(at)
+            assert '<div class="hp-name">You<span class="hp-pos">' in table
+            assert '<div class="hp-name">Hybrid AI<span class="hp-pos">' in table
+            latest = ui.latest_ai_action(history, ai_position)
+            if latest is None:
+                assert "hp-notice-empty" in table
+            else:
+                assert f'<span class="hp-notice-street">{latest[0]}</span>{latest[1]}</div>' in table
+                seen.add(latest[1].split()[1])  # checks, calls, bets, raises, goes, folds
+                ai_lines = [line for line in ui.history_lines(history, mine) if " · AI (" in line]
+                assert ai_lines and ai_lines[-1].startswith(latest[0])  # the same action ends the history
+            if not isinstance(view, HumanTurn):
+                break
+            click_action(at, choose(view, h + len(history)))
+        at.button(key="next-hand").click().run()
+    assert len(seen) >= 2, seen
 
 
 def test_hidden_cards_seeds_and_diagnostics_never_shown_during_a_hand(app) -> None:
@@ -223,18 +297,20 @@ def test_hidden_cards_seeds_and_diagnostics_never_shown_during_a_hand(app) -> No
             text = page(at)
             assert not any(card in text for card in ai_cards)
             assert str(REHEARSAL_SEED) not in text and str(game(at).match_seed) not in text
+            assert table_html(at).count('class="hp-card hp-back"') == 2  # AI cards face-down on the table
             assert "Why did the AI play that way?" not in text and not at.table  # no diagnostics yet
             assert "equity" not in text.lower()
             click_action(at, choose(game(at).view, h))
         hand = game(at).view
         text = page(at)
         assert str(REHEARSAL_SEED) not in text
+        backs = table_html(at).count('class="hp-card hp-back"')
         if hand.went_to_showdown:
             showdowns += 1
-            assert all(card in text for card in ai_cards)
+            assert all(card in text for card in ai_cards) and backs == 0
         else:
             folds += 1
-            assert not any(card in text for card in ai_cards)
+            assert not any(card in text for card in ai_cards) and backs == 2
         at.button(key="next-hand").click().run()
     assert showdowns and folds
 
@@ -316,7 +392,7 @@ def test_new_match_resets_and_rehearsal_seeds_reproduce(app) -> None:
     new = game(first)
     assert new is not old and new.match_id != old.match_id
     assert new.scoreboard.hands_completed == 0 and new.hand_index == 0
-    assert {m.label: m.value for m in first.metric}["Your total"] == "+0 chips"
+    assert "Session profit: **+0 chips** (+0 bb)" in page(first)
     assert app.agents[-1] is new._ai and app.agents[-1].tracker.observed_rows() == 0  # fresh AI and tracker
 
 

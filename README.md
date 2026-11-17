@@ -170,10 +170,10 @@ python -m pytest
 ```
 
 Expected result without the frozen model file (as in GitHub Actions):
-`522 passed, 6 skipped` as of Phase 5C. The skipped tests are the two that need
+`556 passed, 7 skipped` as of Phase 5D. The skipped tests are the two that need
 the frozen model file (`tests/test_ev_agent.py` and `tests/test_phase4_final.py`)
-and the four opt-in acceptance tests in `tests/acceptance/`. With the model in
-place, the two model tests run as well. The full suite takes about 4–6 minutes.
+and the five opt-in acceptance tests in `tests/acceptance/`. With the model in
+place, the two model tests run as well. The full suite takes about 4–7 minutes.
 
 The acceptance tests use the real frozen model and run only when asked (they
 fail, rather than skip, if the model is missing or differs):

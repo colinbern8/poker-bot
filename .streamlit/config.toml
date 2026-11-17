@@ -16,3 +16,26 @@ gatherUsageStats = false
 [client]
 # Hide developer menu items during the presentation.
 toolbarMode = "minimal"
+
+[theme]
+# Approved Phase 5D earth-tone palette: modern, muted, no bright colours.
+base = "light"
+backgroundColor = "#EEE9DF"           # cream page
+secondaryBackgroundColor = "#E4E1D6"  # sidebar and expanders: a slightly deeper cream
+textColor = "#2F2F2D"                 # charcoal
+primaryColor = "#6B4F3A"              # walnut: main buttons and highlights
+borderColor = "#A3AE96"               # sage
+linkColor = "#354B3E"                 # forest
+font = "sans-serif"
+baseRadius = "small"
+buttonRadius = "small"
+paddingTop = "1.5rem"                 # keep the table and buttons inside a 1366x768 screen
+# Result messages in the same earth tones (instead of bright green/yellow/red).
+greenColor = "#354B3E"
+greenBackgroundColor = "#DCE2D6"
+yellowColor = "#6B4F3A"
+yellowBackgroundColor = "#EADFD0"
+redColor = "#9A3B30"
+redBackgroundColor = "#F0DDD8"
+blueColor = "#354B3E"
+blueBackgroundColor = "#E2E4DA"

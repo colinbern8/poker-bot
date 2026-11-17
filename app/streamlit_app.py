@@ -38,6 +38,7 @@ import streamlit as st
 from hybridpoker.game import BIG_BLIND, SMALL_BLIND, STARTING_STACK
 from hybridpoker.opponent_predictor import ModelHashMismatch
 from hybridpoker_demo import presentation as ui
+from hybridpoker_demo import table_view as tv
 from hybridpoker_demo import resources
 from hybridpoker_demo.controller import (
     CompletedHand,
@@ -49,7 +50,8 @@ from hybridpoker_demo.controller import (
 )
 from hybridpoker_demo.seeds import check_seed
 
-AI_NAME = "Hybrid ML Agent"
+AI_NAME = "Hybrid ML Agent"  # full name (sidebar, explanations)
+TABLE_AI_NAME = "Hybrid AI"   # short name on the table and in the score line
 MODEL_NAME = "Random Forest B #22"
 
 # Developer diagnostics go to the terminal that started the app, never to the screen.
@@ -193,40 +195,26 @@ def show_notice() -> None:
         state.notice = None
 
 
-def scoreboard(game: HeadsUpController) -> None:
+def score_line(game: HeadsUpController) -> str:
     board = game.scoreboard
-    hand_number = game.hand_index + 1
-    a, b, c = st.columns(3)
-    a.metric("Hand", f"{hand_number}" if game.phase.value == "human_to_act" else f"{hand_number} (finished)")
-    b.metric("Your total", f"{board.human_net_chips:+d} chips")
-    c.metric("In big blinds", f"{board.human_net_bb:+g} bb")
+    hand = f"Hand {game.hand_index + 1}" + ("" if game.phase.value == "human_to_act" else " (finished)")
+    return (f"**You vs {TABLE_AI_NAME}** · {hand} · Session profit: **{ui.signed(board.human_net_chips)} chips** "
+            f"({ui.signed(board.human_net_bb)} bb)")
 
 
-def seat(title: str, cards_md: str, stack: int, bet: int | None, note: str = "") -> None:
-    with st.container(border=True):
-        left, middle, right = st.columns([2, 3, 2])
-        left.markdown(f"**{title}**")
-        middle.subheader(cards_md, anchor=False)
-        lines = [f"Stack **{stack}**"] + ([f"Bet **{bet}**"] if bet is not None else []) + ([note] if note else [])
-        right.markdown("  \n".join(lines))
+def draw_table(game: HeadsUpController, header, table) -> None:
+    """Fill the score line and the table from the controller's public view (see table_view.py)."""
+    view = game.view
+    header.markdown(score_line(game))
+    if isinstance(view, HumanTurn):
+        table.html(tv.table_during_hand(view, TABLE_AI_NAME))
+    else:
+        table.html(tv.table_after_hand(view, TABLE_AI_NAME, STARTING_STACK))
 
 
-def table_during_hand(turn: HumanTurn) -> None:
+def actions(turn: HumanTurn) -> None:
+    """The legal actions as one row of buttons, directly beneath the table."""
     obs = turn.observation
-    ai_position = "big_blind" if obs.position == "button" else "button"
-    seat(f"{AI_NAME} · {ui.POSITION_NAMES[ai_position]}", ui.HIDDEN_CARDS, obs.opponent_stack, obs.opponent_bet)
-    with st.container(border=True):
-        left, right = st.columns([5, 2])
-        left.markdown(f"**{ui.STREET_NAMES[obs.street]}**")
-        left.subheader(ui.cards_markdown(obs.board_cards), anchor=False)
-        right.markdown("**Pot**")
-        right.subheader(str(obs.pot_size), anchor=False)
-    seat(f"You · {ui.POSITION_NAMES[obs.position]}", ui.cards_markdown(obs.hole_cards), obs.own_stack, obs.own_bet)
-
-
-def actions(game: HeadsUpController, turn: HumanTurn) -> None:
-    obs = turn.observation
-    st.markdown(f"**Your move.** To call: **{obs.to_call}**")
     columns = st.columns(len(obs.legal_actions))
     for column, action in zip(columns, obs.legal_actions):
         label = ui.legal_action_label(action, obs.to_call, obs.street)
@@ -236,25 +224,14 @@ def actions(game: HeadsUpController, turn: HumanTurn) -> None:
                       "secondary")
 
 
-def action_log(history, human_position: str, expanded: bool) -> None:
-    with st.expander("Actions this hand", expanded=expanded):
-        lines = ui.history_lines(history, human_position)
+def action_history(history, human_position: str) -> None:
+    """The complete action history of the hand, in a compact collapsed section."""
+    lines = ui.history_lines(history, human_position)
+    with st.expander(f"Action history ({len(lines)})", expanded=False):
         st.markdown("\n".join(f"{i}. {line}" for i, line in enumerate(lines, 1)) if lines else "No actions yet.")
 
 
-def table_after_hand(hand: CompletedHand) -> None:
-    ai_position = "big_blind" if hand.human_position == "button" else "button"
-    ai_cards = ui.cards_markdown(hand.ai_hole_cards) if hand.ai_hole_cards is not None else ui.HIDDEN_CARDS
-    seat(f"{AI_NAME} · {ui.POSITION_NAMES[ai_position]}", ai_cards, STARTING_STACK + hand.ai_net, None,
-         ui.chips_and_bb(hand.ai_net))
-    with st.container(border=True):
-        st.markdown("**Board**")
-        st.subheader(ui.cards_markdown(hand.board_cards), anchor=False)
-    seat(f"You · {ui.POSITION_NAMES[hand.human_position]}", ui.cards_markdown(hand.human_hole_cards),
-         STARTING_STACK + hand.human_net, None, ui.chips_and_bb(hand.human_net))
-
-
-def result_banner(game: HeadsUpController, hand: CompletedHand) -> None:
+def result_controls(game: HeadsUpController, hand: CompletedHand) -> None:
     result = ui.hand_result(hand)
     show = {"win": st.success, "loss": st.warning, "split": st.info}[result.outcome]
     show(f"**{result.headline}.** {result.detail}")
@@ -262,17 +239,20 @@ def result_banner(game: HeadsUpController, hand: CompletedHand) -> None:
               args=(("next", game.match_id, game.hand_index),))
 
 
-def explanation(game: HeadsUpController, hand: CompletedHand) -> None:
+def explanation(hand: CompletedHand) -> None:
+    """A concise explanation per AI decision; the full recorded numbers are under 'Technical details'."""
     st.subheader("Why did the AI play that way?")
-    st.caption("Shown only after the hand. Every number below is recorded from the AI's own decision "
-               "(equity, expected values and the opponent model's predictions); nothing is estimated afterwards.")
+    st.caption("Recorded from the AI's own decisions during the hand and shown only after it ends; "
+               "nothing is estimated afterwards.")
     reports = [r for r in hand.ai_decisions if r.diagnostics is not None]
     if not reports:
         st.info("The AI did not have to make a decision in this hand.")
-    for i, report in enumerate(reports):
+    for report in reports:
         info = ui.explain_decision(report)
-        with st.expander(f"{ui.STREET_NAMES[info.street]}: the AI chose **{info.action}**", expanded=i == len(reports) - 1):
-            st.markdown(info.summary)
+        street = ui.STREET_NAMES[info.street]
+        flag = " ⚠ *Few similar training examples.*" if info.warnings else ""
+        st.markdown(f"**{street} — {info.action}.** {info.summary}{flag}")
+        with st.expander(f"Technical details: {street.lower()} decision", expanded=False):
             for warning in info.warnings:
                 st.warning(warning)
             st.markdown("**Expected value of each legal action** (chips, one-step estimate)")
@@ -293,14 +273,14 @@ def profile(game: HeadsUpController) -> None:
     current = game.opponent_profile()
     if current is None:
         return
-    st.subheader("What the AI has learned about you")
-    st.caption(f"Observed = your actual actions in {len(game.completed_hands)} finished hands. AI's estimate = "
-               f"the opponent model's input: your rates blended with the population average (weight "
-               f"{current.alpha:g} decisions), so it moves slowly at first.")
-    rows = ui.profile_rows(current, game.completed_hands)
-    st.table(pd.DataFrame([{"Behaviour": r.behaviour, "Observed (you)": r.observed,
-                            "AI's estimate (model input)": f"{r.model_input:.0%}",
-                            "Population average": f"{r.population:.0%}"} for r in rows]), hide_index=True)
+    with st.expander("What the AI has learned about you", expanded=False):
+        st.caption(f"Observed = your actual actions in {len(game.completed_hands)} finished hands. AI's estimate = "
+                   f"the opponent model's input: your rates blended with the population average (weight "
+                   f"{current.alpha:g} decisions), so it moves slowly at first.")
+        rows = ui.profile_rows(current, game.completed_hands)
+        st.table(pd.DataFrame([{"Behaviour": r.behaviour, "Observed (you)": r.observed,
+                                "AI's estimate (model input)": f"{r.model_input:.0%}",
+                                "Population average": f"{r.population:.0%}"} for r in rows]), hide_index=True)
 
 
 def welcome() -> None:
@@ -324,27 +304,35 @@ def main() -> None:
     state.setdefault("notice", None)
 
     model, timings = load_model_or_stop()
+    st.html(tv.TABLE_CSS)
     sidebar(timings)
-    status_area = st.container()
-    run_pending(model, status_area)
-    show_notice()
+
+    # Layout: score line, table, then the controls directly beneath the table.
+    header, table = st.empty(), st.empty()
+    controls = st.container()
+    if state.game is not None:
+        draw_table(state.game, header, table)  # the table stays visible while the AI thinks
+    run_pending(model, controls)               # "The AI is thinking…" appears beneath the table
 
     game: HeadsUpController | None = state.game
     if game is None:
+        with controls:
+            show_notice()
         welcome()
         return
-    st.header(f"You vs the {AI_NAME}")
-    scoreboard(game)
+    draw_table(game, header, table)
     view = game.view
+    with controls:
+        show_notice()
+        if isinstance(view, HumanTurn):
+            actions(view)
+        else:
+            result_controls(game, view)
     if isinstance(view, HumanTurn):
-        table_during_hand(view)
-        actions(game, view)
-        action_log(view.observation.history, view.observation.position, expanded=False)
+        action_history(view.observation.history, view.observation.position)
     else:
-        result_banner(game, view)
-        table_after_hand(view)
-        action_log(view.history, view.human_position, expanded=True)
-        explanation(game, view)
+        action_history(view.history, view.human_position)
+        explanation(view)
         profile(game)
 
 

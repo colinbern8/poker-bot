@@ -1692,3 +1692,133 @@ Local, Python 3.12.3, pinned requirements, no model file:
 - Tests (local, Python 3.12.3, no model file): **522 passed, 6 skipped** (4 new).
 - Deferred: a double click on "Start new match" can start two empty matches.
   This is harmless; it will be revisited only if real testing shows a problem.
+
+### Stage 5C: real-model validation (2026-11-17)
+
+- **Model recovery.** The genuine frozen model was recovered from the owner's
+  Codespace and attached to the `phase4-freeze` release.
+  - Its SHA-256 equals `5d4c8235…7b31`, by GitHub's digest and by our own
+    check.
+  - It was restored in the development container with
+    `restore_phase4_model.py --from`. It is never committed.
+- **Acceptance tests.** All 4 real-model tests passed.
+  - Extended 20-hand app test: 42 AI decisions; median 319 ms, p95 620 ms,
+    max 753 ms.
+  - Cold startup 45.8 s, of which cache warm-up was 44.3 s and model load
+    0.09 s.
+- **Full suite with the model present:** 524 passed, 4 skipped (the opt-in
+  acceptance tests, run separately). Frozen checks passed.
+
+### Stage 5D: earth-tone table interface (2026-11-17)
+
+**Completed** (see `docs/phase5_plan.md`, Stage 5D):
+
+- The approved forest-and-cream table layout and earth-tone palette, with no
+  animations.
+- Betting buttons beneath the table; the table and buttons fit 1366×768
+  without scrolling.
+- A compact collapsed action history.
+- Concise AI explanations with "Technical details" expanders.
+
+**Unchanged:** frozen code, the model, EV calculations, the five action
+categories, the controller and the hidden-information rules.
+
+**Tests**
+
+- New `tests/test_demo_table_view.py`:
+  - layout order, the 5 board positions, stacks, bets and pot;
+  - the AI's cards as backs during a hand and faces only at a showdown;
+  - escaping and suit colours;
+  - WCAG contrast for every text colour pair;
+  - a guard against animation, transition, gradient and box-shadow.
+- AppTests now read the table HTML. The hidden-card checks cover it, and the
+  score line is checked.
+
+**Screens checked with the genuine model:** at 1366×768 and 1920×1080, for
+gameplay, showdown and explanation.
+
+**Deferred:** custom raise amounts, until after the presentation (feasibility
+review in `docs/phase5_plan.md`).
+
+**Investigation: AI preflop all-in during manual testing (2026-11-17).** A
+manual test saw the AI go all-in preflop from the big blind, leaving the human
+two buttons.
+
+- **Findings.** No controller or UI bug was found.
+  - The shove was legal: both players start each hand with 200 chips.
+  - The human may then only fold or call all-in. The call was labelled
+    "Call 198 (all-in)"; it now reads "Call all-in (198)", approved as a
+    presentation-only change. Nothing is left to raise with.
+  - The shove is the frozen agent's highest-EV action. It matches an
+    uninterrupted `play_hand` reference exactly.
+  - This is documented Phase 4 behaviour: ML EV chose all-in on 31.0% of
+    preflop decisions in the final evaluation. The opponent state it predicts
+    (facing an all-in preflop) has no training rows, and the "few similar
+    training examples" warning flags it.
+- **Sample.** In a real-model sample (seeds 1–10, four scripted human
+  styles), the AI shoved in 48 of 120 big-blind hands. That was 32 of 40 on
+  the first hand of a match, falling to 8 of 40 on each of the third and fifth
+  hands.
+- **New regression tests.**
+  - Controller and screen tests with a stand-in shoving AI.
+  - An opt-in real-model test pinning seed 1.
+- **No strategy change.**
+
+**All-in call label (2026-11-17, approved).**
+
+- **Change.** A call that puts the player all-in now reads "Call all-in (N)",
+  with the chips that call adds, on the betting buttons and in the action
+  history. The old label was "Call N (all-in)".
+- **Scope.** One line in `presentation.py`; other labels are unchanged.
+- **Tests.**
+  - Label cases for 198, 194, 150, 56 and 1 chips.
+  - The controller test checks the button and the history line for calls of
+    198, 196 and 194 chips, from both seats.
+  - The screen test and the opt-in real-model test use the new label.
+- **Results.**
+  - Full suite with the model present: 542 passed, 5 skipped (the opt-in
+    acceptance tests).
+  - Real-model shove test: passed.
+
+**Phase 5D refinements after manual testing (2026-11-17, approved).**
+Presentation only.
+
+- **Seat names.** The table names the seats "You" and "Hybrid AI". The
+  position (Button or Big blind) is a small tag beside the name, still read
+  from the controller. The sidebar keeps the full name, "Hybrid ML Agent".
+- **AI action announcement.** It sits between the AI's seat and the pot,
+  for example "PREFLOP AI goes all-in for 200 chips" or "AI calls 1 chip".
+  - It is built only from the AI's last entry in the recorded public
+    history, so it always agrees with the action history. If the AI acts
+    twice in one advance (calling, then leading on the next street), the
+    newest action is shown.
+  - Amounts: a call names the chips added; a bet, raise or all-in names the
+    total bet on the street.
+  - It sits in the normal layout, so it never covers cards or buttons.
+  - Before the AI acts, an invisible placeholder keeps the layout still.
+  - No JavaScript, timers or animation.
+- **Score wording.**
+  - The header reads "Session profit: −400 chips (−200 bb)", with a
+    typographic minus.
+  - After a hand, each seat reads "This hand: +4 chips".
+  - The calculations are unchanged.
+- **Phones.** A narrow-screen CSS rule makes the table less rounded and the
+  cards slightly smaller, so text never meets the rail.
+- **Checked in a browser with the genuine model** (seed 1):
+  - At 1366×768 the table spans 70–603 px. The lowest betting button ends at
+    667 px and "Next hand" at 739 px.
+  - Also checked at 1920×1080 and on a 390 px phone screen.
+- **Tests:**
+  - announcement wording for every action type, with singular and plural
+    chips;
+  - the latest-action rule, including two AI actions in a row;
+  - the signed-amount format;
+  - the table: names, position tags, announcement and "This hand" wording,
+    over many hands;
+  - an AppTest checking the announcement at every step of four hands, and the
+    "Session profit" header.
+- **Results.**
+  - Full suite with the model present: 558 passed, 5 skipped (the opt-in
+    acceptance tests).
+  - All 5 real-model acceptance tests passed.
+  - The frozen manifest check passed and the model's SHA-256 is unchanged.
