@@ -160,6 +160,83 @@ hands.
 | `tests/test_demo_app.py` | AppTest, with the small model substituted by a test-only fixture. Covers: startup, complete hands, legal buttons with engine amounts, score and transitions, rehearsal-seed reproducibility, new match, ignored duplicate, stale and illegal clicks, no hidden cards, seeds or diagnostics during a hand, explanation values on screen, error recovery, per-session isolation with one shared model, and missing or wrong model with no fallback |
 | `tests/acceptance/test_real_model_app.py` | **Opt-in**: the unmodified app with the real model, played through button clicks |
 
+## Stage 5D: earth-tone table interface
+
+The approved visual direction: a modern, understated, premium look. There
+are no animations, transitions, gradients or casino effects.
+
+- **Layout.**
+  - Warm cream page.
+  - A large rounded forest-green table with a walnut rail.
+  - The AI at the top centre with two face-down cards.
+  - The pot and five community-card positions in the middle.
+  - Your two cards at the bottom centre.
+  - Names, positions, stacks and bets at each seat.
+  - A single row of betting buttons directly beneath the table.
+  - The table and buttons fit a 1366×768 screen without scrolling.
+- **Palette.**
+
+  | Colour | Hex | Use |
+  |---|---|---|
+  | Forest | `#354B3E` | Table |
+  | Cream | `#EEE9DF` | Page; text on the table |
+  | Warm white | `#F8F5ED` | Card faces |
+  | Sage | `#A3AE96` | Borders and empty slots only |
+  | Walnut | `#6B4F3A` | Rail, card backs, main button |
+  | Charcoal | `#2F2F2D` | Text; spades and clubs |
+  | Muted brick | `#9A3B30` | Hearts and diamonds |
+
+  Every text colour pair reaches WCAG AA contrast (tested).
+- **Implementation.**
+  - `src/hybridpoker_demo/table_view.py` builds the table as one HTML block
+    from the controller's public views. During a hand the AI's cards are
+    backs; its faces appear only at a showdown. All text is escaped.
+  - `.streamlit/config.toml` sets the theme.
+  - The page draws the table before applying a click, so the table stays in
+    view while "The AI is thinking…" shows beneath it.
+- **Explanations.**
+  - One short summary per AI decision, flagging low training coverage.
+  - The recorded tables, predictions and warnings under "Technical
+    details".
+  - The opponent profile in its own expander.
+  - The full action history in a compact collapsed section.
+- **Unchanged.** Frozen code, the model, EV calculations, the five action
+  categories, the controller, tickets and error handling.
+
+## Post-presentation enhancement (deferred): custom raise amounts
+
+Reviewed in Phase 5D and **deferred until after the December 7–9
+presentation**, by the project owner's decision.
+
+- **Feasible in the engine.**
+  - PokerKit accepts any whole-chip raise between the legal minimum and
+    maximum.
+  - The frozen `apply_action` applies the exact amount.
+  - The AI's counterfactual replay handles custom-sized raises.
+- **Blocked by the frozen simulator.** `play_hand` chooses the chip amount
+  from `Decision.category` only, so custom sizes would need a demo-owned
+  hand loop, proven identical to `play_hand` for the five standard actions.
+- **Lossy for the model.**
+  - Features `a_prev_*` and the opponent tracker's counts use the five
+    category labels, so a custom size must be labelled (for example "pot"
+    for a 3× overbet).
+  - Size-dependent features (`a_to_call_bb`, `a_pot_bb`, `a_spr`, pot odds)
+    would leave the training distribution: the training bots used only ½-pot,
+    pot and all-in sizes.
+  - The coverage warnings do not detect unusual sizes.
+- **Risks.**
+  - Unvalidated AI behaviour against unusual sizes, such as repeated minimum
+    raises or overbets.
+  - Unflagged extrapolation by the model.
+  - A new correctness proof for the hand loop.
+- **Recommended design if pursued.**
+  - An opt-in experimental mode, with the five actions staying the default.
+  - The demo-owned loop with equivalence tests.
+  - One documented labelling rule (all-in at the maximum, otherwise the
+    nearer of ½-pot or pot by pot fraction).
+  - An "outside the training data" note in the explanation.
+  - No change to frozen code, the model or the evaluation.
+
 ## Known limitations and risks
 
 - **The real-model acceptance test has not been run in this environment.** The
