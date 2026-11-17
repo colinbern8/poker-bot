@@ -101,6 +101,7 @@ def texts(at: AppTest) -> list[str]:
         out += [str(e.value) for e in getattr(at, kind)]
     out += [f"{m.label} {m.value}" for m in at.metric]
     out += [b.label for b in at.button] + [e.label for e in at.expander]
+    out += [e.proto.body for e in at.get("html")]  # the poker table (Phase 5D) is one HTML block
     for table in at.table:
         out += [str(v) for v in table.value.astype(str).to_numpy().ravel().tolist()] + list(table.value.columns)
     return out
@@ -108,6 +109,13 @@ def texts(at: AppTest) -> list[str]:
 
 def page(at: AppTest) -> str:
     return "\n".join(texts(at))
+
+
+def table_html(at: AppTest) -> str:
+    """The rendered poker table (the HTML block containing the table)."""
+    tables = [e.proto.body for e in at.get("html") if 'class="hp-table"' in e.proto.body]
+    assert len(tables) == 1, len(tables)
+    return tables[0]
 
 
 def action_buttons(at: AppTest) -> dict[str, str]:
@@ -179,10 +187,9 @@ def test_play_complete_hands_with_score_updates_and_hand_transitions(app) -> Non
         total += hand.human_net
         result = ui.hand_result(hand)
         assert any(result.headline in t for t in texts(at))
-        metrics = {m.label: m.value for m in at.metric}
-        assert metrics["Your total"] == f"{total:+d} chips"
-        assert metrics["In big blinds"] == f"{total / 2:+g} bb"
-        assert "Hand" in metrics and not any("bb/100" in t for t in texts(at))  # no bb/100 on the screen
+        text = page(at)
+        assert f"Hand {h + 1} (finished) · Your total **{total:+d} chips** ({total / 2:+g} bb)" in text
+        assert "bb/100" not in text  # no bb/100 on the screen
         assert hand.human_position == ("button" if h % 2 == 0 else "big_blind")  # button alternates
         at.button(key="next-hand").click().run()
     assert game(at).scoreboard.hands_completed == 4
@@ -204,9 +211,12 @@ def test_action_buttons_are_exactly_the_legal_actions_with_engine_amounts(app) -
                 seen_call = True
                 assert any(label.startswith(f"Call {obs.to_call}") for label in buttons.values())
             text = page(at)
-            assert f"Stack **{obs.own_stack}**" in text and f"Stack **{obs.opponent_stack}**" in text
-            assert f"Bet **{obs.own_bet}**" in text and f"Bet **{obs.opponent_bet}**" in text
-            assert str(obs.pot_size) in [h.value for h in at.subheader]  # the pot
+            table = table_html(at)
+            assert f"Stack <b>{obs.own_stack}</b> · Bet <b>{obs.own_bet}</b>" in table
+            assert f"Stack <b>{obs.opponent_stack}</b> · Bet <b>{obs.opponent_bet}</b>" in table
+            assert f"Pot <b>{obs.pot_size}</b>" in table
+            assert table.count('class="hp-card hp-back"') == 2  # the AI's two face-down cards
+            assert table.count('hp-slot') + len(obs.board_cards) == 5  # five community-card positions
             click_action(at, choose(turn, h + 1))
         at.button(key="next-hand").click().run()
     assert seen_call
@@ -223,18 +233,20 @@ def test_hidden_cards_seeds_and_diagnostics_never_shown_during_a_hand(app) -> No
             text = page(at)
             assert not any(card in text for card in ai_cards)
             assert str(REHEARSAL_SEED) not in text and str(game(at).match_seed) not in text
+            assert table_html(at).count('class="hp-card hp-back"') == 2  # AI cards face-down on the table
             assert "Why did the AI play that way?" not in text and not at.table  # no diagnostics yet
             assert "equity" not in text.lower()
             click_action(at, choose(game(at).view, h))
         hand = game(at).view
         text = page(at)
         assert str(REHEARSAL_SEED) not in text
+        backs = table_html(at).count('class="hp-card hp-back"')
         if hand.went_to_showdown:
             showdowns += 1
-            assert all(card in text for card in ai_cards)
+            assert all(card in text for card in ai_cards) and backs == 0
         else:
             folds += 1
-            assert not any(card in text for card in ai_cards)
+            assert not any(card in text for card in ai_cards) and backs == 2
         at.button(key="next-hand").click().run()
     assert showdowns and folds
 
@@ -316,7 +328,7 @@ def test_new_match_resets_and_rehearsal_seeds_reproduce(app) -> None:
     new = game(first)
     assert new is not old and new.match_id != old.match_id
     assert new.scoreboard.hands_completed == 0 and new.hand_index == 0
-    assert {m.label: m.value for m in first.metric}["Your total"] == "+0 chips"
+    assert "Your total **+0 chips** (+0 bb)" in page(first)
     assert app.agents[-1] is new._ai and app.agents[-1].tracker.observed_rows() == 0  # fresh AI and tracker
 
 
