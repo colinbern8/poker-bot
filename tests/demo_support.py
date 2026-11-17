@@ -9,7 +9,9 @@ them exactly.
 from __future__ import annotations
 
 import dataclasses
+import math
 import random
+import statistics
 
 import numpy as np
 
@@ -149,3 +151,33 @@ def assert_same_hand(actual: HandResult, expected: HandResult, ai_seat: int) -> 
         if a.seat == ai_seat:
             assert a.decision == e.decision
             assert a.agent_name == e.agent_name
+
+
+# --- Latency reporting for the opt-in acceptance tests (Phase 5C) --------------------------------------
+
+P95_TARGET_SECONDS = 2.0       # AI decision time, 95th percentile: a target, not a pass/fail limit
+STARTUP_TARGET_SECONDS = 90.0  # model load + SHA-256 check + cache warm-up: a target, not a limit
+FEW_SAMPLES = 20               # below this, the 95th percentile is close to the maximum
+
+
+def p95(seconds: list[float]) -> float:
+    """95th percentile by the nearest-rank method: the smallest value >= 95% of the sample."""
+    if not seconds:
+        raise ValueError("No decision times to summarize.")
+    ordered = sorted(seconds)
+    return ordered[math.ceil(0.95 * len(ordered)) - 1]
+
+
+def latency_report(seconds: list[float], label: str) -> str:
+    """One line: count, median, p95 and max decision time, and whether the p95 target was met."""
+    value = p95(seconds)
+    status = "met" if value < P95_TARGET_SECONDS else "NOT met (a target, not a test failure)"
+    note = f"; only {len(seconds)} decisions, so p95 is close to the max" if len(seconds) < FEW_SAMPLES else ""
+    return (f"{label}: {len(seconds)} AI decisions; median {1000 * statistics.median(seconds):.0f} ms, "
+            f"p95 {1000 * value:.0f} ms, max {1000 * max(seconds):.0f} ms; "
+            f"target p95 < {1000 * P95_TARGET_SECONDS:.0f} ms: {status}{note}")
+
+
+def startup_report(seconds: float, label: str) -> str:
+    status = "met" if seconds < STARTUP_TARGET_SECONDS else "NOT met (a target, not a test failure)"
+    return f"{label}: {seconds:.1f} s; target < {STARTUP_TARGET_SECONDS:.0f} s: {status}"

@@ -12,13 +12,14 @@ checks, with the real agent at its real sample counts:
 2. interrupted controller matches equal uninterrupted reference matches
    (cards, actions, payoffs, the AI's generator states, diagnostics apart
    from timings, and the opponent tracker after every hand);
-3. decision latency (printed with ``-s``; reported, not asserted).
+3. startup time and AI decision latency: median, 95th percentile and max,
+   compared with the targets (p95 < 2 s, startup < 90 s). Printed with
+   ``-s``; targets are reported, never asserted.
 """
 
 from __future__ import annotations
 
 import os
-import statistics
 import time
 
 import pytest
@@ -27,8 +28,10 @@ from demo_support import (
     assert_same_diagnostics,
     assert_same_hand,
     human_categories,
+    latency_report,
     play_controller_hand,
     reference_match,
+    startup_report,
     tracker_state,
 )
 from hybridpoker.phase4_final import MANIFEST_PATH, check_environment, load_manifest
@@ -47,7 +50,9 @@ def model():
     started = time.perf_counter()
     loaded = load_frozen_ml_model()  # raises if missing or the hash differs (checked first: fails fast)
     loading = time.perf_counter() - started
-    print(f"\nmodel load + SHA-256 check {loading:.1f} s; cache warm-up {warm_caches():.1f} s")
+    warming = warm_caches()
+    print(f"\nmodel load + SHA-256 check {loading:.1f} s; cache warm-up {warming:.1f} s")
+    print(startup_report(loading + warming, "startup (load + check + warm-up)"))
     return loaded
 
 
@@ -72,6 +77,4 @@ def test_real_agent_controller_matches_uninterrupted_reference(model, seed) -> N
         assert tracker_state(ai) == ref["tracker"]
     assert_same_diagnostics(ai.diagnostics, reference_ai.diagnostics)
 
-    seconds = [d.total_seconds for d in ai.diagnostics]
-    print(f"\nseed {seed}: {len(seconds)} AI decisions; median {1000 * statistics.median(seconds):.0f} ms, "
-          f"max {1000 * max(seconds):.0f} ms")
+    print("\n" + latency_report([d.total_seconds for d in ai.diagnostics], f"seed {seed}"))
