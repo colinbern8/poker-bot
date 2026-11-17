@@ -25,7 +25,7 @@ import pytest
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
-from demo_support import SAMPLES
+from demo_support import SAMPLES, ShoveEV
 from hybridpoker.actions import ActionCategory
 from hybridpoker.agents.ev_agent import EVAgent, MLResponseModel
 from hybridpoker.opponent_predictor import ModelHashMismatch, OpponentPredictor
@@ -220,6 +220,35 @@ def test_action_buttons_are_exactly_the_legal_actions_with_engine_amounts(app) -
             click_action(at, choose(turn, h + 1))
         at.button(key="next-hand").click().run()
     assert seen_call
+
+
+def test_facing_an_ai_preflop_shove_shows_fold_and_call_all_in(app) -> None:
+    """Regression (manual Phase 5D test): after the AI shoves preflop from the big blind, the
+    screen offers exactly two buttons, "Fold" and "Call 198 (all-in)", and the table shows
+    the AI all-in with its cards face-down until the showdown."""
+    app.monkeypatch.setattr(resources, "build_ml_agent", lambda model, root=None: app.build(model, cls=ShoveEV))
+    at = app()
+    start(at)
+    turn = game(at).view
+    assert turn.observation.position == "button" and turn.observation.street == "preflop"
+    click_action(at, ActionCategory.CHECK_CALL)  # the human completes the small blind (Call 1)
+
+    turn = game(at).view
+    assert isinstance(turn, HumanTurn) and turn.observation.opponent_stack == 0
+    prefix = f"act-{turn.hand_index}-{turn.ticket.decision_index}-"
+    assert action_buttons(at) == {f"{prefix}fold": "Fold", f"{prefix}check_call": "Call 198 (all-in)"}
+    table = table_html(at)
+    assert "Stack <b>0</b> · Bet <b>200</b>" in table      # the AI, all-in
+    assert "Stack <b>198</b> · Bet <b>2</b>" in table      # the human
+    assert table.count('class="hp-card hp-back"') == 2      # the AI's cards stay hidden
+
+    click_action(at, ActionCategory.CHECK_CALL)
+    hand = game(at).view
+    assert isinstance(hand, CompletedHand) and hand.went_to_showdown and len(hand.board_cards) == 5
+    assert table_html(at).count('class="hp-card hp-back"') == 0  # both hands shown at the showdown
+    text = page(at)
+    assert "Preflop · AI (Big blind): All-in (200)" in text
+    assert "Preflop · You (Button): Call 198 (all-in)" in text
 
 
 def test_hidden_cards_seeds_and_diagnostics_never_shown_during_a_hand(app) -> None:

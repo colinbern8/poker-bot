@@ -10,6 +10,7 @@ from __future__ import annotations
 import pytest
 
 from demo_support import (
+    ShoveEV,
     assert_same_diagnostics,
     assert_same_hand,
     human_categories,
@@ -19,10 +20,12 @@ from demo_support import (
     reference_match,
     tracker_state,
 )
+from hybridpoker.actions import ActionCategory as C
 from hybridpoker.agents.ev_agent import EVAgent
 from hybridpoker.game import BIG_BLIND, BIG_BLIND_SEAT, BUTTON_SEAT, SMALL_BLIND, STARTING_STACK
 from hybridpoker.opponent_tracker import decisions_from_history, other_position
-from hybridpoker_demo.controller import CompletedHand, HeadsUpController, HumanTurn, Phase
+from hybridpoker_demo import presentation as ui
+from hybridpoker_demo.controller import CompletedHand, HeadsUpController, HumanTurn, IllegalHumanAction, Phase
 from hybridpoker_demo.seeds import MAX_SEED, check_seed, hand_setup
 
 SEEDS = (5, 77, 4242)
@@ -156,3 +159,45 @@ def test_phase_and_views(tiny_bundle) -> None:
         controller.submit(view.ticket, view.legal_categories[-1])
     assert controller.phase is Phase.HAND_COMPLETE
     assert controller.completed_hands == (controller.view,)
+
+
+@pytest.mark.parametrize("opening", [C.CHECK_CALL, C.RAISE_HALF_POT, C.RAISE_POT])
+def test_facing_an_ai_preflop_all_in_the_human_may_only_fold_or_call_all_in(tiny_bundle, opening) -> None:
+    """Regression (manual Phase 5D test): the AI shoves preflop; the human's only options are
+    Fold and a call that puts them all-in, labelled "Call N (all-in)". Both stacks start at 200,
+    so nothing is left to raise with. Checked with the human on the button (acting first, then
+    facing the big blind's shove) and in the big blind (facing the button's shove)."""
+    controller = HeadsUpController(ml_agent(tiny_bundle, ShoveEV), match_seed=SEEDS[0])
+    positions = []
+    for h in range(2):  # the button alternates
+        if h:
+            controller.next_hand()
+        turn = controller.view
+        if turn.observation.opponent_stack > 0:  # the human is on the button and acts first
+            turn = controller.submit(turn.ticket, opening)
+        obs = turn.observation
+        positions.append(obs.position)
+        assert obs.street == "preflop" and obs.opponent_stack == 0 and obs.opponent_bet == STARTING_STACK
+        assert turn.legal_categories == (C.FOLD, C.CHECK_CALL)
+        call = obs.legal(C.CHECK_CALL)
+        assert call.is_all_in and call.bet_to == STARTING_STACK
+        assert call.chips_added == obs.to_call == obs.own_stack == STARTING_STACK - obs.own_bet
+        assert [ui.legal_action_label(a, obs.to_call, obs.street) for a in obs.legal_actions] == [
+            "Fold", f"Call {obs.own_stack} (all-in)"]
+        for illegal in (C.ALL_IN, C.RAISE_POT, C.RAISE_HALF_POT):
+            with pytest.raises(IllegalHumanAction):
+                controller.submit(turn.ticket, illegal)
+        assert controller.view.ticket == turn.ticket  # a refused action changes nothing
+
+        done = controller.submit(turn.ticket, C.CHECK_CALL if h == 0 else C.FOLD)
+        assert isinstance(done, CompletedHand)
+        shove = done.ai_decisions[-1]
+        assert shove.street == "preflop" and shove.category is C.ALL_IN and shove.bet_to == STARTING_STACK
+        assert any(a.category is C.ALL_IN and a.bet_to == STARTING_STACK for a in shove.legal_actions)
+        if h == 0:  # called: both all-in, the board is dealt out and the AI's cards are shown
+            assert done.went_to_showdown and len(done.board_cards) == 5 and done.ai_hole_cards is not None
+            assert done.human_net in (-STARTING_STACK, 0, STARTING_STACK)
+        else:       # folded: the human loses only what they had put in; the AI's cards stay hidden
+            assert not done.went_to_showdown and done.ai_hole_cards is None
+            assert done.human_net == -obs.own_bet
+    assert sorted(positions) == ["big_blind", "button"]

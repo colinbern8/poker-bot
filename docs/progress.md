@@ -1739,3 +1739,26 @@ gameplay, showdown and explanation.
 
 **Deferred:** custom raise amounts, until after the presentation (feasibility
 review in `docs/phase5_plan.md`).
+
+**Investigation: AI preflop all-in during manual testing (2026-11-17).** A
+manual test saw the AI go all-in preflop from the big blind, leaving the human
+two buttons.
+
+- **Findings.** No controller or UI bug was found.
+  - The shove was legal: both players start each hand with 200 chips.
+  - The human may then only fold or call all-in, labelled "Call 198 (all-in)".
+    Nothing is left to raise with.
+  - The shove is the frozen agent's highest-EV action. It matches an
+    uninterrupted `play_hand` reference exactly.
+  - This is documented Phase 4 behaviour: ML EV chose all-in on 31.0% of
+    preflop decisions in the final evaluation. The opponent state it predicts
+    (facing an all-in preflop) has no training rows, and the "few similar
+    training examples" warning flags it.
+- **Sample.** In a real-model sample (seeds 1–10, four scripted human
+  styles), the AI shoved in 48 of 120 big-blind hands. That was 32 of 40 on
+  the first hand of a match, falling to 8 of 40 on each of the third and fifth
+  hands.
+- **New regression tests.**
+  - Controller and screen tests with a stand-in shoving AI.
+  - An opt-in real-model test pinning seed 1.
+- **No strategy change.**
