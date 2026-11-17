@@ -34,7 +34,11 @@ def test_cards_use_suit_symbols_red_for_hearts_and_diamonds() -> None:
     ((C.FOLD, 2, 0, 1, "preflop"), "Fold"),
     ((C.CHECK_CALL, 2, 0, 0, "flop"), "Check"),
     ((C.CHECK_CALL, 6, 4, 4, "turn"), "Call 4"),
-    ((C.CHECK_CALL, 200, 150, 150, "river", True), "Call 150 (all-in)"),
+    ((C.CHECK_CALL, 200, 150, 150, "river", True), "Call all-in (150)"),
+    ((C.CHECK_CALL, 200, 198, 198, "preflop", True), "Call all-in (198)"),  # facing a shove after a limp
+    ((C.CHECK_CALL, 200, 194, 194, "preflop", True), "Call all-in (194)"),  # after raising to 6
+    ((C.CHECK_CALL, 200, 56, 56, "turn", True), "Call all-in (56)"),
+    ((C.CHECK_CALL, 200, 1, 1, "river", True), "Call all-in (1)"),
     ((C.RAISE_HALF_POT, 6, 6, 0, "flop"), "Bet 6 (½ pot)"),
     ((C.RAISE_POT, 6, 5, 1, "preflop"), "Raise to 6 (pot)"),
     ((C.RAISE_POT, 6, 4, 0, "preflop"), "Raise to 6 (pot)"),  # big blind raising after a limp

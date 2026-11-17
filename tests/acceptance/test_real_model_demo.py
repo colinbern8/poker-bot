@@ -13,7 +13,7 @@ checks, with the real agent at its real sample counts:
    (cards, actions, payoffs, the AI's generator states, diagnostics apart
    from timings, and the opponent tracker after every hand);
 3. a pinned preflop shove (seed 1, first hand) is the frozen agent's own
-   EV choice and leaves the human exactly Fold or "Call 198 (all-in)";
+   EV choice and leaves the human exactly Fold or "Call all-in (198)";
 4. startup time and AI decision latency: median, 95th percentile and max,
    compared with the targets (p95 < 2 s, startup < 90 s). Printed with
    ``-s``; targets are reported, never asserted.
@@ -106,7 +106,7 @@ def test_pinned_preflop_shove_is_the_frozen_ev_choice_and_leaves_fold_or_call_al
     assert isinstance(turn, HumanTurn) and obs.opponent_stack == 0 and obs.opponent_bet == 200
     assert turn.legal_categories == (C.FOLD, C.CHECK_CALL)
     assert [ui.legal_action_label(a, obs.to_call, obs.street) for a in obs.legal_actions] == [
-        "Fold", "Call 198 (all-in)"]
+        "Fold", "Call all-in (198)"]
 
     done = controller.submit(turn.ticket, C.CHECK_CALL)
     assert isinstance(done, CompletedHand) and done.went_to_showdown

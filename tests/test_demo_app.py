@@ -209,7 +209,8 @@ def test_action_buttons_are_exactly_the_legal_actions_with_engine_amounts(app) -
             assert buttons == expected
             if obs.to_call:
                 seen_call = True
-                assert any(label.startswith(f"Call {obs.to_call}") for label in buttons.values())
+                call = obs.legal(ActionCategory.CHECK_CALL)
+                assert (f"Call all-in ({obs.to_call})" if call.is_all_in else f"Call {obs.to_call}") in buttons.values()
             text = page(at)
             table = table_html(at)
             assert f"Stack <b>{obs.own_stack}</b> · Bet <b>{obs.own_bet}</b>" in table
@@ -224,7 +225,7 @@ def test_action_buttons_are_exactly_the_legal_actions_with_engine_amounts(app) -
 
 def test_facing_an_ai_preflop_shove_shows_fold_and_call_all_in(app) -> None:
     """Regression (manual Phase 5D test): after the AI shoves preflop from the big blind, the
-    screen offers exactly two buttons, "Fold" and "Call 198 (all-in)", and the table shows
+    screen offers exactly two buttons, "Fold" and "Call all-in (198)", and the table shows
     the AI all-in with its cards face-down until the showdown."""
     app.monkeypatch.setattr(resources, "build_ml_agent", lambda model, root=None: app.build(model, cls=ShoveEV))
     at = app()
@@ -236,7 +237,7 @@ def test_facing_an_ai_preflop_shove_shows_fold_and_call_all_in(app) -> None:
     turn = game(at).view
     assert isinstance(turn, HumanTurn) and turn.observation.opponent_stack == 0
     prefix = f"act-{turn.hand_index}-{turn.ticket.decision_index}-"
-    assert action_buttons(at) == {f"{prefix}fold": "Fold", f"{prefix}check_call": "Call 198 (all-in)"}
+    assert action_buttons(at) == {f"{prefix}fold": "Fold", f"{prefix}check_call": "Call all-in (198)"}
     table = table_html(at)
     assert "Stack <b>0</b> · Bet <b>200</b>" in table      # the AI, all-in
     assert "Stack <b>198</b> · Bet <b>2</b>" in table      # the human
@@ -248,7 +249,7 @@ def test_facing_an_ai_preflop_shove_shows_fold_and_call_all_in(app) -> None:
     assert table_html(at).count('class="hp-card hp-back"') == 0  # both hands shown at the showdown
     text = page(at)
     assert "Preflop · AI (Big blind): All-in (200)" in text
-    assert "Preflop · You (Button): Call 198 (all-in)" in text
+    assert "Preflop · You (Button): Call all-in (198)" in text
 
 
 def test_hidden_cards_seeds_and_diagnostics_never_shown_during_a_hand(app) -> None:

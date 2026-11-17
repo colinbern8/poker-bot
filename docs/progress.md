@@ -1746,8 +1746,9 @@ two buttons.
 
 - **Findings.** No controller or UI bug was found.
   - The shove was legal: both players start each hand with 200 chips.
-  - The human may then only fold or call all-in, labelled "Call 198 (all-in)".
-    Nothing is left to raise with.
+  - The human may then only fold or call all-in. The call was labelled
+    "Call 198 (all-in)"; it now reads "Call all-in (198)", approved as a
+    presentation-only change. Nothing is left to raise with.
   - The shove is the frozen agent's highest-EV action. It matches an
     uninterrupted `play_hand` reference exactly.
   - This is documented Phase 4 behaviour: ML EV chose all-in on 31.0% of
@@ -1762,3 +1763,19 @@ two buttons.
   - Controller and screen tests with a stand-in shoving AI.
   - An opt-in real-model test pinning seed 1.
 - **No strategy change.**
+
+**All-in call label (2026-11-17, approved).**
+
+- **Change.** A call that puts the player all-in now reads "Call all-in (N)",
+  with the chips that call adds, on the betting buttons and in the action
+  history. The old label was "Call N (all-in)".
+- **Scope.** One line in `presentation.py`; other labels are unchanged.
+- **Tests.**
+  - Label cases for 198, 194, 150, 56 and 1 chips.
+  - The controller test checks the button and the history line for calls of
+    198, 196 and 194 chips, from both seats.
+  - The screen test and the opt-in real-model test use the new label.
+- **Results.**
+  - Full suite with the model present: 542 passed, 5 skipped (the opt-in
+    acceptance tests).
+  - Real-model shove test: passed.

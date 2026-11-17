@@ -164,7 +164,7 @@ def test_phase_and_views(tiny_bundle) -> None:
 @pytest.mark.parametrize("opening", [C.CHECK_CALL, C.RAISE_HALF_POT, C.RAISE_POT])
 def test_facing_an_ai_preflop_all_in_the_human_may_only_fold_or_call_all_in(tiny_bundle, opening) -> None:
     """Regression (manual Phase 5D test): the AI shoves preflop; the human's only options are
-    Fold and a call that puts them all-in, labelled "Call N (all-in)". Both stacks start at 200,
+    Fold and a call that puts them all-in, labelled "Call all-in (N)". Both stacks start at 200,
     so nothing is left to raise with. Checked with the human on the button (acting first, then
     facing the big blind's shove) and in the big blind (facing the button's shove)."""
     controller = HeadsUpController(ml_agent(tiny_bundle, ShoveEV), match_seed=SEEDS[0])
@@ -183,7 +183,7 @@ def test_facing_an_ai_preflop_all_in_the_human_may_only_fold_or_call_all_in(tiny
         assert call.is_all_in and call.bet_to == STARTING_STACK
         assert call.chips_added == obs.to_call == obs.own_stack == STARTING_STACK - obs.own_bet
         assert [ui.legal_action_label(a, obs.to_call, obs.street) for a in obs.legal_actions] == [
-            "Fold", f"Call {obs.own_stack} (all-in)"]
+            "Fold", f"Call all-in ({obs.own_stack})"]
         for illegal in (C.ALL_IN, C.RAISE_POT, C.RAISE_HALF_POT):
             with pytest.raises(IllegalHumanAction):
                 controller.submit(turn.ticket, illegal)
@@ -195,6 +195,9 @@ def test_facing_an_ai_preflop_all_in_the_human_may_only_fold_or_call_all_in(tiny
         assert shove.street == "preflop" and shove.category is C.ALL_IN and shove.bet_to == STARTING_STACK
         assert any(a.category is C.ALL_IN and a.bet_to == STARTING_STACK for a in shove.legal_actions)
         if h == 0:  # called: both all-in, the board is dealt out and the AI's cards are shown
+            mine = ui.POSITION_NAMES[obs.position]
+            assert ui.history_lines(done.history, done.human_position)[-1] == (
+                f"Preflop · You ({mine}): Call all-in ({obs.own_stack})")
             assert done.went_to_showdown and len(done.board_cards) == 5 and done.ai_hole_cards is not None
             assert done.human_net in (-STARTING_STACK, 0, STARTING_STACK)
         else:       # folded: the human loses only what they had put in; the AI's cards stay hidden

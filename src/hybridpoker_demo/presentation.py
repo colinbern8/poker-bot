@@ -70,14 +70,17 @@ def hand_name(hole: Sequence[Card], board: Sequence[Card]) -> str:
 
 def action_text(category: ActionCategory, bet_to: int, chips_added: int, to_call: int, street: str,
                 is_all_in: bool = False) -> str:
-    """A player-facing label with chip amounts, e.g. "Call 4", "Bet 6 (½ pot)", "Raise to 24 (pot)"."""
+    """A player-facing label with chip amounts, e.g. "Call 4", "Bet 6 (½ pot)", "Raise to 24 (pot)".
+
+    A call that puts the player all-in reads "Call all-in (198)" (the chips it adds).
+    """
     category = ActionCategory(category)
     if category is ActionCategory.FOLD:
         return "Fold"
     if category is ActionCategory.CHECK_CALL:
         if to_call == 0:
             return "Check"
-        return f"Call {chips_added}" + (" (all-in)" if is_all_in else "")
+        return f"Call all-in ({chips_added})" if is_all_in else f"Call {chips_added}"
     if category is ActionCategory.ALL_IN:
         return f"All-in ({bet_to})"
     verb = "Bet" if to_call == 0 and street != "preflop" else "Raise to"
