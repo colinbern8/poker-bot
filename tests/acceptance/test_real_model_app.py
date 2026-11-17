@@ -5,13 +5,13 @@
 Nothing is substituted: the unmodified app loads the SHA-256-verified model,
 warms the caches and plays a few rehearsal hands through real button
 clicks. When opted in it fails (rather than skips) if the model is missing or
-wrong. Startup time and AI decision times are printed (``-s``), not asserted.
+wrong. Startup time and AI decision times (median, p95, max) are printed with
+``-s`` and compared with the targets; they are reported, never asserted.
 """
 
 from __future__ import annotations
 
 import os
-import statistics
 import sys
 import time
 from pathlib import Path
@@ -20,6 +20,7 @@ import pytest
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
+from demo_support import latency_report, startup_report
 from hybridpoker.agents.ev_agent import FROZEN_MODEL_SHA256
 from hybridpoker.phase4_final import MANIFEST_PATH, load_manifest
 from hybridpoker_demo.controller import HumanTurn
@@ -29,7 +30,8 @@ pytestmark = pytest.mark.skipif(os.environ.get("HYBRIDPOKER_REAL_MODEL") != "1",
 
 APP = Path(__file__).resolve().parents[2] / "app" / "streamlit_app.py"
 SEED = 2026
-HANDS = 4
+# More hands give a more reliable p95, e.g. HYBRIDPOKER_ACCEPTANCE_HANDS=20 (about 50+ AI decisions).
+HANDS = int(os.environ.get("HYBRIDPOKER_ACCEPTANCE_HANDS", "4"))
 
 
 def test_unmodified_app_plays_with_the_real_frozen_model(monkeypatch) -> None:
@@ -62,6 +64,5 @@ def test_unmodified_app_plays_with_the_real_frozen_model(monkeypatch) -> None:
         at.button(key="next-hand").click().run()
     assert game.scoreboard.hands_completed == HANDS
 
-    seconds = [d.total_seconds for d in game._ai.diagnostics]
-    print(f"\nstartup (model load + warm-up + first page) {startup:.1f} s; {len(seconds)} AI decisions: "
-          f"median {1000 * statistics.median(seconds):.0f} ms, max {1000 * max(seconds):.0f} ms")
+    print("\n" + startup_report(startup, "startup (model load + warm-up + first page)"))
+    print(latency_report([d.total_seconds for d in game._ai.diagnostics], f"app, {HANDS} hands"))

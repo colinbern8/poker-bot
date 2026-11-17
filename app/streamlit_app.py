@@ -19,10 +19,17 @@ How this screen stays safe:
   view: the AI's cards are face-down, its reasoning is not shown, and no seed
   is displayed. The explanation appears after the hand; the AI's cards only
   at a showdown.
+* **Errors.** The screen never shows raw internal error text. An unexpected
+  error shows a plain message with a short reference code; the full error and
+  traceback are written to the terminal log (logger ``hybridpoker.demo``)
+  under the same code.
 """
 
 from __future__ import annotations
 
+import logging
+import secrets
+import sys
 import time
 
 import pandas as pd
@@ -44,6 +51,21 @@ from hybridpoker_demo.seeds import check_seed
 
 AI_NAME = "Hybrid ML Agent"
 MODEL_NAME = "Random Forest B #22"
+
+# Developer diagnostics go to the terminal that started the app, never to the screen.
+LOG = logging.getLogger("hybridpoker.demo")
+if not LOG.handlers:  # this file runs again on every page update; add the handler once
+    _handler = logging.StreamHandler(sys.stderr)
+    _handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    LOG.addHandler(_handler)
+    LOG.setLevel(logging.INFO)
+
+
+def log_incident(context: str, error: BaseException) -> str:
+    """Log the full error with its traceback; return a short reference code to show on screen."""
+    reference = secrets.token_hex(3).upper()
+    LOG.error("incident %s while %s: %s: %s", reference, context, type(error).__name__, error, exc_info=error)
+    return reference
 
 # --- Shared, read-only resources ---------------------------------------------------------------------
 
@@ -76,8 +98,12 @@ def load_model_or_stop():
                  "No other agent is used in its place.")
         st.markdown("Replace it with the verified copy, then reload this page:")
         st.code(resources.RESTORE_HINT, language="bash")
-    except Exception as error:  # noqa: BLE001 - shown to the presenter, never swallowed
-        st.error(f"**The model could not be loaded:** {type(error).__name__}: {error}")
+    except Exception as error:  # noqa: BLE001 - logged in full; the screen gets a plain message
+        reference = log_incident("loading the model", error)
+        st.error("**The model could not be loaded, so the demonstration cannot start.** "
+                 "No other agent is used in its place.")
+        st.markdown(f"The details are in the terminal where the app was started (reference **{reference}**). "
+                    "Check the model file with `python scripts/restore_phase4_model.py`, then reload this page.")
     st.stop()
 
 
@@ -134,10 +160,12 @@ def run_pending(model, area) -> None:
         except (StaleTicket, WrongPhase):
             state.notice = ("info", "That click was already handled, so it was ignored.")
         except IllegalHumanAction as error:
-            state.notice = ("warning", f"That action is not allowed now: {error}")
-        except Exception as error:  # noqa: BLE001 - recover without losing the game
-            state.notice = ("error", f"Something went wrong ({type(error).__name__}: {error}). The game was not "
-                                     "changed: try the same action again, or start a new match.")
+            LOG.info("rejected action: %s", error)
+            state.notice = ("warning", "That action is not allowed right now. Please choose one of the buttons shown.")
+        except Exception as error:  # noqa: BLE001 - recover without losing the game; details go to the log
+            reference = log_incident(f"applying {operation!r}", error)  # kind, ticket and action: no cards
+            state.notice = ("error", f"Something went wrong while handling that click (reference {reference}). "
+                                     "The game was not changed: try the same action again, or start a new match.")
 
 
 # --- Drawing -------------------------------------------------------------------------------------------

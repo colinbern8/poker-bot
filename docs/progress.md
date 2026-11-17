@@ -1659,3 +1659,36 @@ Local, Python 3.12.3, pinned requirements, no model file:
 2. On the presentation machine, work through `docs/phase5_demo_checklist.md`,
    including the real-model acceptance tests.
 3. Rehearse with a fixed seed; record the fallback video.
+
+### Stage 5C-1: model and environment check (2026-11-17)
+
+- The repository matches `main` (`e796c1f`). The environment matches the frozen
+  manifest (Python 3.12.3, pinned packages), and all 46 frozen files match.
+- **The genuine model was not found** in any of these places:
+  - this container (only the 71 KB test bundle);
+  - git history on any branch;
+  - the `phase4-freeze` release (no attached files);
+  - CI (no artifacts are uploaded);
+  - the owner's Google Drive.
+- Recovery in progress: the owner is checking the Phase 4 Codespace and their
+  laptop. A rebuild needs separate approval.
+- Real-model acceptance tests: not run (no model). Opted in, they fail at once
+  with "model file missing", as intended.
+
+### Stage 5C: reliability hardening (2026-11-17)
+
+- **The app no longer shows raw internal errors.**
+  - An unexpected error shows a plain message with a short reference code.
+  - The full error and traceback go to the terminal log (logger
+    `hybridpoker.demo`) under the same code.
+  - Checked under `streamlit run`: one log entry per incident, with a
+    timestamp and the full traceback.
+  - A rejected action shows a plain message; its detail is logged.
+- **The acceptance tests now report the 95th percentile** with the median and
+  maximum, compared with the targets (p95 < 2 s, startup < 90 s). Targets are
+  reported, never asserted.
+  - `HYBRIDPOKER_ACCEPTANCE_HANDS` lets the app acceptance test play more
+    hands, for a more reliable 95th percentile.
+- Tests (local, Python 3.12.3, no model file): **522 passed, 6 skipped** (4 new).
+- Deferred: a double click on "Start new match" can start two empty matches.
+  This is harmless; it will be revisited only if real testing shows a problem.

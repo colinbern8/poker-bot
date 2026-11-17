@@ -16,6 +16,8 @@ opt-in acceptance test in ``tests/acceptance/``.
 
 from __future__ import annotations
 
+import logging
+import re
 import sys
 from pathlib import Path
 
@@ -140,6 +142,13 @@ def start(at: AppTest, seed: int | None = None) -> None:
             at.text_input(key="seed_text").input(str(seed))
         at.button[[b.label for b in at.button].index("Start new match")].click().run()
     assert not at.exception, [e.value for e in at.exception]
+
+
+def incident(caplog, reference: str) -> logging.LogRecord:
+    """The developer-log record written for an on-screen reference code."""
+    records = [r for r in caplog.records if r.name == "hybridpoker.demo" and reference in r.getMessage()]
+    assert len(records) == 1, [r.getMessage() for r in caplog.records]
+    return records[0]
 
 
 def ai_hole_cards(match_seed: int, hand_index: int):
@@ -289,6 +298,7 @@ def test_duplicate_and_stale_clicks_do_not_act_twice(app) -> None:
         at.session_state["pending"] = ("act", game(at).view.ticket, ActionCategory.FOLD)
         at.run()
         assert "not allowed" in page(at) and game(at)._human_actions == before
+        assert "ActionCategory" not in page(at) and "legal:" not in page(at)  # no internal detail on screen
 
 
 def test_new_match_resets_and_rehearsal_seeds_reproduce(app) -> None:
@@ -321,7 +331,9 @@ def test_sessions_are_isolated_and_only_the_model_is_shared(app) -> None:
     assert g2.scoreboard.hands_completed == 0 and g2._ai.tracker.observed_rows() == 0
 
 
-def test_unexpected_error_is_reported_and_the_game_recovers(app) -> None:
+def test_unexpected_error_is_reported_safely_and_the_game_recovers(app, caplog) -> None:
+    """The screen shows a plain message and a reference code; the log has the full error."""
+    caplog.set_level(logging.INFO, logger="hybridpoker.demo")
     app.monkeypatch.setattr(resources, "build_ml_agent", lambda model, root=None: app.build(model, cls=FailOnceEV))
     FailOnceEV.fail = True
     at = app()
@@ -336,6 +348,13 @@ def test_unexpected_error_is_reported_and_the_game_recovers(app) -> None:
         click_action(at, choose(current.view, -1))
         if "Something went wrong" in page(at):
             failed = True
+            text = page(at)
+            assert "injected failure" not in text and "RuntimeError" not in text and "Traceback" not in text
+            reference = re.search(r"reference ([0-9A-F]{6})", text).group(1)
+            record = incident(caplog, reference)
+            assert record.levelno == logging.ERROR and "injected failure" in record.getMessage()
+            assert record.exc_info is not None  # the traceback is logged, down to the line that failed
+            assert 'raise RuntimeError("injected failure")' in caplog.text
             assert (current.view, current._human_actions, len(current._ai.diagnostics)) == before
             click_action(at, choose(current.view, -1))  # the same button works again
             assert "Something went wrong" not in page(at)
@@ -356,6 +375,24 @@ def test_spawned_worker_processes_do_not_run_the_page(app) -> None:
     assert sys.modules["__main__"].__file__.endswith("streamlit_app.py")
     with ProcessPoolExecutor(1, mp_context=multiprocessing.get_context("spawn")) as pool:
         assert pool.submit(abs, -7).result(timeout=120) == 7
+
+
+def test_unexpected_model_loading_error_shows_no_internal_details(app, caplog) -> None:
+    caplog.set_level(logging.INFO, logger="hybridpoker.demo")
+
+    def fail(root=None):
+        raise RuntimeError("internal detail at /secret/path")
+
+    app.monkeypatch.setattr(resources, "load_frozen_ml_model", fail)
+    at = app()
+    assert not at.exception
+    text = page(at)
+    assert any("could not be loaded" in e.value for e in at.error)
+    assert "internal detail" not in text and "/secret/path" not in text and "RuntimeError" not in text
+    reference = re.search(r"reference \*\*([0-9A-F]{6})\*\*", text).group(1)
+    record = incident(caplog, reference)
+    assert "internal detail at /secret/path" in record.getMessage() and record.exc_info is not None
+    assert len(at.button) == 0 and at.session_state["game"] is None and not app.agents  # no fallback
 
 
 @pytest.mark.parametrize("error, message", [
