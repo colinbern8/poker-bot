@@ -1,0 +1,18 @@
+# Streamlit settings for the classroom demonstration (read when the app is
+# started from the repository folder: streamlit run app/streamlit_app.py).
+
+[server]
+# Only this computer can open the demo (not other devices on the classroom network).
+address = "localhost"
+port = 8501
+# Do not open a browser or ask for an email address on the first start; open
+# http://localhost:8501 yourself.
+headless = true
+
+[browser]
+# Do not send usage statistics: the demo must work offline and send nothing out.
+gatherUsageStats = false
+
+[client]
+# Hide developer menu items during the presentation.
+toolbarMode = "minimal"

@@ -1578,3 +1578,84 @@ Local, Python 3.12.3, pinned requirements, no model file:
 2. Run the acceptance test with the verified model on the presentation
    machine.
 3. Stage 5B: the Streamlit screen.
+
+### Stage 5B: Streamlit demonstration (2026-11-16)
+
+**Completed**
+
+- `app/streamlit_app.py`: a playable heads-up screen against the Hybrid ML
+  Agent, showing:
+  - the players, your cards and the face-down AI cards;
+  - the board, pot, stacks and bets;
+  - the legal action buttons with the engine's chip amounts;
+  - the result, and a running score in chips and big blinds (no bb/100);
+  - **Next hand** and **New match** (random deal or rehearsal seed);
+  - an "AI is thinking" spinner.
+- `src/hybridpoker_demo/presentation.py`: explanations built only from the
+  recorded diagnostics, and an opponent profile that keeps observed actions,
+  model inputs and population averages apart.
+- Controller: read-only `opponent_profile()`. Decision reports now carry
+  `to_call` and the AI's legal actions, so labels use exact amounts.
+- `.streamlit/config.toml`: localhost only, no first-run prompt, no usage
+  statistics.
+- `docs/phase5_demo_checklist.md`: installation, model restore,
+  acceptance tests, startup and latency checks, offline use, rehearsal,
+  fallback.
+
+**Engineering decisions**
+
+- Queued actions applied once under the spinner, with tickets, so reruns and
+  double clicks never act twice.
+- The model is shared between sessions (read-only, cached); the controller,
+  AI agent and tracker are per session and per match.
+- A missing or wrong model stops the app with restore instructions. It never
+  falls back to another agent.
+- The app has no test hooks. The AppTest tests substitute the small model
+  with pytest's `monkeypatch`.
+
+**Bugs found by the new tests and fixed before commit**
+
+- An AI call that put it all-in was labelled "Call 56" instead of
+  "Call 56 (all-in)". Labels now come from the AI's real legal actions.
+- Streamlit's `clear_on_submit` is applied by the browser, so AppTest could
+  not confirm the typed seed was cleared. The form callback now clears it
+  explicitly.
+
+**Bug found by Windows CI and fixed**
+
+- **What failed:** the first CI run of the pull request failed on Windows
+  only. The Phase 4 test `test_runs_resume_without_replaying_and_reproduce_exactly`
+  reported `BrokenProcessPool`.
+- **Cause:** AppTest replaces `sys.modules["__main__"]` with the app script.
+  On Windows, worker processes start by re-running the parent's main file
+  (`spawn`), so the later pool workers ran the Streamlit page and crashed.
+  Linux (`fork`) was unaffected.
+- **Fix, in two parts:**
+  - the AppTest fixtures restore the original `__main__`;
+  - the page now runs only when `__name__ == "__main__"`.
+- **Verification:** reproduced on Linux by forcing `spawn`. The fix passes,
+  and removing it reproduces the CI failure. A regression test
+  (`test_spawned_worker_processes_do_not_run_the_page`) was added. No Phase 4
+  file was changed.
+
+**Tests (local, Python 3.12.3, no model file)**
+
+- **518 passed, 6 skipped** (34 new).
+- Skipped: the 2 model-file tests and the 4 opt-in acceptance tests.
+- Also checked in Chromium, with the small model:
+  - the missing-model page;
+  - the turn, result, explanation and profile screens;
+  - repeated full hands, with every click registering.
+
+**Known problems**
+
+- The real-model acceptance tests (`tests/acceptance/`, 4 tests) have
+  **not** been run: the model file is not available here.
+- Demo games are not research evidence.
+
+### Next milestone
+
+1. Review and merge the Stage 5B pull request.
+2. On the presentation machine, work through `docs/phase5_demo_checklist.md`,
+   including the real-model acceptance tests.
+3. Rehearse with a fixed seed; record the fallback video.

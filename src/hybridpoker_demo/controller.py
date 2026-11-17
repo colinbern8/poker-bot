@@ -36,6 +36,7 @@ are shown only if the hand reached a showdown; mucked cards stay hidden.
 from __future__ import annotations
 
 import copy
+import math
 import secrets
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
@@ -45,7 +46,7 @@ from typing import Any
 
 from pokerkit import Card
 
-from hybridpoker.actions import ActionCategory
+from hybridpoker.actions import ActionCategory, LegalAction
 from hybridpoker.agents.base import Agent
 from hybridpoker.game import BIG_BLIND, SEAT_POSITIONS
 from hybridpoker.observation import Observation, PublicAction
@@ -116,6 +117,8 @@ class AIDecisionReport:
     category: ActionCategory
     bet_to: int
     chips_added: int
+    to_call: int  # chips the AI had to call before acting
+    legal_actions: tuple[LegalAction, ...]  # the AI's options with their chip amounts (public)
     reason: str
     equity: float | None
     diagnostics: Any | None
@@ -158,6 +161,24 @@ class Scoreboard:
     @property
     def human_bb_per_100(self) -> float | None:
         return None if self.hands_completed == 0 else 100 * self.human_net_bb / self.hands_completed
+
+
+@dataclass(frozen=True)
+class OpponentProfile:
+    """What the AI's opponent tracker currently believes about the human (read-only copy).
+
+    These are the **model inputs** (Feature Set B): rates from the human's
+    actions in finished hands, smoothed toward the population rates
+    (``population``) with weight ``alpha`` (10), so with few hands they stay
+    near the population values. Keys are the ``b_`` feature names, e.g.
+    ``b_vpip``, ``b_pfr``, ``b_face_fold``.
+    """
+
+    hands_observed: int
+    decisions_observed: int
+    rates: dict[str, float]
+    population: dict[str, float]
+    alpha: float
 
 
 @dataclass(frozen=True)
@@ -206,6 +227,29 @@ class HeadsUpController:
     @property
     def scoreboard(self) -> Scoreboard:
         return Scoreboard(len(self._completed), self._human_net)
+
+    def opponent_profile(self) -> OpponentProfile | None:
+        """A copy of the AI's current opponent-history features, or None if the AI keeps none.
+
+        The tracker is updated only when a hand finishes, so this reflects
+        finished hands only. Reading it changes nothing the AI uses (the
+        tracker may cache the computed features, which are deterministic).
+        """
+        tracker = getattr(self._ai, "tracker", None)
+        if tracker is None:
+            return None
+        features = {name: float(value) for name, value in tracker.history_features().items()}
+        priors = tracker.priors
+        population = {f"b_open_{name}": float(rate) for name, rate in priors.open_rates.items()}
+        population.update({f"b_face_{name}": float(rate) for name, rate in priors.face_rates.items()})
+        population.update({"b_vpip": float(priors.vpip), "b_pfr": float(priors.pfr)})
+        return OpponentProfile(
+            hands_observed=int(round(math.expm1(features.pop("b_log_prior_hands")))),
+            decisions_observed=int(round(math.expm1(features.pop("b_log_prior_decisions")))),
+            rates=features,
+            population=population,
+            alpha=float(priors.alpha),
+        )
 
     # --- operations ----------------------------------------------------------------------------
 
@@ -323,8 +367,9 @@ class HeadsUpController:
             raise ReplayDivergence("The AI records do not match the AI decisions of the hand.")
         reports = tuple(
             AIDecisionReport(move.observation.street, move.observation.position, move.action.category,
-                             move.action.bet_to, move.action.chips_added, record.decision.reason,
-                             record.decision.equity, record.diagnostics)
+                             move.action.bet_to, move.action.chips_added, move.observation.to_call,
+                             move.observation.legal_actions, record.decision.reason, record.decision.equity,
+                             record.diagnostics)
             for move, record in zip(ai_moves, records))
         return CompletedHand(
             hand_index=setup.hand_index,
