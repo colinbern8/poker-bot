@@ -188,7 +188,10 @@ def test_play_complete_hands_with_score_updates_and_hand_transitions(app) -> Non
         result = ui.hand_result(hand)
         assert any(result.headline in t for t in texts(at))
         text = page(at)
-        assert f"Hand {h + 1} (finished) · Your total **{total:+d} chips** ({total / 2:+g} bb)" in text
+        assert (f"Hand {h + 1} (finished) · Session profit: **{ui.signed(total)} chips** "
+                f"({ui.signed(total / 2)} bb)") in text
+        assert f"This hand: <b>{ui.signed(hand.human_net)}</b> chips" in table_html(at)
+        assert "Your total" not in text
         assert "bb/100" not in text  # no bb/100 on the screen
         assert hand.human_position == ("button" if h % 2 == 0 else "big_blind")  # button alternates
         at.button(key="next-hand").click().run()
@@ -240,6 +243,7 @@ def test_facing_an_ai_preflop_shove_shows_fold_and_call_all_in(app) -> None:
     assert action_buttons(at) == {f"{prefix}fold": "Fold", f"{prefix}check_call": "Call all-in (198)"}
     table = table_html(at)
     assert "Stack <b>0</b> · Bet <b>200</b>" in table      # the AI, all-in
+    assert ">AI goes all-in for 200 chips</div>" in table   # announced at the table
     assert "Stack <b>198</b> · Bet <b>2</b>" in table      # the human
     assert table.count('class="hp-card hp-back"') == 2      # the AI's cards stay hidden
 
@@ -250,6 +254,36 @@ def test_facing_an_ai_preflop_shove_shows_fold_and_call_all_in(app) -> None:
     text = page(at)
     assert "Preflop · AI (Big blind): All-in (200)" in text
     assert "Preflop · You (Button): Call all-in (198)" in text
+
+
+def test_every_ai_action_is_announced_at_the_table_from_the_recorded_history(app) -> None:
+    """The announcement on screen is always the AI's latest action in the recorded history, with the
+    seat names "You" and "Hybrid AI" and the positions as small tags."""
+    at = app()
+    start(at, REHEARSAL_SEED)
+    seen = set()
+    for h in range(4):
+        while True:
+            view = game(at).view
+            history = view.observation.history if isinstance(view, HumanTurn) else view.history
+            mine = view.observation.position if isinstance(view, HumanTurn) else view.human_position
+            ai_position = "big_blind" if mine == "button" else "button"
+            table = table_html(at)
+            assert '<div class="hp-name">You<span class="hp-pos">' in table
+            assert '<div class="hp-name">Hybrid AI<span class="hp-pos">' in table
+            latest = ui.latest_ai_action(history, ai_position)
+            if latest is None:
+                assert "hp-notice-empty" in table
+            else:
+                assert f'<span class="hp-notice-street">{latest[0]}</span>{latest[1]}</div>' in table
+                seen.add(latest[1].split()[1])  # checks, calls, bets, raises, goes, folds
+                ai_lines = [line for line in ui.history_lines(history, mine) if " · AI (" in line]
+                assert ai_lines and ai_lines[-1].startswith(latest[0])  # the same action ends the history
+            if not isinstance(view, HumanTurn):
+                break
+            click_action(at, choose(view, h + len(history)))
+        at.button(key="next-hand").click().run()
+    assert len(seen) >= 2, seen
 
 
 def test_hidden_cards_seeds_and_diagnostics_never_shown_during_a_hand(app) -> None:
@@ -358,7 +392,7 @@ def test_new_match_resets_and_rehearsal_seeds_reproduce(app) -> None:
     new = game(first)
     assert new is not old and new.match_id != old.match_id
     assert new.scoreboard.hands_completed == 0 and new.hand_index == 0
-    assert "Your total **+0 chips** (+0 bb)" in page(first)
+    assert "Session profit: **+0 chips** (+0 bb)" in page(first)
     assert app.agents[-1] is new._ai and app.agents[-1].tracker.observed_rows() == 0  # fresh AI and tracker
 
 

@@ -11,10 +11,10 @@ from hybridpoker.game import STARTING_STACK
 from hybridpoker.simulator import shuffled_deck
 from hybridpoker_demo import table_view as tv
 from hybridpoker_demo.controller import HeadsUpController, HumanTurn
-from hybridpoker_demo.presentation import card_text
+from hybridpoker_demo.presentation import card_text, latest_ai_action, signed
 from hybridpoker_demo.seeds import hand_setup
 
-AI = "Hybrid ML Agent"
+AI = "Hybrid AI"
 BACK = 'class="hp-card hp-back"'
 
 
@@ -55,6 +55,39 @@ def turns_and_hands(bundle, seed: int, hands: int):
         yield controller.view, ai_cards
 
 
+YOU = '<div class="hp-name">You<span'
+
+
+def other(position: str) -> str:
+    return "big_blind" if position == "button" else "button"
+
+
+def assert_names_and_positions(html: str, human_position: str) -> None:
+    """Plain seat names; the positions only as small secondary tags."""
+    names = {"button": "Button", "big_blind": "Big blind"}
+    assert f'<div class="hp-name">You<span class="hp-pos">{names[human_position]}</span></div>' in html
+    assert f'<div class="hp-name">{AI}<span class="hp-pos">{names[other(human_position)]}</span></div>' in html
+    assert "You ·" not in html and f"{AI} ·" not in html
+
+
+announced = 0
+
+
+def assert_notice(html: str, history, ai_position: str) -> None:
+    """The announcement is the AI's last entry in the recorded history (or an invisible placeholder)."""
+    global announced
+    ai_actions = [a for a in history if a.position == ai_position]
+    latest = latest_ai_action(history, ai_position)
+    assert html.count("hp-notice\"") + html.count("hp-notice hp-notice-empty") == 1
+    if not ai_actions:
+        assert latest is None and "hp-notice-empty" in html
+        return
+    announced += 1
+    street, text = latest
+    assert street.lower() == ai_actions[-1].street and text.startswith("AI ")
+    assert f'<div class="hp-notice" role="status"><span class="hp-notice-street">{street}</span>{text}</div>' in html
+
+
 def test_table_layout_and_hidden_information(tiny_bundle) -> None:
     turns = showdowns = folds = 0
     for seed in (3, 19):
@@ -63,8 +96,10 @@ def test_table_layout_and_hidden_information(tiny_bundle) -> None:
                 turns += 1
                 obs = view.observation
                 html = tv.table_during_hand(view, AI)
-                # Layout order: AI seat at the top, then the pot and board, then the human seat.
-                assert html.index(AI) < html.index("Pot") < html.index("You ·")
+                # Layout order: AI seat at the top, its latest action, the pot and board, then the human seat.
+                assert html.index(AI) < html.index("hp-notice") < html.index("Pot") < html.index(YOU)
+                assert_names_and_positions(html, obs.position)
+                assert_notice(html, obs.history, other(obs.position))
                 assert html.count(BACK) == 2 and not any(card in html for card in ai_cards)
                 assert all(card_text(c) in html for c in obs.hole_cards)
                 assert all(card_text(c) in html for c in obs.board_cards)
@@ -74,15 +109,17 @@ def test_table_layout_and_hidden_information(tiny_bundle) -> None:
                 assert f"Pot <b>{obs.pot_size}</b>" in html
                 continue
             html = tv.table_after_hand(view, AI, STARTING_STACK)
-            assert f"Stack <b>{STARTING_STACK + view.human_net}</b>" in html
-            assert f"Stack <b>{STARTING_STACK + view.ai_net}</b>" in html
+            assert f"Stack <b>{STARTING_STACK + view.human_net}</b> · This hand: <b>{signed(view.human_net)}</b> chips" in html
+            assert f"Stack <b>{STARTING_STACK + view.ai_net}</b> · This hand: <b>{signed(view.ai_net)}</b> chips" in html
+            assert_names_and_positions(html, view.human_position)
+            assert_notice(html, view.history, other(view.human_position))
             if view.went_to_showdown:
                 showdowns += 1
                 assert html.count(BACK) == 0 and all(card in html for card in ai_cards) and "Showdown" in html
             else:
                 folds += 1
                 assert html.count(BACK) == 2 and not any(card in html for card in ai_cards) and "Hand over" in html
-    assert turns and showdowns and folds
+    assert turns and showdowns and folds and announced
 
 
 def test_red_suits_use_the_brick_class_and_text_is_escaped(tiny_bundle) -> None:

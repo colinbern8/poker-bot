@@ -64,6 +64,44 @@ def test_history_lines_name_players_streets_and_amounts() -> None:
     ]
 
 
+A = PublicAction
+
+
+@pytest.mark.parametrize("action, to_call, text", [
+    (A("flop", "big_blind", C.CHECK_CALL, 0, 0, False), 0, "AI checks"),
+    (A("preflop", "big_blind", C.CHECK_CALL, 2, 0, False), 0, "AI checks"),          # big blind's option
+    (A("preflop", "button", C.CHECK_CALL, 2, 1, False), 1, "AI calls 1 chip"),
+    (A("turn", "button", C.CHECK_CALL, 12, 4, False), 4, "AI calls 4 chips"),
+    (A("preflop", "button", C.CHECK_CALL, 200, 194, True), 194, "AI calls all-in for 194 chips"),
+    (A("flop", "big_blind", C.RAISE_HALF_POT, 6, 6, False), 0, "AI bets 6 chips"),
+    (A("preflop", "big_blind", C.RAISE_POT, 6, 4, False), 0, "AI raises to 6 chips"),  # raise after a limp
+    (A("turn", "button", C.RAISE_POT, 12, 12, False), 4, "AI raises to 12 chips"),
+    (A("preflop", "big_blind", C.ALL_IN, 200, 198, True), 0, "AI goes all-in for 200 chips"),
+    (A("river", "button", C.RAISE_POT, 150, 150, True), 0, "AI goes all-in for 150 chips"),  # pot size clamped
+    (A("river", "big_blind", C.FOLD, 0, 0, False), 30, "AI folds"),
+])
+def test_ai_action_announcements_name_the_recorded_action_and_amount(action, to_call, text) -> None:
+    assert ui.ai_action_announcement(action, to_call) == text
+
+
+def test_latest_ai_action_is_the_last_ai_entry_of_the_history() -> None:
+    history = (A("preflop", "button", C.RAISE_POT, 6, 5, False),     # the human (button) raises
+               A("preflop", "big_blind", C.CHECK_CALL, 6, 4, False),  # the AI calls ...
+               A("flop", "big_blind", C.RAISE_HALF_POT, 6, 6, False))  # ... and then acts first on the flop
+    # Two AI actions in a row (one controller advance): the newest is announced, the history keeps both.
+    assert ui.latest_ai_action(history, "big_blind") == ("Flop", "AI bets 6 chips")
+    assert ui.latest_ai_action(history[:2], "big_blind") == ("Preflop", "AI calls 4 chips")
+    assert ui.latest_ai_action(history[:1], "big_blind") is None       # the AI has not acted yet
+    assert ui.latest_ai_action((), "button") is None
+    assert ui.history_lines(history, "button")[1:] == ["Preflop · AI (Big blind): Call 4",
+                                                       "Flop · AI (Big blind): Bet 6 (½ pot)"]
+
+
+def test_signed_amounts_use_a_typographic_minus() -> None:
+    assert [ui.signed(4), ui.signed(-400), ui.signed(0), ui.signed(-1.5), ui.signed(2.0)] == [
+        "+4", "−400", "+0", "−1.5", "+2"]
+
+
 def play_match(bundle, seed: int, hands: int = HANDS):
     ai = ml_agent(bundle)
     controller = HeadsUpController(ai, match_seed=seed)

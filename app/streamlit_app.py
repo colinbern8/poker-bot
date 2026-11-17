@@ -50,7 +50,8 @@ from hybridpoker_demo.controller import (
 )
 from hybridpoker_demo.seeds import check_seed
 
-AI_NAME = "Hybrid ML Agent"
+AI_NAME = "Hybrid ML Agent"  # full name (sidebar, explanations)
+TABLE_AI_NAME = "Hybrid AI"   # short name on the table and in the score line
 MODEL_NAME = "Random Forest B #22"
 
 # Developer diagnostics go to the terminal that started the app, never to the screen.
@@ -197,8 +198,8 @@ def show_notice() -> None:
 def score_line(game: HeadsUpController) -> str:
     board = game.scoreboard
     hand = f"Hand {game.hand_index + 1}" + ("" if game.phase.value == "human_to_act" else " (finished)")
-    return (f"**You vs the {AI_NAME}** · {hand} · Your total **{board.human_net_chips:+d} chips** "
-            f"({board.human_net_bb:+g} bb)")
+    return (f"**You vs {TABLE_AI_NAME}** · {hand} · Session profit: **{ui.signed(board.human_net_chips)} chips** "
+            f"({ui.signed(board.human_net_bb)} bb)")
 
 
 def draw_table(game: HeadsUpController, header, table) -> None:
@@ -206,9 +207,9 @@ def draw_table(game: HeadsUpController, header, table) -> None:
     view = game.view
     header.markdown(score_line(game))
     if isinstance(view, HumanTurn):
-        table.html(tv.table_during_hand(view, AI_NAME))
+        table.html(tv.table_during_hand(view, TABLE_AI_NAME))
     else:
-        table.html(tv.table_after_hand(view, AI_NAME, STARTING_STACK))
+        table.html(tv.table_after_hand(view, TABLE_AI_NAME, STARTING_STACK))
 
 
 def actions(turn: HumanTurn) -> None:

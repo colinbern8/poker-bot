@@ -1779,3 +1779,46 @@ two buttons.
   - Full suite with the model present: 542 passed, 5 skipped (the opt-in
     acceptance tests).
   - Real-model shove test: passed.
+
+**Phase 5D refinements after manual testing (2026-11-17, approved).**
+Presentation only.
+
+- **Seat names.** The table names the seats "You" and "Hybrid AI". The
+  position (Button or Big blind) is a small tag beside the name, still read
+  from the controller. The sidebar keeps the full name, "Hybrid ML Agent".
+- **AI action announcement.** It sits between the AI's seat and the pot,
+  for example "PREFLOP AI goes all-in for 200 chips" or "AI calls 1 chip".
+  - It is built only from the AI's last entry in the recorded public
+    history, so it always agrees with the action history. If the AI acts
+    twice in one advance (calling, then leading on the next street), the
+    newest action is shown.
+  - Amounts: a call names the chips added; a bet, raise or all-in names the
+    total bet on the street.
+  - It sits in the normal layout, so it never covers cards or buttons.
+  - Before the AI acts, an invisible placeholder keeps the layout still.
+  - No JavaScript, timers or animation.
+- **Score wording.**
+  - The header reads "Session profit: −400 chips (−200 bb)", with a
+    typographic minus.
+  - After a hand, each seat reads "This hand: +4 chips".
+  - The calculations are unchanged.
+- **Phones.** A narrow-screen CSS rule makes the table less rounded and the
+  cards slightly smaller, so text never meets the rail.
+- **Checked in a browser with the genuine model** (seed 1):
+  - At 1366×768 the table spans 70–603 px. The lowest betting button ends at
+    667 px and "Next hand" at 739 px.
+  - Also checked at 1920×1080 and on a 390 px phone screen.
+- **Tests:**
+  - announcement wording for every action type, with singular and plural
+    chips;
+  - the latest-action rule, including two AI actions in a row;
+  - the signed-amount format;
+  - the table: names, position tags, announcement and "This hand" wording,
+    over many hands;
+  - an AppTest checking the announcement at every step of four hands, and the
+    "Session profit" header.
+- **Results.**
+  - Full suite with the model present: 558 passed, 5 skipped (the opt-in
+    acceptance tests).
+  - All 5 real-model acceptance tests passed.
+  - The frozen manifest check passed and the model's SHA-256 is unchanged.
