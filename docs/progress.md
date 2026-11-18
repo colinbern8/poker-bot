@@ -1880,7 +1880,14 @@ No rule was changed; regression tests were added.
   sections on screen; the ⚠ flag only for chosen bets (every bet option marked
   low); Fold button visibility in the same post-flop spots.
 
-**Results:** see the test results below.
+**Results** (Python 3.12.3 with the pinned requirements, frozen model absent):
+
+- New and changed demo tests: 82 passed.
+- Full suite: 584 passed, 7 skipped. The skipped tests all need the frozen
+  model: the 5 opt-in real-model acceptance tests and 2 model-file checks.
+- `test_phase4_freeze_guard.py` passed, and `git diff` against `main` shows no
+  change under `src/hybridpoker/`, `results/`, `models/` or `data/`. The
+  model's SHA-256 could not be checked here because the file is absent.
 
 **Known limitations**
 
