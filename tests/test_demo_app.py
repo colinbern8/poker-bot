@@ -32,6 +32,7 @@ from hybridpoker.opponent_predictor import ModelHashMismatch, OpponentPredictor
 from hybridpoker.simulator import shuffled_deck
 from hybridpoker.state_coverage import COVERAGE_PATH, load_coverage
 from hybridpoker_demo import presentation as ui
+from hybridpoker_demo import research_results as research
 from hybridpoker_demo import resources
 from hybridpoker_demo.controller import CompletedHand, HumanTurn
 from hybridpoker_demo.seeds import hand_setup
@@ -210,7 +211,8 @@ def test_play_complete_hands_with_score_updates_and_hand_transitions(app) -> Non
                 f"({ui.signed(total / 2)} bb)") in text
         assert f"This hand: <b>{ui.signed(hand.human_net)}</b> chips" in table_html(at)
         assert "Your total" not in text
-        assert "bb/100" not in text  # no bb/100 on the screen
+        # The demo's own results never use bb/100; only the frozen research figures in their panel do.
+        assert "bb/100" not in without_research_panel(text)
         assert hand.human_position == ("button" if h % 2 == 0 else "big_blind")  # button alternates
         at.button(key="next-hand").click().run()
     assert game(at).scoreboard.hands_completed == 4
@@ -455,6 +457,58 @@ def test_duplicate_and_stale_clicks_do_not_act_twice(app) -> None:
         at.run()
         assert "not allowed" in page(at) and game(at)._human_actions == before
         assert "ActionCategory" not in page(at) and "legal:" not in page(at)  # no internal detail on screen
+
+
+def without_research_panel(text: str) -> str:
+    """The page text with the research results panel's own text removed."""
+    panel = research.research_panel()
+    for part in (panel.primary, panel.interval, panel.meaning, panel.derived, panel.scale, panel.baseline,
+                 panel.source, *panel.limitations):
+        text = text.replace(part, "")
+    return text
+
+
+def assert_research_panel_last_and_collapsed(at: AppTest) -> list[str]:
+    labels = [e.label for e in at.expander]
+    assert labels[-1] == research.TITLE and labels.count(research.TITLE) == 1, labels
+    assert at.expander[-1].proto.expanded is False  # collapsed by default
+    return labels
+
+
+def test_research_panel_is_collapsed_and_below_the_game_on_every_page(app) -> None:
+    """Phase 5E-1: the frozen research results sit in one collapsed section, last in the main column:
+    below the welcome text, below the action history during a hand, and below the explanations after it."""
+    panel = research.research_panel()
+    at = app()
+    assert_research_panel_last_and_collapsed(at)  # welcome page
+    text = page(at)
+    for part in (panel.primary, panel.interval, panel.meaning, panel.derived, panel.scale, panel.baseline,
+                 panel.source, *panel.limitations):
+        assert part in text
+    start(at)
+    labels = assert_research_panel_last_and_collapsed(at)  # during a hand
+    assert labels.index(research.TITLE) > next(i for i, l in enumerate(labels) if l.startswith("Action history"))
+    assert table_html(at).count('class="hp-card hp-back"') == 2  # the table is unchanged
+    hand = play_hand(at)
+    labels = assert_research_panel_last_and_collapsed(at)  # after the hand
+    details = [i for i, l in enumerate(labels) if l.startswith("Detailed analysis")]
+    assert all(i < labels.index(research.TITLE) for i in details)
+    assert isinstance(hand, CompletedHand) and "Why did the AI play that way?" in [s.value for s in at.subheader]
+
+
+def test_research_panel_shows_no_figures_when_verification_fails(app, caplog) -> None:
+    app.monkeypatch.setattr(research, "SUMMARY_SHA256", "0" * 64)  # as if the frozen file had changed
+    at = app()
+    with caplog.at_level(logging.WARNING, logger="hybridpoker.demo"):
+        at.run()
+    assert_research_panel_last_and_collapsed(at)
+    text = page(at)
+    assert research.UNAVAILABLE in text
+    for figure in ("84.8", "51.6", "117.9", "11.2%", "64,000", "16,000"):
+        assert figure not in text
+    assert any("research results not shown" in r.getMessage() for r in caplog.records)
+    start(at)  # the game is unaffected
+    assert isinstance(game(at).view, HumanTurn)
 
 
 def test_new_match_resets_and_rehearsal_seeds_reproduce(app) -> None:

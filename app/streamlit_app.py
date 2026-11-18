@@ -40,6 +40,7 @@ from hybridpoker.opponent_predictor import ModelHashMismatch
 from hybridpoker_demo import presentation as ui
 from hybridpoker_demo import table_view as tv
 from hybridpoker_demo import resources
+from hybridpoker_demo import research_results as research
 from hybridpoker_demo.controller import (
     CompletedHand,
     HeadsUpController,
@@ -300,6 +301,27 @@ def profile(game: HeadsUpController) -> None:
                                 "Population average": f"{r.population:.0%}"} for r in rows]), hide_index=True)
 
 
+def research_results() -> None:
+    """The frozen Phase 4 results: collapsed by default and always last on the page, below the game.
+
+    Every figure is read from the frozen summary file after its SHA-256 is verified (see
+    research_results.py). If verification fails, only a plain "unavailable" message is shown.
+    """
+    panel = research.research_panel()
+    with st.expander(research.TITLE, expanded=False):
+        if not panel.available:
+            LOG.warning("research results not shown: %s", panel.reason)
+            st.info(panel.message)
+            return
+        st.markdown(f"**Primary result: {panel.primary}** · {panel.interval}")
+        st.markdown(panel.meaning)
+        st.markdown(panel.derived)
+        st.markdown(panel.scale)
+        st.markdown(f"**Statistical baseline.** {panel.baseline}")
+        st.markdown("**Limitations**\n\n" + "\n".join(f"- {item}" for item in panel.limitations))
+        st.caption(panel.source)
+
+
 def welcome() -> None:
     st.header("Heads-up poker against the Hybrid ML Agent")
     st.markdown(
@@ -336,6 +358,7 @@ def main() -> None:
         with controls:
             show_notice()
         welcome()
+        research_results()
         return
     draw_table(game, header, table)
     view = game.view
@@ -351,6 +374,7 @@ def main() -> None:
         action_history(view.history, view.human_position)
         explanation(view)
         profile(game)
+    research_results()  # last: never above the table, the buttons or the explanations
 
 
 # Streamlit runs this file as "__main__". Anything else that runs it - for example a
