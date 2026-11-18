@@ -1895,3 +1895,64 @@ No rule was changed; regression tests were added.
   real-model acceptance tests were skipped and the screen was previewed with
   the small test model. A genuine-model check is needed before the
   presentation.
+
+**Genuine-model verification of Stage 5E-0 (2026-11-18).** Run before merging
+PR #13, in a Linux container with Python 3.12.3 and the pinned requirements:
+
+- The model from the `phase4-freeze` release matched the frozen SHA-256
+  (`5d4c8235…7b31`); `scripts/restore_phase4_model.py` accepted it.
+- The 5 opt-in acceptance tests and the 2 model-file checks passed. Full suite
+  with the model in place: 586 passed, 5 skipped (the opt-in tests).
+- In 79 genuine-model AI decisions, every default explanation matched its
+  recorded diagnostics. Rehearsal seed 1 reproduced the pinned preflop shove
+  with the expected explanation and the low-coverage warning.
+- Startup 37.7 s (model load 0.1 s, warm-up about 39 s in the live app); AI
+  decisions median 343 ms, p95 436 ms (4 cores).
+- Merged as `2089814`; post-merge CI passed on Ubuntu and Windows.
+
+### Stage 5E-1: research results panel (2026-11-18)
+
+**Completed**
+
+- A read-only panel, "Research results (Phase 4 evaluation, simulated)",
+  collapsed by default and always last in the main column: below the welcome
+  text, below the action history during a hand, and below the explanations
+  after it. The table, buttons and explanations are unchanged.
+- It shows the pre-specified primary result (+84.8 bb/100, 95% confidence
+  interval [+51.6, +117.9]), bb/100 in plain English, a short interpretation,
+  the derived 11.2% (labelled as derived, with its formula), 64,000 simulated
+  hands (4 agents × 16,000), the baseline, and four limitations. The secondary
+  endpoints are left out.
+- `src/hybridpoker_demo/research_results.py` reads every figure from
+  `results/phase4/stage4d_final_summary.json`; no result is stored in code.
+
+**Engineering decisions**
+
+- **Integrity.** The file is used only if its SHA-256 (CRLF normalized to LF,
+  as the freeze guard hashes it) equals the freeze guard's pinned value; a test
+  checks that the two pinned values are identical. The extracted figures must
+  also agree with each other (the primary difference equals the difference of
+  the two agents' win rates; all agents played 16,000 hands; and so on).
+- **Fail closed.** A missing, altered or inconsistent file shows only "Research
+  results are unavailable…", with no figures; the reason goes to the developer
+  log. The game is unaffected.
+- **Derived percentage.** 11.2% = the primary difference ÷ the baseline's
+  average win rate (84.76 ÷ 758.49 bb/100). Labelled "derived" and "not a
+  separately tested result".
+- **Limitation figures** come from the same file: all-in share 23.3% of the
+  ML agent's decisions; low-coverage chosen actions in 15.7% of its decisions
+  (67.4% of its all-ins), threshold 30 from the frozen `state_coverage` code.
+  They match the frozen report's tables, which a test checks.
+- The existing screen test "no bb/100 on the screen" now applies to everything
+  except the research panel: the demo's own results still never use bb/100.
+
+**Tests added**
+
+- `tests/test_demo_research_panel.py`: the pinned hash equals the freeze
+  guard's; the file is never modified; missing, altered and empty files show no
+  figures; Windows line endings still verify; inconsistent figures are rejected;
+  every figure equals the frozen JSON; the approved figures; agreement with the
+  frozen report; baseline and limitation wording; no secondary endpoints.
+- `tests/test_demo_app.py`: the panel is collapsed and last on the welcome
+  page, during a hand and after it; a failed verification shows the
+  unavailable message, no figures, a log entry, and the game still starts.
