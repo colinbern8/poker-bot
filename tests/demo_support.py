@@ -15,7 +15,7 @@ import statistics
 
 import numpy as np
 
-from hybridpoker.actions import ActionCategory
+from hybridpoker.actions import RAISE_CATEGORIES, ActionCategory
 from hybridpoker.agents import make_agent
 from hybridpoker.agents.base import Agent, Decision
 from hybridpoker.agents.ev_agent import EVAgent, MLResponseModel, SituationFrequencyResponseModel
@@ -42,6 +42,44 @@ class ShoveEV(EVAgent):
     def choose(values, chips):
         shove = next((v for v in values if v.category is ActionCategory.ALL_IN), None)
         return shove or EVAgent.choose(values, chips)
+
+
+class AllLowCoverageEV(EVAgent):
+    """The unchanged ML EV agent, except that every bet option is marked as low training coverage.
+
+    Coverage is a diagnostic only (it does not change any decision), so this
+    test stand-in plays exactly like the agent while making the "few similar
+    training examples" warnings appear for every option it could bet with.
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.low_coverage_threshold = 10**12
+
+
+class ScriptedAggressorEV(EVAgent):
+    """A test stand-in that ignores its EV calculation and follows a fixed script.
+
+    It creates the post-flop betting spots of the Fold-availability tests and
+    records no diagnostics:
+
+    * preflop: check or call;
+    * flop: bet or raise half the pot until it has made two bets or raises on the
+      flop, then call;
+    * turn and river: all-in when checked to, otherwise call.
+    """
+
+    def act(self, observation: Observation, rng: random.Random) -> Decision:
+        legal = observation.legal_categories
+        choice = ActionCategory.CHECK_CALL
+        if observation.street == "flop":
+            mine = sum(a.street == "flop" and a.position == observation.position and a.category in RAISE_CATEGORIES
+                       for a in observation.history)
+            if mine < 2 and ActionCategory.RAISE_HALF_POT in legal:
+                choice = ActionCategory.RAISE_HALF_POT
+        elif observation.street != "preflop" and observation.to_call == 0 and ActionCategory.ALL_IN in legal:
+            choice = ActionCategory.ALL_IN
+        return Decision(choice, "scripted")
 
 
 def ml_agent(bundle: dict, cls: type[EVAgent] = EVAgent) -> EVAgent:

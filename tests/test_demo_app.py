@@ -25,8 +25,8 @@ import pytest
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
-from demo_support import SAMPLES, ShoveEV
-from hybridpoker.actions import ActionCategory
+from demo_support import SAMPLES, AllLowCoverageEV, ScriptedAggressorEV, ShoveEV
+from hybridpoker.actions import RAISE_CATEGORIES, ActionCategory
 from hybridpoker.agents.ev_agent import EVAgent, MLResponseModel
 from hybridpoker.opponent_predictor import ModelHashMismatch, OpponentPredictor
 from hybridpoker.simulator import shuffled_deck
@@ -164,6 +164,24 @@ def ai_hole_cards(match_seed: int, hand_index: int):
     setup = hand_setup(match_seed, hand_index)
     deck = shuffled_deck(setup.deal_seed)
     return deck[setup.ai_seat], deck[setup.ai_seat + 2]
+
+
+EXPLANATION_BLOCK = re.compile(r"\*\*(Preflop|Flop|Turn|River) — AI ")
+
+
+def explanation_blocks(at: AppTest) -> list[str]:
+    """The short default explanation of each AI decision, in order."""
+    return [m.value for m in at.markdown if EXPLANATION_BLOCK.match(m.value)]
+
+
+def default_block(report) -> str:
+    """The markdown the page should show for one decision (see ``explanation`` in the app)."""
+    brief = ui.default_explanation(report)
+    lines = [f"**{ui.STREET_NAMES[report.street]} — {brief.headline}**",
+             " ".join(t for t in (brief.reason, brief.response) if t)]
+    lines += [brief.comparison] if brief.comparison else []
+    lines += [f"⚠ *{brief.warning}*"] if brief.warning else []
+    return "  \n".join(lines)
 
 
 # --- tests ---------------------------------------------------------------------------------------------
@@ -326,10 +344,13 @@ def test_explanations_show_the_recorded_values(app) -> None:
         at.button(key="next-hand").click().run()
     text = page(at)
     tables = [t.value for t in at.table]
+    assert explanation_blocks(at) == [default_block(r) for r in reports]  # the short default explanations
+    labels = [e.label for e in at.expander if e.label.startswith("Detailed analysis")]
+    assert len(labels) == len(reports) and "Technical details" not in text
     for report in reports:
         d = report.diagnostics
         info = ui.explain_decision(report)
-        assert info.summary in text
+        assert info.summary in text  # the full summary, now inside "Detailed analysis"
         ev_table = next(t for t in tables if list(t.columns) == ["Action", "Expected value", "Chosen"]
                         and list(t["Action"]) == [r.action for r in info.ev_rows])
         assert list(ev_table["Expected value"]) == [f"{ev:+.2f}" for ev in d.action_evs.values()]
@@ -342,6 +363,65 @@ def test_explanations_show_the_recorded_values(app) -> None:
     profile = game(at).opponent_profile()
     assert list(profile_table["AI's estimate (model input)"])[0] == f"{profile.rates['b_vpip']:.0%}"
     assert "Observed (you)" in profile_table.columns and "Population average" in profile_table.columns
+
+
+def test_default_warning_concerns_only_the_action_the_ai_chose(app) -> None:
+    """Regression (Phase 5E): a check, call or fold is not flagged because an unchosen bet has
+    low training coverage. Every bet option is marked low here; only chosen bets get the flag,
+    and the warning about the other options stays under "Detailed analysis"."""
+    app.monkeypatch.setattr(resources, "build_ml_agent",
+                            lambda model, root=None: app.build(model, cls=AllLowCoverageEV))
+    at = app()
+    start(at, 77)
+    passive = 0
+    for _ in range(8):
+        hand = play_hand(at)  # the human checks or calls, so the AI meets spots where it may too
+        reports = [r for r in hand.ai_decisions if r.diagnostics is not None]
+        blocks = explanation_blocks(at)
+        assert len(blocks) == len(reports)
+        for report, block in zip(reports, blocks):
+            chose_bet = report.category in RAISE_CATEGORIES
+            assert ("⚠" in block) == chose_bet, block
+            if not chose_bet and report.diagnostics.coverage:
+                passive += 1
+                assert ui.explain_decision(report).warnings  # the old screen flagged on any warning
+        if any(not (r.category in RAISE_CATEGORIES) and r.diagnostics.coverage for r in reports):
+            details = [w.value for w in at.warning]
+            assert any(w.startswith("Predictions for these other options also rest on fewer than") for w in details)
+        if passive >= 3:
+            break
+        at.button(key="next-hand").click().run()
+    assert passive >= 3
+
+
+def test_fold_button_is_shown_exactly_when_the_human_owes_chips(app) -> None:
+    """Regression (Phase 5E Fold investigation): post-flop, facing a bet, a raise or an all-in the
+    screen shows a Fold button; when checking is free it shows Check and no Fold button."""
+    from test_demo_fold_availability import human_choice, spot
+
+    app.monkeypatch.setattr(resources, "build_ml_agent",
+                            lambda model, root=None: app.build(model, cls=ScriptedAggressorEV))
+    at = app()
+    start(at)
+    seen = set()
+    for hand_index in range(2):
+        while isinstance(game(at).view, HumanTurn):
+            turn = game(at).view
+            obs = turn.observation
+            kind = spot(obs)
+            prefix = f"act-{turn.hand_index}-{turn.ticket.decision_index}-"
+            buttons = action_buttons(at)
+            if kind == "free":
+                assert f"{prefix}fold" not in buttons and buttons[f"{prefix}check_call"] == "Check"
+            else:
+                assert buttons[f"{prefix}fold"] == "Fold"
+                assert list(buttons)[0] == f"{prefix}fold"  # first in the row, as always
+            if kind == "all-in":
+                assert set(buttons) == {f"{prefix}fold", f"{prefix}check_call"}
+            seen.add((kind, obs.street != "preflop"))
+            click_action(at, human_choice(obs, hand_index))
+        at.button(key="next-hand").click().run()
+    assert {("bet", True), ("raise", True), ("all-in", True), ("free", True)} <= seen, seen
 
 
 def test_duplicate_and_stale_clicks_do_not_act_twice(app) -> None:

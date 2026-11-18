@@ -240,19 +240,36 @@ def result_controls(game: HeadsUpController, hand: CompletedHand) -> None:
 
 
 def explanation(hand: CompletedHand) -> None:
-    """A concise explanation per AI decision; the full recorded numbers are under 'Technical details'."""
+    """A short explanation per AI decision; the full recorded numbers are under 'Detailed analysis'.
+
+    The default lines come from ``ui.default_explanation``: the warning there concerns only the
+    action the AI chose. Warnings about options it did not choose stay in the detailed analysis.
+    """
     st.subheader("Why did the AI play that way?")
     st.caption("Recorded from the AI's own decisions during the hand and shown only after it ends; "
-               "nothing is estimated afterwards.")
+               "nothing is recomputed afterwards. Estimated values are the AI's one-step estimates in chips, "
+               "not guaranteed results.")
     reports = [r for r in hand.ai_decisions if r.diagnostics is not None]
     if not reports:
         st.info("The AI did not have to make a decision in this hand.")
+    per_street: dict[str, int] = {}
     for report in reports:
-        info = ui.explain_decision(report)
-        street = ui.STREET_NAMES[info.street]
-        flag = " ⚠ *Few similar training examples.*" if info.warnings else ""
-        st.markdown(f"**{street} — {info.action}.** {info.summary}{flag}")
-        with st.expander(f"Technical details: {street.lower()} decision", expanded=False):
+        brief = ui.default_explanation(report)
+        street = ui.STREET_NAMES[report.street]
+        lines = [f"**{street} — {brief.headline}**", " ".join(t for t in (brief.reason, brief.response) if t)]
+        if brief.comparison:
+            lines.append(brief.comparison)
+        if brief.warning:
+            lines.append(f"⚠ *{brief.warning}*")
+        st.markdown("  \n".join(lines))
+        per_street[street] = per_street.get(street, 0) + 1
+        label = f"Detailed analysis · {street}" + (f" ({per_street[street]})" if per_street[street] > 1 else "")
+        with st.expander(label, expanded=False):
+            if not brief.details:
+                st.caption("No detailed analysis is available for this decision.")
+                continue
+            info = ui.explain_decision(report)
+            st.markdown(info.summary)
             for warning in info.warnings:
                 st.warning(warning)
             st.markdown("**Expected value of each legal action** (chips, one-step estimate)")
