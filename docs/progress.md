@@ -1822,3 +1822,69 @@ Presentation only.
     acceptance tests).
   - All 5 real-model acceptance tests passed.
   - The frozen manifest check passed and the model's SHA-256 is unchanged.
+
+### Stage 5E-0: clearer AI explanations (2026-11-18)
+
+Phase 5E (demo readiness and release) starts on branch `phase-5e-release`.
+Stage 5E-0 makes the after-hand explanation readable in about ten seconds by a
+casual player. **Presentation only:** frozen code, the model, EV calculations,
+the opponent tracker, poker rules and the controller are unchanged.
+
+**Completed**
+
+- `presentation.default_explanation(report)` builds, only from the recorded
+  `DecisionDiagnostics`:
+  - a headline worded like the table announcement ("AI calls 4 chips.");
+  - one or two sentences on why the action had the highest estimated value;
+  - a comparison with the next-best legal option ("Estimated value: Call
+    +1.3 chips | Fold 0 chips");
+  - for a bet, raise or all-in only, the model's predicted fold rate for that
+    exact action, if recorded;
+  - a low-coverage warning only when it applies to the **chosen** action.
+- The screen shows these lines by default. The previous summary, both
+  warnings, the EV table, the response predictions, equity against a random
+  hand and the decision time are under "Detailed analysis · {Street}".
+- **Bug fixed:** the ⚠ flag appeared whenever any warning existed, so a check
+  or call was flagged when only an unchosen raise had low coverage.
+
+**Engineering decisions**
+
+- Ties use the agent's own rule (values within 1e-9). A lead under 0.5 chips is
+  worded "only slightly ahead of" (wording only; the decision rule is
+  unchanged).
+- Values are shown with one decimal, and with up to three when needed so that
+  unequal values never look tied and a non-zero value never looks like 0.
+- Missing or inconsistent diagnostics (no diagnostics, values not recorded for
+  every legal action, a recorded choice that differs from the action played or
+  is not the best value) give a plain notice and no comparison, rather than an
+  invented explanation.
+- Default text avoids "EV", equity and any claim about the human's cards.
+
+**Fold investigation (read-only, 2026-11-17).** A manual test reported that
+Fold "sometimes disappears". Fold is offered exactly when the human owes chips;
+it is not offered when checking is free (`hybridpoker.actions.legal_actions`,
+the Phase 1 action design). The controller and screen add no filtering. In a
+scratch run of 1,684 human turns with scripted AIs there were no exceptions.
+No rule was changed; regression tests were added.
+
+**Tests added**
+
+- `tests/test_demo_default_explanation.py`: every action type, exact and
+  near ties, rounding, a single legal action, missing values and predictions,
+  mismatched diagnostics, a wording guard, and real played decisions (small
+  test model) checked against their recorded values.
+- `tests/test_demo_fold_availability.py`: with a scripted stand-in AI, Fold is
+  offered facing a post-flop bet, raise and all-in, and not when checking is
+  free.
+- `tests/test_demo_app.py`: the default lines and "Detailed analysis"
+  sections on screen; the ⚠ flag only for chosen bets (every bet option marked
+  low); Fold button visibility in the same post-flop spots.
+
+**Results:** see the test results below.
+
+**Known limitations**
+
+- The genuine model was not available in the development container, so the
+  real-model acceptance tests were skipped and the screen was previewed with
+  the small test model. A genuine-model check is needed before the
+  presentation.

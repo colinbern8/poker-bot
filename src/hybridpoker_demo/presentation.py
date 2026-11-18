@@ -8,7 +8,9 @@ views, so it can be unit-tested and cannot reach hidden information:
 * the public action log, the hand result and showdown hand names;
 * the announcement of the AI's latest action (from the recorded history);
 * the **after-hand explanation**, built only from the AI's recorded
-  ``DecisionDiagnostics`` (nothing is estimated or invented here);
+  ``DecisionDiagnostics`` (nothing is estimated or invented here): a short
+  default explanation (:func:`default_explanation`) and the full numbers for
+  the "Detailed analysis" section (:func:`explain_decision`);
 * the opponent profile, keeping three things apart: what the human was
   **observed** to do, the **model's inputs** (smoothed rates), and the
   **population** averages the smoothing starts from.
@@ -272,6 +274,171 @@ def explain_decision(report: AIDecisionReport) -> DecisionExplanation:
         street=report.street, action=labels[chosen], equity=float(d.equity), ev_rows=ev_rows,
         responses=tuple(responses), warnings=tuple(warnings), summary=" ".join(parts),
         history_hands=int(d.opponent_history_hands), seconds=float(d.total_seconds))
+
+
+# --- The default explanation of one AI decision (readable in about ten seconds) ------------------------
+
+NEAR_TIE_CHIPS = 0.5  # wording only: a smaller lead is described as "only slightly ahead"
+MAX_VALUE_DECIMALS = 3  # values are shown with 1 decimal, more only if needed to tell them apart
+MISMATCH_REASON = "The recorded analysis does not match this action, so no explanation is shown."
+
+
+@dataclass(frozen=True)
+class DefaultExplanation:
+    """The short explanation shown for every AI decision; the rest is under "Detailed analysis".
+
+    ``status`` is "ok" (complete, consistent diagnostics), "no_diagnostics",
+    "missing_values" (not every legal action has a recorded value) or
+    "mismatch" (the diagnostics disagree with the action played). Only "ok"
+    has a comparison; only when ``details`` is true can the full detailed
+    analysis (:func:`explain_decision`) be built from the diagnostics.
+    """
+
+    headline: str
+    reason: str
+    comparison: str | None = None
+    response: str | None = None
+    warning: str | None = None
+    status: str = "ok"
+    details: bool = False
+
+
+def _bets(to_call: int, street: str) -> bool:
+    """True if a raise category is a bet (nothing to call after the flop), as in :func:`action_text`."""
+    return to_call == 0 and street != "preflop"
+
+
+def _short_name(action: LegalAction, to_call: int, street: str) -> str:
+    """A short action name for the value comparison, e.g. "Call", "Bet ½ pot", "All-in"."""
+    category = action.category
+    if category is ActionCategory.FOLD:
+        return "Fold"
+    if category is ActionCategory.CHECK_CALL:
+        return "Check" if to_call == 0 else "Call"
+    if category is ActionCategory.ALL_IN:
+        return "All-in"
+    name = f"{'Bet' if _bets(to_call, street) else 'Raise'} {SIZE_NAMES[category]}"
+    return name + (" (all-in)" if action.is_all_in else "")
+
+
+def _gerund(action: LegalAction, to_call: int, street: str) -> str:
+    """The action as an "-ing" phrase, e.g. "calling", "betting half the pot", "going all-in"."""
+    category = action.category
+    if category is ActionCategory.FOLD:
+        return "folding"
+    if category is ActionCategory.CHECK_CALL:
+        return "checking" if to_call == 0 else "calling"
+    if category is ActionCategory.ALL_IN:
+        return "going all-in"
+    size = "half the pot" if category is ActionCategory.RAISE_HALF_POT else "the pot"
+    phrase = f"{'betting' if _bets(to_call, street) else 'raising'} {size}"
+    return phrase + (" (all-in)" if action.is_all_in else "")
+
+
+def _bet_noun(action: LegalAction, to_call: int, street: str) -> str:
+    if action.category is ActionCategory.ALL_IN or action.is_all_in:
+        return "all-in"
+    return "bet" if _bets(to_call, street) else "raise"
+
+
+def _value_text(value: float, decimals: int) -> str:
+    """An estimated value in chips, e.g. "+1.3 chips", "−2.0 chips", "0 chips" (exactly zero only)."""
+    if value == 0:
+        return "0 chips"
+    return f"{value:+.{decimals}f}".replace("-", "−") + " chips"
+
+
+def _comparison_decimals(values: Sequence[float], tied: bool) -> int:
+    """The fewest decimals (1 to 3) at which unequal values look unequal and no non-zero value looks like 0."""
+    for decimals in range(1, MAX_VALUE_DECIMALS + 1):
+        shown = [f"{v:.{decimals}f}" for v in values]
+        distinct = tied or len(set(shown)) == len(shown)
+        if distinct and all(v == 0 or float(s) != 0 for v, s in zip(values, shown)):
+            return decimals
+    return MAX_VALUE_DECIMALS
+
+
+def _percent(p: float) -> str:
+    if 0 < p < 0.005:
+        return "less than 1%"
+    if 0.995 < p < 1:
+        return "more than 99%"
+    return f"about {p:.0%}" if 0 < p < 1 else f"{p:.0%}"
+
+
+def _headline(report: AIDecisionReport) -> str:
+    """The action actually played, worded like the table announcement, e.g. "AI calls 4 chips."."""
+    legal = next((a for a in report.legal_actions if a.category is report.category), None)
+    action = PublicAction(report.street, report.position, report.category, report.bet_to, report.chips_added,
+                          legal.is_all_in if legal is not None else False)
+    return ai_action_announcement(action, report.to_call) + "."
+
+
+def default_explanation(report: AIDecisionReport) -> DefaultExplanation:
+    """The short default explanation of one AI decision, built only from its recorded diagnostics.
+
+    It names the action, says why it was estimated to be best, and compares its
+    estimated value with the next-best legal alternative. For a bet, raise or
+    all-in it adds the model's predicted fold rate and a low-coverage warning,
+    but only if they were recorded for that exact action. Nothing is inferred:
+    missing or inconsistent diagnostics give a plain notice instead.
+    """
+    headline = _headline(report)
+    d = report.diagnostics
+    if d is None:
+        return DefaultExplanation(headline, "No recorded analysis is available for this decision.",
+                                  status="no_diagnostics")
+    legal = {a.category.value: a for a in report.legal_actions}
+    chosen = report.category.value
+    values = {name: float(ev) for name, ev in d.action_evs.items()}
+    if d.chosen != chosen or chosen not in legal or not set(values) <= set(legal):
+        return DefaultExplanation(headline, MISMATCH_REASON, status="mismatch")
+    if set(values) != set(legal):
+        return DefaultExplanation(headline, "The AI's estimated values were not fully recorded for this decision, "
+                                            "so no comparison is shown.", status="missing_values")
+    others = [(name, ev) for name, ev in values.items() if name != chosen]
+    if any(ev > values[chosen] + TIE_TOLERANCE for _, ev in others):
+        return DefaultExplanation(headline, MISMATCH_REASON, status="mismatch")
+
+    to_call, street = report.to_call, report.street
+    lead = _gerund(legal[chosen], to_call, street).capitalize()
+    if not others:
+        reason = "This was the AI's only legal option."
+        decimals = _comparison_decimals([values[chosen]], tied=True)
+        comparison = f"Estimated value: {_short_name(legal[chosen], to_call, street)} " \
+                     f"{_value_text(values[chosen], decimals)}"
+    else:
+        other, other_value = max(others, key=lambda item: item[1])  # the first of equals, in recorded order
+        gap = values[chosen] - other_value
+        tied = gap <= TIE_TOLERANCE  # the agent's own tie rule
+        alternative = _gerund(legal[other], to_call, street)
+        if tied:
+            rule = "on a tie the AI takes the option that adds fewer chips" \
+                if legal[chosen].chips_added < legal[other].chips_added else "the AI's fixed tie rule chose it"
+            reason = f"{lead} tied with {alternative} for the highest estimated value; {rule}."
+        elif gap < NEAR_TIE_CHIPS:
+            reason = f"{lead} had the highest estimated value, only slightly ahead of {alternative}."
+        else:
+            reason = f"{lead} had the highest estimated value of the {len(legal)} available options."
+        decimals = _comparison_decimals([values[chosen], other_value], tied)
+        shown = [_value_text(values[chosen], decimals), _value_text(other_value, decimals)]
+        comparison = (f"Estimated value: {_short_name(legal[chosen], to_call, street)} {shown[0]} | "
+                      f"{_short_name(legal[other], to_call, street)} {shown[1]}")
+        if not tied and shown[0] == shown[1]:
+            comparison += f" (a difference under {10 ** -MAX_VALUE_DECIMALS:g} chips)"
+
+    response = warning = None
+    if report.category in RAISE_CATEGORIES:  # predictions exist only for the AI's own bets
+        noun = _bet_noun(legal[chosen], to_call, street)
+        probabilities = d.opponent_probabilities.get(chosen)
+        if probabilities is not None and len(probabilities) == len(CLASS_ORDER):
+            fold = float(probabilities[CLASS_ORDER.index("fold")])
+            response = f"The model estimated you would fold {_percent(fold)} of the time to this {noun}."
+        if (d.coverage.get(chosen) or {}).get("low") is True:
+            warning = f"Few similar training examples for this {noun}, so the predicted response is less certain."
+    details = all(name in legal and name in d.coverage and name in d.continue_fraction and name in d.called_equity
+                  for name in d.opponent_probabilities)
+    return DefaultExplanation(headline, reason, comparison, response, warning, status="ok", details=details)
 
 
 # --- Opponent profile: observed behaviour versus model inputs ---------------------------------------
