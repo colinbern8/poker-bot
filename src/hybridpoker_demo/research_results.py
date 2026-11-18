@@ -196,10 +196,11 @@ def research_panel(root: Path | None = None) -> ResearchPanel:
         "The opponents were scripted bots, not people; the held-out bots are variations of the training styles.",
         "It has not been shown that these results carry over to human players.",
         "The AI looks only one decision ahead (one-step estimated value): it does not plan later betting rounds, "
-        f"and it went all-in in {_percent(s.ml_all_in_share)} of its decisions.",
-        f"Some decisions rely on limited training examples: in {_percent(s.ml_low_coverage_share)} of the ML "
-        f"agent's decisions ({_percent(s.ml_low_coverage_all_in_share)} of its all-ins), the chosen action led "
-        f"to a situation with fewer than {s.low_coverage_threshold} similar training examples.",
+        f"and it chose the all-in action in {_percent(s.ml_all_in_share)} of its decisions.",
+        f"Some decisions rely on limited training examples: in {_percent(s.ml_low_coverage_share)} of all the ML "
+        f"agent's decisions, and in {_percent(s.ml_low_coverage_all_in_share)} of the decisions where it chose "
+        f"the all-in action, the chosen action led to a situation with fewer than {s.low_coverage_threshold} "
+        "similar training examples.",
     )
     source = (f"Source: {SUMMARY_RELATIVE_PATH.as_posix()} (frozen Phase 4 final evaluation; SHA-256 verified). "
               "Demonstration games are not research evidence.")

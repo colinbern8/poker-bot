@@ -148,6 +148,20 @@ def test_baseline_and_limitations_are_stated_plainly() -> None:
     assert f"fewer than {rr.LOW_COVERAGE_THRESHOLD} similar training examples" in coverage
 
 
+def test_each_percentage_names_what_it_is_a_share_of() -> None:
+    """The all-in share counts only the all-in action; the two coverage shares have distinct denominators:
+    all of the ML agent's decisions, and only the decisions where it chose the all-in action."""
+    s, p = rr.load_research_summary(ROOT), rr.research_panel(ROOT)
+    _, _, one_step, coverage = p.limitations
+    assert f"it chose the all-in action in {s.ml_all_in_share:.1%} of its decisions" in one_step
+    assert f"in {s.ml_low_coverage_share:.1%} of all the ML agent's decisions" in coverage
+    assert f"in {s.ml_low_coverage_all_in_share:.1%} of the decisions where it chose the all-in action" in coverage
+    assert "of its all-ins" not in coverage and "went all-in" not in one_step
+    # The all-in share is the all-in *action* (category), not every action that put the whole stack in.
+    d = frozen()["all_in"]["ev_ml"]
+    assert s.ml_all_in_share == d["all_in_action_share"] != d["all_in_any_share"]
+
+
 def test_secondary_endpoints_are_left_out() -> None:
     d, text = frozen(), panel_text(rr.research_panel(ROOT))
     for name, endpoint in d["endpoints"].items():
